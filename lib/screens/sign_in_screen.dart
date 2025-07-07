@@ -57,7 +57,7 @@ class SignInScreen extends StatelessWidget {
                   ),
                   textAlign: TextAlign.center,
                 ),
-                SizedBox(height: blockH * 5.2),
+                SizedBox(height: blockH * 2.5),
                 Container(
                   decoration: BoxDecoration(
                     color: const Color(0xFFF3F3F3),
@@ -124,9 +124,29 @@ class SignInScreen extends StatelessWidget {
                   ),
                 )),
                 SizedBox(height: blockH * 1.1),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.end,
+                Obx(() => Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
+                    Row(
+                      children: [
+                        Checkbox(
+                          value: controller.rememberMe.value,
+                          onChanged: (val) => controller.rememberMe.value = val ?? false,
+                          activeColor: const Color(0xFF007AFF),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
+                          materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                          visualDensity: VisualDensity.compact,
+                        ),
+                        Text(
+                          'Remember Me',
+                          style: GoogleFonts.inter(
+                            fontWeight: FontWeight.w500,
+                            fontSize: blockW * 3.8,
+                            color: Colors.black,
+                          ),
+                        ),
+                      ],
+                    ),
                     TextButton(
                       onPressed: () {
                         Get.to(() => const ForgotPasswordScreen());
@@ -147,7 +167,7 @@ class SignInScreen extends StatelessWidget {
                       ),
                     ),
                   ],
-                ),
+                )),
                 SizedBox(height: blockH * 1.1),
                 Obx(() => SizedBox(
                   height: blockH * 6.2, // 48 on 777px

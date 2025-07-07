@@ -5,6 +5,8 @@ import 'screens/splash_screen.dart';
 import 'screens/dashboard_screen.dart';
 import 'controllers/sign_in_controller.dart';
 import 'controllers/dashboard_controller.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'screens/onboarding_screen.dart';
 
 void main() {
   runApp(const MyApp());
@@ -12,6 +14,17 @@ void main() {
 
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
+
+  Future<Widget> _getInitialScreen() async {
+    final prefs = await SharedPreferences.getInstance();
+    final rememberMe = prefs.getBool('remember_me') ?? false;
+    final isLoggedIn = await Get.find<AuthService>().isLoggedIn();
+    if (rememberMe && isLoggedIn) {
+      return DashboardScreen();
+    } else {
+      return OnboardingScreen();
+    }
+  }
 
   // This widget is the root of your application.
   @override
@@ -52,7 +65,16 @@ class MyApp extends StatelessWidget {
         colorScheme: ColorScheme.fromSeed(seedColor: Color(0xFF007AFF)),
         useMaterial3: true,
       ),
-      home: const SplashScreen(),
+      home: FutureBuilder<Widget>(
+        future: _getInitialScreen(),
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.done) {
+            return snapshot.data!;
+          }
+          // Show splash while loading
+          return const SplashScreen();
+        },
+      ),
     );
   }
 }

@@ -8,76 +8,76 @@ class OnboardingScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // ✅ Transparent Status Bar & Navigation Bar (Immersive Look)
-    SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
-    SystemChrome.setSystemUIOverlayStyle(const SystemUiOverlayStyle(
-      statusBarColor: Colors.transparent,
-      systemNavigationBarColor: Colors.transparent,
-      statusBarIconBrightness: Brightness.dark,
-      systemNavigationBarIconBrightness: Brightness.dark,
-    ));
-
     final mediaQuery = MediaQuery.of(context);
 
-    return Scaffold(
-      resizeToAvoidBottomInset: false, // Prevents layout shifting
-      extendBody: true, // Allows content under navigation bar
-      extendBodyBehindAppBar: true, // Allows content under status bar
-      backgroundColor: Colors.transparent,
-      body: Stack(
-        children: [
-          // ✅ Full Background Image
-          Positioned.fill(
-            child: Image.asset(
-              'assets/man.jpg',
-              fit: BoxFit.cover,
+    return AnnotatedRegion<SystemUiOverlayStyle>(
+      value: const SystemUiOverlayStyle(
+        statusBarColor: Color(0xFF007AFF),
+        statusBarIconBrightness: Brightness.light,
+        statusBarBrightness: Brightness.dark, // For iOS
+        systemNavigationBarColor: Color(0xFF007AFF),
+        systemNavigationBarIconBrightness: Brightness.light,
+      ),
+      child: Scaffold(
+        resizeToAvoidBottomInset: false,
+        backgroundColor: const Color(0xFF007AFF),
+        body: Stack(
+          children: [
+            // Full Background Image (fills under status and nav bars)
+            Positioned.fill(
+              child: Image.asset(
+                'assets/man.jpg',
+                fit: BoxFit.cover,
+                alignment: Alignment.topCenter,
+              ),
             ),
-          ),
-
-          // ✅ Chart Image Overlay (Positioned Responsively)
-          Positioned(
-            left: mediaQuery.size.width * 0.10,
-            top: mediaQuery.size.height * 0.47,
-            child: Image.asset(
-              'assets/chart.jpg',
-              width: mediaQuery.size.width * 0.30,
-              fit: BoxFit.contain,
+            // Chart Image Overlay
+            Positioned(
+              left: mediaQuery.size.width * 0.10,
+              top: mediaQuery.size.height * 0.47,
+              child: Image.asset(
+                'assets/chart.jpg',
+                width: mediaQuery.size.width * 0.30,
+                fit: BoxFit.contain,
+              ),
             ),
-          ),
-
-          // ✅ Next Button at Bottom Center (Inside SafeArea for Padding)
-          Align(
-            alignment: Alignment.bottomCenter,
-            child: SafeArea(
-              minimum: EdgeInsets.only(bottom: mediaQuery.size.height * 0.03),
-              child: SizedBox(
-                width: mediaQuery.size.width * 0.55,
-                height: 48,
-                child: ElevatedButton(
-                  onPressed: () {
-                    Get.to(() => SignInScreen());
-                  },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF007AFF),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8),
+            // Next Button at Bottom Center (inside SafeArea for padding only at bottom)
+            Align(
+              alignment: Alignment.bottomCenter,
+              child: SafeArea(
+                minimum: EdgeInsets.only(bottom: mediaQuery.size.height * 0.03),
+                top: false,
+                left: false,
+                right: false,
+                child: SizedBox(
+                  width: mediaQuery.size.width * 0.55,
+                  height: 48,
+                  child: ElevatedButton(
+                    onPressed: () {
+                      Get.to(() => SignInScreen());
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF007AFF),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      elevation: 0,
                     ),
-                    elevation: 0,
-                  ),
-                  child: const Text(
-                    'Next',
-                    style: TextStyle(
-                      fontFamily: 'SFProDisplay',
-                      fontWeight: FontWeight.w600,
-                      fontSize: 17,
-                      color: Colors.white,
+                    child: const Text(
+                      'Next',
+                      style: TextStyle(
+                        fontFamily: 'SFProDisplay',
+                        fontWeight: FontWeight.w600,
+                        fontSize: 17,
+                        color: Colors.white,
+                      ),
                     ),
                   ),
                 ),
               ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

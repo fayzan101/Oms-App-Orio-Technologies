@@ -15,48 +15,41 @@ class _SplashScreenState extends State<SplashScreen> {
   @override
   void initState() {
     super.initState();
+    SystemChrome.setEnabledSystemUIMode(
+      SystemUiMode.manual,
+      overlays: [SystemUiOverlay.top],
+    );
     Future.delayed(const Duration(seconds: 2), () {
-      Get.off(() => const OnboardingScreen());
+      Get.offAll(() => OnboardingScreen());
     });
   }
 
   @override
-  Widget build(BuildContext context) {
-    // Set status bar and navigation bar to transparent, enable edge-to-edge
-    SystemChrome.setSystemUIOverlayStyle(const SystemUiOverlayStyle(
-      statusBarColor: Colors.transparent,
-      statusBarIconBrightness: Brightness.light,
-      statusBarBrightness: Brightness.light,
-      systemNavigationBarColor: Colors.transparent,
-      systemNavigationBarIconBrightness: Brightness.light,
-    ));
+  void dispose() {
     SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
+    super.dispose();
+  }
 
-    return Scaffold(
-      extendBody: true,
-      extendBodyBehindAppBar: true,
-      backgroundColor: const Color(0xFF007AFF),
-      body: Stack(
-        children: [
-          // Main content
-          Center(
-            child: SafeArea(
-              top: false, // allow content behind status bar
-              bottom: true,
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  SvgPicture.asset(
-                    'assets/frame.svg',
-                    width: 60,
-                    height: 60,
-                    color: Colors.white,
-                  ),
-                ],
-              ),
-            ),
+  @override
+  Widget build(BuildContext context) {
+    return AnnotatedRegion<SystemUiOverlayStyle>(
+      value: const SystemUiOverlayStyle(
+        statusBarColor: Color(0xFF007AFF),
+        statusBarIconBrightness: Brightness.light,
+        statusBarBrightness: Brightness.dark, // For iOS
+        systemNavigationBarColor: Color(0xFF007AFF),
+        systemNavigationBarIconBrightness: Brightness.light,
+      ),
+      child: Scaffold(
+        backgroundColor: const Color(0xFF007AFF),
+        body: Center(
+          child: SvgPicture.asset(
+            'assets/frame.svg',
+            width: 60,
+            height: 60,
+            color: Colors.white,
           ),
-        ],
+        ),
       ),
     );
   }
