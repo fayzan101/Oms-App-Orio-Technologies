@@ -3,6 +3,8 @@ import 'package:get/get.dart';
 import 'services/auth_service.dart';
 import 'screens/splash_screen.dart';
 import 'screens/dashboard_screen.dart';
+import 'controllers/sign_in_controller.dart';
+import 'controllers/dashboard_controller.dart';
 
 void main() {
   runApp(const MyApp());
@@ -19,10 +21,18 @@ class MyApp extends StatelessWidget {
       title: 'Orio',
       initialBinding: BindingsBuilder(() {
         Get.put(AuthService());
+        Get.put(SignInController());
+        Get.put(DashboardController());
       }),
       getPages: [
         GetPage(name: '/dashboard', page: () => DashboardScreen()),
       ],
+      unknownRoute: GetPage(
+        name: '/notfound',
+        page: () => Scaffold(
+          body: Center(child: Text('Page not found or failed to build', style: TextStyle(fontSize: 20))),
+        ),
+      ),
       theme: ThemeData(
         // This is the theme of your application.
         //

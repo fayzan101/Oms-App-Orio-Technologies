@@ -22,24 +22,27 @@ class _SplashScreenState extends State<SplashScreen> {
 
   @override
   Widget build(BuildContext context) {
-    // Set status bar to transparent and navigation bar to match background
+    // Set status bar and navigation bar to transparent, enable edge-to-edge
     SystemChrome.setSystemUIOverlayStyle(const SystemUiOverlayStyle(
       statusBarColor: Colors.transparent,
       statusBarIconBrightness: Brightness.light,
       statusBarBrightness: Brightness.light,
-      systemNavigationBarColor: Color(0xFF007AFF),
+      systemNavigationBarColor: Colors.transparent,
       systemNavigationBarIconBrightness: Brightness.light,
     ));
+    SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
 
     return Scaffold(
+      extendBody: true,
+      extendBodyBehindAppBar: true,
       backgroundColor: const Color(0xFF007AFF),
       body: Stack(
         children: [
           // Main content
-          SafeArea(
-            top: false, // allow content behind status bar
-            bottom: true,
-            child: Center(
+          Center(
+            child: SafeArea(
+              top: false, // allow content behind status bar
+              bottom: true,
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
@@ -53,8 +56,6 @@ class _SplashScreenState extends State<SplashScreen> {
               ),
             ),
           ),
-          // iOS status bar mockup (for preview only, not needed in real app)
-          // Remove this Container in production
         ],
       ),
     );

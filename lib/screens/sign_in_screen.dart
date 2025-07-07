@@ -2,88 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
-import '../services/auth_service.dart';
+import '../controllers/sign_in_controller.dart';
 import 'create_account_screen.dart';
 import 'forgot_password_screen.dart';
 
-class SignInController extends GetxController {
-  var obscurePassword = true.obs;
-  final emailController = TextEditingController();
-  final passwordController = TextEditingController();
-  final authService = Get.find<AuthService>();
-
-  // Error states for input fields
-  final emailError = false.obs;
-  final passwordError = false.obs;
-
-  @override
-  void onClose() {
-    emailController.dispose();
-    passwordController.dispose();
-    super.onClose();
-  }
-
-  Future<void> signIn() async {
-    // Dismiss keyboard
-    Get.focusScope?.unfocus();
-    emailError.value = false;
-    passwordError.value = false;
-
-    final email = emailController.text.trim();
-    final password = passwordController.text;
-
-    // Simple email validation
-    final emailValid = RegExp(r"^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}").hasMatch(email);
-    if (email.isEmpty || password.isEmpty || !emailValid) {
-      emailError.value = true;
-      passwordError.value = true;
-      Get.snackbar(
-        'Invalid',
-        'Invalid email or password',
-        snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: Colors.red,
-        colorText: Colors.white,
-        margin: const EdgeInsets.all(16),
-        borderRadius: 12,
-      );
-      return;
-    }
-
-    final success = await authService.login(email, password);
-
-    if (success) {
-      // Show success snackbar on dashboard
-      Get.offAllNamed('/dashboard');
-      Future.delayed(const Duration(milliseconds: 300), () {
-        Get.snackbar(
-          'Success',
-          'Login successful!',
-          snackPosition: SnackPosition.BOTTOM,
-          backgroundColor: Colors.green,
-          colorText: Colors.white,
-          margin: const EdgeInsets.all(16),
-          borderRadius: 12,
-        );
-      });
-    } else {
-      emailError.value = true;
-      passwordError.value = true;
-      Get.snackbar(
-        'Invalid',
-        'Invalid email or password',
-        snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: Colors.red,
-        colorText: Colors.white,
-        margin: const EdgeInsets.all(16),
-        borderRadius: 12,
-      );
-    }
-  }
-}
-
 class SignInScreen extends StatelessWidget {
   SignInScreen({Key? key}) : super(key: key);
-  final SignInController controller = Get.put(SignInController());
+  final SignInController controller = Get.find<SignInController>();
 
   @override
   Widget build(BuildContext context) {
