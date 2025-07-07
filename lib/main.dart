@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'services/auth_service.dart';
 import 'screens/splash_screen.dart';
+import 'screens/dashboard_screen.dart';
 
 void main() {
   runApp(const MyApp());
@@ -15,6 +17,12 @@ class MyApp extends StatelessWidget {
     return GetMaterialApp(
       debugShowCheckedModeBanner: false,
       title: 'Orio',
+      initialBinding: BindingsBuilder(() {
+        Get.put(AuthService());
+      }),
+      getPages: [
+        GetPage(name: '/dashboard', page: () => DashboardScreen()),
+      ],
       theme: ThemeData(
         // This is the theme of your application.
         //

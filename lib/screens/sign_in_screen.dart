@@ -2,11 +2,83 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
+import '../services/auth_service.dart';
 import 'create_account_screen.dart';
 import 'forgot_password_screen.dart';
 
 class SignInController extends GetxController {
   var obscurePassword = true.obs;
+  final emailController = TextEditingController();
+  final passwordController = TextEditingController();
+  final authService = Get.find<AuthService>();
+
+  // Error states for input fields
+  final emailError = false.obs;
+  final passwordError = false.obs;
+
+  @override
+  void onClose() {
+    emailController.dispose();
+    passwordController.dispose();
+    super.onClose();
+  }
+
+  Future<void> signIn() async {
+    // Dismiss keyboard
+    Get.focusScope?.unfocus();
+    emailError.value = false;
+    passwordError.value = false;
+
+    final email = emailController.text.trim();
+    final password = passwordController.text;
+
+    // Simple email validation
+    final emailValid = RegExp(r"^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}").hasMatch(email);
+    if (email.isEmpty || password.isEmpty || !emailValid) {
+      emailError.value = true;
+      passwordError.value = true;
+      Get.snackbar(
+        'Invalid',
+        'Invalid email or password',
+        snackPosition: SnackPosition.BOTTOM,
+        backgroundColor: Colors.red,
+        colorText: Colors.white,
+        margin: const EdgeInsets.all(16),
+        borderRadius: 12,
+      );
+      return;
+    }
+
+    final success = await authService.login(email, password);
+
+    if (success) {
+      // Show success snackbar on dashboard
+      Get.offAllNamed('/dashboard');
+      Future.delayed(const Duration(milliseconds: 300), () {
+        Get.snackbar(
+          'Success',
+          'Login successful!',
+          snackPosition: SnackPosition.BOTTOM,
+          backgroundColor: Colors.green,
+          colorText: Colors.white,
+          margin: const EdgeInsets.all(16),
+          borderRadius: 12,
+        );
+      });
+    } else {
+      emailError.value = true;
+      passwordError.value = true;
+      Get.snackbar(
+        'Invalid',
+        'Invalid email or password',
+        snackPosition: SnackPosition.BOTTOM,
+        backgroundColor: Colors.red,
+        colorText: Colors.white,
+        margin: const EdgeInsets.all(16),
+        borderRadius: 12,
+      );
+    }
+  }
 }
 
 class SignInScreen extends StatelessWidget {
@@ -56,7 +128,7 @@ class SignInScreen extends StatelessWidget {
                   style: GoogleFonts.inter(
                     fontWeight: FontWeight.w400,
                     fontSize: blockW * 3.8,
-                    color: const Color(0xFF222222), // darker subtitle
+                    color: Colors.black // darker subtitle
                   ),
                   textAlign: TextAlign.center,
                 ),
@@ -65,14 +137,23 @@ class SignInScreen extends StatelessWidget {
                   decoration: BoxDecoration(
                     color: const Color(0xFFF3F3F3),
                     borderRadius: BorderRadius.circular(blockW * 2), // 8 on 390px
+                    border: controller.emailError.value
+                        ? Border.all(color: Colors.red, width: 1.5)
+                        : null,
                   ),
                   child: TextField(
+                    controller: controller.emailController,
+                    style: GoogleFonts.inter(
+                      fontWeight: FontWeight.w400,
+                      fontSize: blockW * 4.1,
+                      color: Colors.black, // darker input text
+                    ),
                     decoration: InputDecoration(
                       hintText: 'Email',
                       hintStyle: GoogleFonts.inter(
                         fontWeight: FontWeight.w400,
                         fontSize: blockW * 4.1, // ~16 on 390px
-                        color: const Color(0xFF6B6B6B), // darker hint
+                        color: Colors.black, // darker hint
                       ),
                       border: InputBorder.none,
                       contentPadding: EdgeInsets.symmetric(horizontal: blockW * 4, vertical: blockH * 2.2),
@@ -85,22 +166,31 @@ class SignInScreen extends StatelessWidget {
                   decoration: BoxDecoration(
                     color: const Color(0xFFF3F3F3),
                     borderRadius: BorderRadius.circular(blockW * 2),
+                    border: controller.passwordError.value
+                        ? Border.all(color: Colors.red, width: 1.5)
+                        : null,
                   ),
                   child: TextField(
+                    controller: controller.passwordController,
                     obscureText: controller.obscurePassword.value,
+                    style: GoogleFonts.inter(
+                      fontWeight: FontWeight.w400,
+                      fontSize: blockW * 4.1,
+                      color: Colors.black, // darker input text
+                    ),
                     decoration: InputDecoration(
                       hintText: 'Password',
                       hintStyle: GoogleFonts.inter(
                         fontWeight: FontWeight.w400,
                         fontSize: blockW * 4.1,
-                        color: const Color(0xFF6B6B6B), // darker hint
+                        color: Colors.black, // darker hint
                       ),
                       border: InputBorder.none,
                       contentPadding: EdgeInsets.symmetric(horizontal: blockW * 4, vertical: blockH * 2.2),
                       suffixIcon: IconButton(
                         icon: Icon(
                           controller.obscurePassword.value ? Icons.visibility_off : Icons.visibility,
-                          color: const Color(0xFFBDBDBD),
+                          color: Colors.black, // darker icon
                           size: blockW * 6,
                         ),
                         onPressed: () => controller.obscurePassword.value = !controller.obscurePassword.value,
@@ -127,17 +217,17 @@ class SignInScreen extends StatelessWidget {
                         style: GoogleFonts.inter(
                           fontWeight: FontWeight.w400,
                           fontSize: blockW * 3.6, // ~14 on 390px
-                          color: const Color(0xFF6B6B6B),
+                          color: Colors.black,
                         ),
                       ),
                     ),
                   ],
                 ),
                 SizedBox(height: blockH * 1.1),
-                SizedBox(
+                Obx(() => SizedBox(
                   height: blockH * 6.2, // 48 on 777px
                   child: ElevatedButton(
-                    onPressed: () {},
+                    onPressed: controller.authService.isLoading.value ? null : controller.signIn,
                     style: ElevatedButton.styleFrom(
                       backgroundColor: const Color(0xFF007AFF),
                       shape: RoundedRectangleBorder(
@@ -145,16 +235,25 @@ class SignInScreen extends StatelessWidget {
                       ),
                       elevation: 0,
                     ),
-                    child: Text(
-                      'Sign in',
-                      style: GoogleFonts.inter(
-                        fontWeight: FontWeight.w600,
-                        fontSize: blockW * 4.4, // ~17 on 390px
-                        color: Colors.white,
-                      ),
-                    ),
+                    child: controller.authService.isLoading.value
+                        ? SizedBox(
+                            height: 20,
+                            width: 20,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                            ),
+                          )
+                        : Text(
+                            'Sign in',
+                            style: GoogleFonts.inter(
+                              fontWeight: FontWeight.w600,
+                              fontSize: blockW * 4.4, // ~17 on 390px
+                              color: Colors.white,
+                            ),
+                          ),
                   ),
-                ),
+                )),
                 SizedBox(height: blockH * 3.1),
                 Row(
                   children: [
@@ -249,7 +348,7 @@ class SignInScreen extends StatelessWidget {
                       style: GoogleFonts.inter(
                         fontWeight: FontWeight.w400,
                         fontSize: blockW * 3.6, // ~14 on 390px
-                        color: const Color(0xFF6B6B6B),
+                        color: Colors.black,
                       ),
                     ),
                     GestureDetector(

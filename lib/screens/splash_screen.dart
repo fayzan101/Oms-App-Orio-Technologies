@@ -45,8 +45,8 @@ class _SplashScreenState extends State<SplashScreen> {
                 children: [
                   SvgPicture.asset(
                     'assets/frame.svg',
-                    width: 120,
-                    height: 120,
+                    width: 60,
+                    height: 60,
                     color: Colors.white,
                   ),
                 ],

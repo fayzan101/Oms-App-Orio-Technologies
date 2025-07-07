@@ -35,7 +35,7 @@ class CreateAccountScreen extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                const SizedBox(height: 48),
+                const SizedBox(height: 84),
                 const Text(
                   'Create Account',
                   style: TextStyle(
@@ -46,37 +46,37 @@ class CreateAccountScreen extends StatelessWidget {
                   ),
                   textAlign: TextAlign.center,
                 ),
-                const SizedBox(height: 32),
+                const SizedBox(height: 20),
                 _buildTextField('Email'),
-                const SizedBox(height: 16),
+                const SizedBox(height: 6),
                 _buildTextField('Full Name'),
-                const SizedBox(height: 16),
+                const SizedBox(height: 6),
                 _buildTextField('Phone Number', keyboardType: TextInputType.phone),
-                const SizedBox(height: 16),
+                const SizedBox(height: 6),
                 Obx(() => _buildTextField(
                   'Password',
                   obscureText: controller.obscurePassword.value,
                   suffixIcon: IconButton(
                     icon: Icon(
                       controller.obscurePassword.value ? Icons.visibility_off : Icons.visibility,
-                      color: const Color(0xFFBDBDBD),
+                      color: Colors.black,
                     ),
                     onPressed: () => controller.obscurePassword.value = !controller.obscurePassword.value,
                   ),
                 )),
-                const SizedBox(height: 16),
+                const SizedBox(height: 8),
                 Obx(() => _buildTextField(
                   'Re-Enter Password',
                   obscureText: controller.obscureRePassword.value,
                   suffixIcon: IconButton(
                     icon: Icon(
                       controller.obscureRePassword.value ? Icons.visibility_off : Icons.visibility,
-                      color: const Color(0xFFBDBDBD),
+                      color: Colors.black,
                     ),
                     onPressed: () => controller.obscureRePassword.value = !controller.obscureRePassword.value,
                   ),
                 )),
-                const SizedBox(height: 20),
+                const SizedBox(height: 10),
                 Obx(() => Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -96,7 +96,7 @@ class CreateAccountScreen extends StatelessWidget {
                           'I have read and agreed to the Privacy Policy and Terms and Conditions',
                           style: GoogleFonts.inter(
                             fontWeight: FontWeight.w400,
-                            fontSize: 13,
+                            fontSize: 11,
                             color: const Color(0xFF222222),
                           ),
                         ),
@@ -104,7 +104,7 @@ class CreateAccountScreen extends StatelessWidget {
                     ),
                   ],
                 )),
-                const SizedBox(height: 20),
+                const SizedBox(height: 10),
                 SizedBox(
                   height: 48,
                   child: ElevatedButton(
@@ -127,7 +127,7 @@ class CreateAccountScreen extends StatelessWidget {
                     ),
                   ),
                 ),
-                const SizedBox(height: 32),
+                const SizedBox(height: 20),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
@@ -137,7 +137,7 @@ class CreateAccountScreen extends StatelessWidget {
                         fontFamily: 'SFProDisplay',
                         fontWeight: FontWeight.w400,
                         fontSize: 14,
-                        color: Color(0xFF6B6B6B),
+                        color: Colors.black,
                       ),
                     ),
                     GestureDetector(

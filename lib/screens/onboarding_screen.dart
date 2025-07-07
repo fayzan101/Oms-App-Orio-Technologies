@@ -8,45 +8,50 @@ class OnboardingScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Set status bar and navigation bar to transparent for full image coverage
+    // ✅ Transparent Status Bar & Navigation Bar (Immersive Look)
+    SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
     SystemChrome.setSystemUIOverlayStyle(const SystemUiOverlayStyle(
       statusBarColor: Colors.transparent,
-      statusBarIconBrightness: Brightness.dark,
-      statusBarBrightness: Brightness.light,
       systemNavigationBarColor: Colors.transparent,
+      statusBarIconBrightness: Brightness.dark,
       systemNavigationBarIconBrightness: Brightness.dark,
     ));
 
+    final mediaQuery = MediaQuery.of(context);
+
     return Scaffold(
-      extendBodyBehindAppBar: true,
-      extendBody: true,
+      resizeToAvoidBottomInset: false, // Prevents layout shifting
+      extendBody: true, // Allows content under navigation bar
+      extendBodyBehindAppBar: true, // Allows content under status bar
       backgroundColor: Colors.transparent,
       body: Stack(
         children: [
-          // Full screen man image as background
+          // ✅ Full Background Image
           Positioned.fill(
             child: Image.asset(
               'assets/man.jpg',
               fit: BoxFit.cover,
             ),
           ),
-          // Chart image overlay near the shirt
+
+          // ✅ Chart Image Overlay (Positioned Responsively)
           Positioned(
-            left: MediaQuery.of(context).size.width * 0.10,
-            top: MediaQuery.of(context).size.height * 0.47, // move a bit up
+            left: mediaQuery.size.width * 0.10,
+            top: mediaQuery.size.height * 0.47,
             child: Image.asset(
               'assets/chart.jpg',
-              width: 120,
+              width: mediaQuery.size.width * 0.30,
               fit: BoxFit.contain,
             ),
           ),
-          // Only the Next button at the bottom center
+
+          // ✅ Next Button at Bottom Center (Inside SafeArea for Padding)
           Align(
             alignment: Alignment.bottomCenter,
-            child: Padding(
-              padding: const EdgeInsets.only(bottom: 32.0),
+            child: SafeArea(
+              minimum: EdgeInsets.only(bottom: mediaQuery.size.height * 0.03),
               child: SizedBox(
-                width: 220,
+                width: mediaQuery.size.width * 0.55,
                 height: 48,
                 child: ElevatedButton(
                   onPressed: () {
@@ -76,4 +81,4 @@ class OnboardingScreen extends StatelessWidget {
       ),
     );
   }
-} 
+}
