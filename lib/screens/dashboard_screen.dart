@@ -133,11 +133,11 @@ class DashboardScreen extends StatelessWidget {
                             Text(
                               'PKR 235,461',
                               style: TextStyle(
-                                fontSize: 24,
+                                    fontSize: 24,
                                 fontWeight: FontWeight.bold,
                                 color: Colors.black,
                                   ),
-                            ),
+                        ),
                             // Simple chart representation
                       Image.asset(
                               'assets/icon/graph.png',

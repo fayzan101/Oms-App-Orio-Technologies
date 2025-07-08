@@ -3,7 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import 'dashboard_screen.dart';
 import 'menu.dart';
-import 'create_order.dart';
+import 'create_order.dart' as create_order;
 
 class ReportsScreen extends StatelessWidget {
   const ReportsScreen({Key? key}) : super(key: key);
@@ -78,11 +78,14 @@ class ReportsScreen extends StatelessWidget {
           onMenuTap: () {
             Get.offAll(() => const MenuScreen());
           },
+          onPencilTap: () {
+            Get.offAll(() => create_order.CreateOrderScreen());
+          },
         ),
         floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
         floatingActionButton: FloatingActionButton(
           onPressed: () {
-            Get.to(() => const CreateOrderScreen());
+            Get.to(() => const create_order.CreateOrderScreen());
           },
           backgroundColor: const Color(0xFF0A253B),
           elevation: 4,
@@ -134,7 +137,8 @@ class CustomBottomNavBar extends StatelessWidget {
   final VoidCallback? onMenuTap;
   final VoidCallback? onHomeTap;
   final VoidCallback? onReportsTap;
-  const CustomBottomNavBar({Key? key, required this.selectedIndex, this.onMenuTap, this.onHomeTap, this.onReportsTap}) : super(key: key);
+  final VoidCallback? onPencilTap;
+  const CustomBottomNavBar({Key? key, required this.selectedIndex, this.onMenuTap, this.onHomeTap, this.onReportsTap, this.onPencilTap}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {

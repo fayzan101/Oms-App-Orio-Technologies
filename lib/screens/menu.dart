@@ -5,6 +5,7 @@ import 'dashboard_screen.dart';
 import '../services/auth_service.dart';
 import 'sign_in_screen.dart';
 import 'report.dart' as report;
+import 'create_order.dart' as create_order;
 
 class MenuScreen extends StatelessWidget {
   const MenuScreen({Key? key}) : super(key: key);
@@ -173,6 +174,9 @@ class MenuScreen extends StatelessWidget {
             Get.offAll(() => report.ReportsScreen());
           },
           onMenuTap: () {},
+          onPencilTap: () {
+            Get.offAll(() => create_order.CreateOrderScreen());
+          },
         ),
         floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
         floatingActionButton: FloatingActionButton(
@@ -369,7 +373,8 @@ class CustomBottomNavBar extends StatelessWidget {
   final VoidCallback? onHomeTap;
   final VoidCallback? onReportsTap;
   final VoidCallback? onMenuTap;
-  const CustomBottomNavBar({Key? key, required this.selectedIndex, this.onHomeTap, this.onReportsTap, this.onMenuTap}) : super(key: key);
+  final VoidCallback? onPencilTap;
+  const CustomBottomNavBar({Key? key, required this.selectedIndex, this.onHomeTap, this.onReportsTap, this.onMenuTap, this.onPencilTap}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
