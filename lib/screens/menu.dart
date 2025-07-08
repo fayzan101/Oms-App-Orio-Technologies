@@ -4,6 +4,7 @@ import 'package:get/get.dart';
 import 'dashboard_screen.dart';
 import '../services/auth_service.dart';
 import 'sign_in_screen.dart';
+import 'report.dart' as report;
 
 class MenuScreen extends StatelessWidget {
   const MenuScreen({Key? key}) : super(key: key);
@@ -163,9 +164,16 @@ class MenuScreen extends StatelessWidget {
             ],
           ),
         ),
-        bottomNavigationBar: CustomBottomNavBar(selectedIndex: 4, onHomeTap: () {
-          Get.offAll(() => DashboardScreen());
-        }),
+        bottomNavigationBar: CustomBottomNavBar(
+          selectedIndex: 4,
+          onHomeTap: () {
+            Get.offAll(() => DashboardScreen());
+          },
+          onReportsTap: () {
+            Get.offAll(() => report.ReportsScreen());
+          },
+          onMenuTap: () {},
+        ),
         floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
         floatingActionButton: FloatingActionButton(
           onPressed: () {},
@@ -359,7 +367,9 @@ class _MenuItem extends StatelessWidget {
 class CustomBottomNavBar extends StatelessWidget {
   final int selectedIndex;
   final VoidCallback? onHomeTap;
-  const CustomBottomNavBar({Key? key, required this.selectedIndex, this.onHomeTap}) : super(key: key);
+  final VoidCallback? onReportsTap;
+  final VoidCallback? onMenuTap;
+  const CustomBottomNavBar({Key? key, required this.selectedIndex, this.onHomeTap, this.onReportsTap, this.onMenuTap}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
@@ -392,13 +402,13 @@ class CustomBottomNavBar extends StatelessWidget {
                 icon: Icons.tune_outlined,
                 label: 'Reports',
                 selected: selectedIndex == 2,
-                onTap: () {},
+                onTap: onReportsTap ?? () {},
               ),
               _NavBarItem(
                 icon: Icons.menu,
                 label: 'Menu',
                 selected: selectedIndex == 4,
-                onTap: () {},
+                onTap: onMenuTap ?? () {},
                 selectedColor: const Color(0xFF007AFF),
               ),
             ],

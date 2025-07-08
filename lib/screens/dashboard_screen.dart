@@ -7,6 +7,7 @@ import '../controllers/dashboard_controller.dart';
 import 'menu.dart';
 import 'report.dart';
 import 'package:fl_chart/fl_chart.dart';
+import 'create_order.dart';
 
 class DashboardScreen extends StatelessWidget {
   DashboardScreen({Key? key}) : super(key: key);
@@ -14,38 +15,39 @@ class DashboardScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge, overlays: [SystemUiOverlay.top, SystemUiOverlay.bottom]);
+   
+     SystemChrome.setEnabledSystemUIMode(SystemUiMode.manual, overlays: [SystemUiOverlay.top]);
     return AnnotatedRegion<SystemUiOverlayStyle>(
       value: const SystemUiOverlayStyle(
         statusBarColor: Colors.white,
-        statusBarIconBrightness: Brightness.dark,
-        statusBarBrightness: Brightness.light,
-        systemNavigationBarColor: Colors.white,
-        systemNavigationBarIconBrightness: Brightness.dark,
+      statusBarIconBrightness: Brightness.dark,
+      statusBarBrightness: Brightness.light,
+      systemNavigationBarColor: Colors.white,
+      systemNavigationBarIconBrightness: Brightness.dark,
         systemNavigationBarDividerColor: Colors.transparent,
       ),
       child: Scaffold(
-        extendBody: true,
+      extendBody: true,
         extendBodyBehindAppBar: false,
         backgroundColor: Colors.white,
         appBar: AppBar(
-          backgroundColor: Colors.white,
+      backgroundColor: Colors.white,
           elevation: 0,
           systemOverlayStyle: SystemUiOverlayStyle.dark,
           title: SvgPicture.asset(
             'assets/frame.svg',
             width: 50,
             height: 30,
-            color: Color(0xFF007AFF),
-          ),
+                        color: Color(0xFF007AFF),
+                      ),
           actions: [
-            IconButton(
+                        IconButton(
               icon: Icon(Icons.notifications_outlined, color: Colors.black),
-              onPressed: () {},
-            ),
-            IconButton(
+                          onPressed: () {},
+                        ),
+                        IconButton(
               icon: Icon(Icons.calendar_today_outlined, color: Colors.black),
-              onPressed: () {},
+                          onPressed: () {},
             ),
           ],
           bottom: PreferredSize(
@@ -65,27 +67,27 @@ class DashboardScreen extends StatelessWidget {
                 ),
               ),
             ),
-          ),
         ),
-        body: SafeArea(
-          child: SingleChildScrollView(
+      ),
+      body: SafeArea(
+        child: SingleChildScrollView(
             child: Padding(
               padding: EdgeInsets.all(16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
                   // Dashboard Header
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
                       Text(
-                        'Dashboard',
+                      'Dashboard',
                         style: TextStyle(
-                          fontSize: 24,
+                        fontSize: 24,
                           fontWeight: FontWeight.bold,
                           color: Colors.black,
-                        ),
-                      ),
+                    ),
+                  ),
                       Container(
                         padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                         decoration: BoxDecoration(
@@ -113,17 +115,17 @@ class DashboardScreen extends StatelessWidget {
                       color: Color(0xFFF8F9FA),
                       borderRadius: BorderRadius.circular(12),
                     ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'Total Amount Outstanding',
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Total Amount Outstanding',
                           style: TextStyle(
                             fontSize: 14,
                             color: Color(0xFF666666),
-                            fontWeight: FontWeight.w500,
+                                fontWeight: FontWeight.w500,
                           ),
-                        ),
+                              ),
                         SizedBox(height: 8),
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -134,36 +136,36 @@ class DashboardScreen extends StatelessWidget {
                                 fontSize: 24,
                                 fontWeight: FontWeight.bold,
                                 color: Colors.black,
-                              ),
+                                  ),
                             ),
                             // Simple chart representation
-                            Image.asset(
+                      Image.asset(
                               'assets/icon/graph.png',
                               width: 100,
                               height: 50,
-                              fit: BoxFit.contain,
+                        fit: BoxFit.contain,
                             ),
                           ],
-                        ),
-                      ],
-                    ),
+                      ),
+                    ],
                   ),
+                ),
                   SizedBox(height: 20),
 
                   // Metrics Card
                   Container(
                     width: double.infinity,
                     padding: EdgeInsets.all(20),
-                    decoration: BoxDecoration(
+                  decoration: BoxDecoration(
                       color: Color(0xFFF8F9FA),
                       borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Row(
-                      children: [
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
+                  ),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
                               Text(
                                 'Orders',
                                 style: TextStyle(
@@ -176,18 +178,18 @@ class DashboardScreen extends StatelessWidget {
                               Text(
                                 '8,487',
                                 style: TextStyle(
-                                  fontSize: 16,
+                                    fontSize: 16,
                                   fontWeight: FontWeight.bold,
                                   color: Colors.black,
                                 ),
-                              ),
-                            ],
-                          ),
+                                  ),
+                          ],
                         ),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
+                      ),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
                               Text(
                                 'Revenue',
                                 style: TextStyle(
@@ -200,18 +202,18 @@ class DashboardScreen extends StatelessWidget {
                               Text(
                                 'PKR 46,553',
                                 style: TextStyle(
-                                  fontSize: 16,
+                                    fontSize: 16,
                                   fontWeight: FontWeight.bold,
                                   color: Colors.black,
                                 ),
-                              ),
-                            ],
-                          ),
+                                  ),
+                          ],
                         ),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
+                      ),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
                               Text(
                                 'Product Sold',
                                 style: TextStyle(
@@ -224,17 +226,17 @@ class DashboardScreen extends StatelessWidget {
                               Text(
                                 '6,342',
                                 style: TextStyle(
-                                  fontSize: 16,
+                                    fontSize: 16,
                                   fontWeight: FontWeight.bold,
                                   color: Colors.black,
                                 ),
-                              ),
-                            ],
-                          ),
+                                  ),
+                          ],
                         ),
-                      ],
-                    ),
+                      ),
+                    ],
                   ),
+                ),
                   SizedBox(height: 20),
 
                   // Pending Payment Cards
@@ -266,7 +268,7 @@ class DashboardScreen extends StatelessWidget {
                   Container(
                     width: double.infinity,
                     padding: EdgeInsets.all(20),
-                    decoration: BoxDecoration(
+                        decoration: BoxDecoration(
                       color: Color(0xFFF5F5F7),
                       borderRadius: BorderRadius.circular(16),
                     ),
@@ -279,7 +281,7 @@ class DashboardScreen extends StatelessWidget {
                             fontSize: 14,
                             color: Color(0xFF8E8E93),
                             fontWeight: FontWeight.w500,
-                          ),
+                        ),
                         ),
                         SizedBox(height: 2),
                         Text(
@@ -405,9 +407,9 @@ class DashboardScreen extends StatelessWidget {
                       color: Color(0xFFF5F5F7),
                       borderRadius: BorderRadius.circular(16),
                     ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
                         ..._orderStatusSummaryList.map((item) => Padding(
                           padding: const EdgeInsets.only(bottom: 16),
                           child: _OrderStatusSummaryRow(
@@ -416,7 +418,7 @@ class DashboardScreen extends StatelessWidget {
                             amount: item['amount'],
                             count: item['count'],
                           ),
-                        )),
+                                      )),
                         SizedBox(height: 8),
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -434,7 +436,7 @@ class DashboardScreen extends StatelessWidget {
                               style: TextStyle(
                                 fontSize: 18,
                                 color: Colors.black,
-                                fontWeight: FontWeight.w700,
+                                        fontWeight: FontWeight.w700,
                               ),
                             ),
                           ],
@@ -468,16 +470,16 @@ class DashboardScreen extends StatelessWidget {
                   Text(
                     'Failed Attempt',
                     style: TextStyle(
-                      fontSize: 18,
+                    fontSize: 18,
                       fontWeight: FontWeight.bold,
                       color: Colors.black,
                     ),
                   ),
                   SizedBox(height: 12),
-                  Container(
+              Container(
                     width: double.infinity,
                     padding: EdgeInsets.all(20),
-                    decoration: BoxDecoration(
+                decoration: BoxDecoration(
                       color: Color(0xFFF5F5F7),
                       borderRadius: BorderRadius.circular(16),
                     ),
@@ -491,7 +493,7 @@ class DashboardScreen extends StatelessWidget {
                             progress: item['progress'],
                             amount: item['amount'],
                             count: item['count'],
-                          ),
+                    ),
                         )),
                         SizedBox(height: 8),
                         Row(
@@ -537,20 +539,29 @@ class DashboardScreen extends StatelessWidget {
                             ),
                           ],
                         ),
-                      ],
-                    ),
-                  ),
-                ],
+                  ],
+                ),
               ),
-            ),
+            ],
           ),
         ),
-        bottomNavigationBar: CustomBottomNavBar(selectedIndex: 0, onMenuTap: () {
-          Get.offAll(() => const MenuScreen());
-        }),
-        floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
+      ),
+        ),
+        bottomNavigationBar: CustomBottomNavBar(
+          selectedIndex: 0,
+          onHomeTap: () {},
+          onReportsTap: () {
+            Get.offAll(() => const ReportsScreen());
+          },
+          onMenuTap: () {
+            Get.offAll(() => const MenuScreen());
+          },
+        ),
+      floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
         floatingActionButton: FloatingActionButton(
-          onPressed: () {},
+          onPressed: () {
+            Get.to(() => const CreateOrderScreen());
+          },
           backgroundColor: const Color(0xFF0A253B),
           elevation: 4,
           shape: const CircleBorder(),
@@ -651,7 +662,7 @@ class PaymentCard extends StatelessWidget {
                       fontWeight: FontWeight.bold,
                       color: Colors.black,
                     ),
-                  ),
+        ),
                 ],
               ),
               Image.asset(
@@ -738,7 +749,8 @@ class CustomBottomNavBar extends StatelessWidget {
   final int selectedIndex;
   final VoidCallback? onMenuTap;
   final VoidCallback? onHomeTap;
-  const CustomBottomNavBar({Key? key, required this.selectedIndex, this.onMenuTap, this.onHomeTap}) : super(key: key);
+  final VoidCallback? onReportsTap;
+  const CustomBottomNavBar({Key? key, required this.selectedIndex, this.onMenuTap, this.onHomeTap, this.onReportsTap}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
@@ -776,9 +788,9 @@ class CustomBottomNavBar extends StatelessWidget {
             color: Colors.white,
             child: SizedBox(
               height: 64,
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceAround,
-                children: [
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceAround,
+        children: [
                   _NavBarItem(
                     icon: Icons.home_outlined,
                     label: 'Home',
@@ -796,9 +808,7 @@ class CustomBottomNavBar extends StatelessWidget {
                     icon: Icons.tune_outlined,
                     label: 'Reports',
                     selected: selectedIndex == 2,
-                    onTap: () {
-                      Get.offAll(() => const ReportsScreen());
-                    },
+                    onTap: onReportsTap ?? () {},
                   ),
                   _NavBarItem(
                     icon: Icons.menu,
@@ -1053,8 +1063,8 @@ class _FailedAttemptRow extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(
-                label,
+        Text(
+          label,
                 style: TextStyle(
                   fontSize: 14,
                   color: Colors.black,
@@ -1094,7 +1104,7 @@ class _FailedAttemptRow extends StatelessWidget {
                 style: TextStyle(
                   fontSize: 14,
                   color: Color(0xFF8E8E93),
-                  fontWeight: FontWeight.w500,
+            fontWeight: FontWeight.w500,
                 ),
               ),
             ],

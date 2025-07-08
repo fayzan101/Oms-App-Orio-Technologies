@@ -3,14 +3,14 @@ import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import 'dashboard_screen.dart';
 import 'menu.dart';
+import 'create_order.dart';
 
 class ReportsScreen extends StatelessWidget {
   const ReportsScreen({Key? key}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
-    // Show both status and navigation bars
-    SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge, overlays: [SystemUiOverlay.top, SystemUiOverlay.bottom]);
+     SystemChrome.setEnabledSystemUIMode(SystemUiMode.manual, overlays: [SystemUiOverlay.top]);
 
     return AnnotatedRegion<SystemUiOverlayStyle>(
       value: const SystemUiOverlayStyle(
@@ -74,13 +74,16 @@ class ReportsScreen extends StatelessWidget {
           onHomeTap: () {
             Get.offAll(() => DashboardScreen());
           },
+          onReportsTap: () {},
           onMenuTap: () {
             Get.offAll(() => const MenuScreen());
           },
         ),
         floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
         floatingActionButton: FloatingActionButton(
-          onPressed: () {},
+          onPressed: () {
+            Get.to(() => const CreateOrderScreen());
+          },
           backgroundColor: const Color(0xFF0A253B),
           elevation: 4,
           shape: const CircleBorder(),
@@ -130,7 +133,8 @@ class CustomBottomNavBar extends StatelessWidget {
   final int selectedIndex;
   final VoidCallback? onMenuTap;
   final VoidCallback? onHomeTap;
-  const CustomBottomNavBar({Key? key, required this.selectedIndex, this.onMenuTap, this.onHomeTap}) : super(key: key);
+  final VoidCallback? onReportsTap;
+  const CustomBottomNavBar({Key? key, required this.selectedIndex, this.onMenuTap, this.onHomeTap, this.onReportsTap}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
@@ -188,7 +192,7 @@ class CustomBottomNavBar extends StatelessWidget {
                     icon: Icons.tune_outlined,
                     label: 'Reports',
                     selected: selectedIndex == 2,
-                    onTap: () {},
+                    onTap: onReportsTap ?? () {},
                   ),
                   _NavBarItem(
                     icon: Icons.menu,
