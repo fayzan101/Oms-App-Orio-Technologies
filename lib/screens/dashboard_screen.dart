@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import '../controllers/dashboard_controller.dart';
+import 'menu.dart';
 
 class DashboardScreen extends StatelessWidget {
   DashboardScreen({Key? key}) : super(key: key);
@@ -10,431 +12,546 @@ class DashboardScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Set status bar and navigation bar to transparent, enable edge-to-edge
-    SystemChrome.setSystemUIOverlayStyle(const SystemUiOverlayStyle(
-      statusBarColor: Colors.transparent,
-      statusBarIconBrightness: Brightness.dark,
-      statusBarBrightness: Brightness.light,
-      systemNavigationBarColor: Colors.white,
-      systemNavigationBarIconBrightness: Brightness.dark,
-    ));
-    SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
-
-    return Scaffold(
-      extendBody: true,
-      extendBodyBehindAppBar: true,
-      backgroundColor: Colors.white,
-      appBar: PreferredSize(
-        preferredSize: const Size.fromHeight(60),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            SafeArea(
-              top: true,
-              bottom: false,
-              child: Container(
-                height: 60,
-                alignment: Alignment.center,
-                padding: const EdgeInsets.symmetric(horizontal: 20),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  crossAxisAlignment: CrossAxisAlignment.center,
-                  children: [
-                    Text(
-                      'ORIO',
-                      style: GoogleFonts.inter(
-                        fontWeight: FontWeight.w700,
-                        fontSize: 32,
+    // Hide only the system navigation bar, keep status bar visible
+    SystemChrome.setEnabledSystemUIMode(SystemUiMode.manual, overlays: [SystemUiOverlay.top]);
+    return AnnotatedRegion<SystemUiOverlayStyle>(
+      value: const SystemUiOverlayStyle(
+        statusBarColor: Colors.white,
+        statusBarIconBrightness: Brightness.dark,
+        statusBarBrightness: Brightness.light,
+        systemNavigationBarColor: Colors.transparent,
+        systemNavigationBarIconBrightness: Brightness.dark,
+        systemNavigationBarDividerColor: Colors.transparent,
+      ),
+      child: Scaffold(
+        extendBody: true,
+        extendBodyBehindAppBar: false,
+        backgroundColor: Colors.white,
+        appBar: AppBar(
+          backgroundColor: Colors.white,
+          elevation: 0,
+          systemOverlayStyle: SystemUiOverlayStyle.dark,
+          title: SvgPicture.asset(
+            'assets/frame.svg',
+            width: 60,
+            height: 30,
+            color: Color(0xFF007AFF),
+          ),
+          actions: [
+            IconButton(
+              icon: Icon(Icons.notifications_outlined, color: Colors.black),
+              onPressed: () {},
+            ),
+            IconButton(
+              icon: Icon(Icons.calendar_today_outlined, color: Colors.black),
+              onPressed: () {},
+            ),
+          ],
+          bottom: PreferredSize(
+            preferredSize: Size.fromHeight(1),
+            child: Container(
+              height: 1,
+              color: Color(0xFFE0E0E0),
+            ),
+          ),
+        ),
+        body: SingleChildScrollView(
+          padding: EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Dashboard Header
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    'Dashboard',
+                    style: TextStyle(
+                      fontSize: 24,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.black,
+                    ),
+                  ),
+                  Container(
+                    padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                    decoration: BoxDecoration(
+                      color: Color(0xFFE8F4FD),
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: Text(
+                      'Last 3 Days',
+                      style: TextStyle(
                         color: Color(0xFF007AFF),
-                        letterSpacing: 2.0,
+                        fontSize: 12,
+                        fontWeight: FontWeight.w500,
                       ),
                     ),
+                  ),
+                ],
+              ),
+              SizedBox(height: 20),
+
+              // Total Amount Outstanding Card
+              Container(
+                width: double.infinity,
+                padding: EdgeInsets.all(20),
+                decoration: BoxDecoration(
+                  color: Color(0xFFF8F9FA),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Total Amount Outstanding',
+                      style: TextStyle(
+                        fontSize: 14,
+                        color: Color(0xFF666666),
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                    SizedBox(height: 8),
                     Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        IconButton(
-                          icon: Icon(Icons.notifications_none_outlined, color: Color(0xFF222222), size: 26),
-                          onPressed: () {},
-                          splashRadius: 22,
-                          padding: EdgeInsets.zero,
-                          constraints: BoxConstraints(),
+                        Text(
+                          'PKR 235,461',
+                          style: TextStyle(
+                            fontSize: 24,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.black,
+                          ),
                         ),
-                        const SizedBox(width: 12),
-                        IconButton(
-                          icon: Icon(Icons.calendar_today_outlined, color: Color(0xFF222222), size: 24),
-                          onPressed: () {},
-                          splashRadius: 22,
-                          padding: EdgeInsets.zero,
-                          constraints: BoxConstraints(),
+                        // Simple chart representation
+                        Image.asset(
+                          'assets/icon/graph.png',
+                          width: 100,
+                          height: 50,
+                          fit: BoxFit.contain,
                         ),
                       ],
                     ),
                   ],
                 ),
               ),
-            ),
-            Container(
-              height: 1,
-              color: Color(0xFFE5E5E5),
-            ),
-          ],
-        ),
-      ),
-      body: SafeArea(
-        top: false,
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.only(top: 56, left: 16, right: 16, bottom: 16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const SizedBox(height: 18),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                crossAxisAlignment: CrossAxisAlignment.end,
-                children: [
-                  Padding(
-                    padding: const EdgeInsets.only(bottom: 2),
-                    child: Text(
-                      'Dashboard',
-                      style: GoogleFonts.inter(
-                        fontWeight: FontWeight.w700,
-                        fontSize: 24,
-                        color: const Color(0xFF222222),
-                      ),
-                    ),
-                  ),
-                  Obx(() => Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFFF7F7F7),
-                          borderRadius: BorderRadius.circular(16),
-                        ),
-                        child: Text(
-                          controller.selectedDays.value,
-                          style: GoogleFonts.inter(
-                            fontWeight: FontWeight.w500,
-                            fontSize: 14,
-                            color: const Color(0xFF007AFF),
-                          ),
-                        ),
-                      )),
-                ],
-              ),
-              const SizedBox(height: 14),
-              // Main stats card
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 4),
-                child: Container(
-                  padding: const EdgeInsets.all(18),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFF7F7F7),
-                    borderRadius: BorderRadius.circular(16),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withOpacity(0.04),
-                        blurRadius: 12,
-                        offset: const Offset(0, 2),
-                      ),
-                    ],
-                  ),
-                  child: Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              'Total Amount Outstanding',
-                              style: GoogleFonts.inter(
-                                fontWeight: FontWeight.w500,
-                                fontSize: 14,
-                                color: const Color(0xFF6B6B6B),
-                              ),
-                            ),
-                            const SizedBox(height: 6),
-                            Obx(() => Text(
-                                  'PKR ${controller.outstandingAmount.value.toString().replaceAllMapped(RegExp(r"\\B(?=(\\d{3})+(?!\\d))"), (match) => ',')}',
-                                  style: GoogleFonts.inter(
-                                    fontWeight: FontWeight.w700,
-                                    fontSize: 24,
-                                    color: const Color(0xFF222222),
-                                  ),
-                                )),
-                          ],
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      Image.asset(
-                        'assets/chart.jpg',
-                        width: 80,
-                        height: 60,
-                        fit: BoxFit.contain,
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-              const SizedBox(height: 12),
-              // Orders/Revenue/Products card
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 4),
-                child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFF7F7F7),
-                    borderRadius: BorderRadius.circular(16),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withOpacity(0.04),
-                        blurRadius: 12,
-                        offset: const Offset(0, 2),
-                      ),
-                    ],
-                  ),
-                  child: Row(
-                    children: [
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text('Orders',
-                                style: GoogleFonts.inter(
-                                  fontWeight: FontWeight.w500,
-                                  fontSize: 13,
-                                  color: const Color(0xFF6B6B6B),
-                                )),
-                            const SizedBox(height: 2),
-                            Obx(() => Text(
-                                  controller.orders.value.toString(),
-                                  style: GoogleFonts.inter(
-                                    fontWeight: FontWeight.w700,
-                                    fontSize: 16,
-                                    color: const Color(0xFF222222),
-                                  ),
-                                )),
-                          ],
-                        ),
-                      ),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text('Revenue',
-                                style: GoogleFonts.inter(
-                                  fontWeight: FontWeight.w500,
-                                  fontSize: 13,
-                                  color: const Color(0xFF6B6B6B),
-                                )),
-                            const SizedBox(height: 2),
-                            Obx(() => Text(
-                                  'PKR ${controller.revenue.value.toString().replaceAllMapped(RegExp(r"\\B(?=(\\d{3})+(?!\\d))"), (match) => ',')}',
-                                  style: GoogleFonts.inter(
-                                    fontWeight: FontWeight.w700,
-                                    fontSize: 16,
-                                    color: const Color(0xFF222222),
-                                  ),
-                                )),
-                          ],
-                        ),
-                      ),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text('Product Sold',
-                                style: GoogleFonts.inter(
-                                  fontWeight: FontWeight.w500,
-                                  fontSize: 13,
-                                  color: const Color(0xFF6B6B6B),
-                                )),
-                            const SizedBox(height: 2),
-                            Obx(() => Text(
-                                  controller.productsSold.value.toString(),
-                                  style: GoogleFonts.inter(
-                                    fontWeight: FontWeight.w700,
-                                    fontSize: 16,
-                                    color: const Color(0xFF222222),
-                                  ),
-                                )),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-              const SizedBox(height: 12),
-              // Pending Payments
-              Obx(() => Column(
-                    children: List.generate(controller.pendingPayments.length, (i) {
-                      final item = controller.pendingPayments[i];
-                      return Container(
-                        margin: const EdgeInsets.only(bottom: 10),
-                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFFF7F7F7),
-                          borderRadius: BorderRadius.circular(14),
-                        ),
-                        child: Row(
-                          children: [
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text('Pending Payment',
-                                      style: GoogleFonts.inter(
-                                        fontWeight: FontWeight.w500,
-                                        fontSize: 13,
-                                        color: const Color(0xFF6B6B6B),
-                                      )),
-                                  const SizedBox(height: 4),
-                                  Text('Rs. ${item['amount'].toString().replaceAllMapped(RegExp(r"\B(?=(\d{3})+(?!\d))"), (match) => ',')}',
-                                      style: GoogleFonts.inter(
-                                        fontWeight: FontWeight.w700,
-                                        fontSize: 18,
-                                        color: const Color(0xFF222222),
-                                      )),
-                                  const SizedBox(height: 8),
-                                  Text('Shipment: ${item['shipments']}',
-                                      style: GoogleFonts.inter(
-                                        fontWeight: FontWeight.w500,
-                                        fontSize: 14,
-                                        color: const Color(0xFF007AFF),
-                                      )),
-                                ],
-                              ),
-                            ),
-                            Image.asset(
-                              item['logo'] as String,
-                              width: 56,
-                              height: 32,
-                              fit: BoxFit.contain,
-                            ),
-                          ],
-                        ),
-                      );
-                    }),
-                  )),
-              const SizedBox(height: 16),
-              Text('Order Status',
-                  style: GoogleFonts.inter(
-                    fontWeight: FontWeight.w700,
-                    fontSize: 18,
-                    color: const Color(0xFF222222),
-                  )),
-              const SizedBox(height: 10),
-              // Delivery Ratio Card (placeholder)
+              SizedBox(height: 20),
+
+              // Metrics Card
               Container(
-                padding: const EdgeInsets.all(16),
+                width: double.infinity,
+                padding: EdgeInsets.all(20),
                 decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(14),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withOpacity(0.04),
-                      blurRadius: 12,
-                      offset: const Offset(0, 2),
-                    ),
-                  ],
+                  color: Color(0xFFF8F9FA),
+                  borderRadius: BorderRadius.circular(12),
                 ),
                 child: Row(
                   children: [
-                    Icon(Icons.pie_chart_outline, color: Color(0xFF007AFF), size: 32),
-                    const SizedBox(width: 16),
-                    Text('Delivery Ratio',
-                        style: GoogleFonts.inter(
-                          fontWeight: FontWeight.w600,
-                          fontSize: 16,
-                          color: const Color(0xFF222222),
-                        )),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Orders',
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: Color(0xFF666666),
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                          SizedBox(height: 4),
+                          Text(
+                            '8,487',
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.black,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Revenue',
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: Color(0xFF666666),
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                          SizedBox(height: 4),
+                          Text(
+                            'PKR 46,553',
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.black,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Product Sold',
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: Color(0xFF666666),
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                          SizedBox(height: 4),
+                          Text(
+                            '6,342',
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.black,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
                   ],
                 ),
               ),
-              const SizedBox(height: 28),
+              SizedBox(height: 20),
+
+              // Pending Payment Cards
+              PaymentCard(
+                title: 'Pending Payment',
+                amount: 'Rs. 12,340',
+                shipment: '47',
+                logoAsset: 'assets/icon/tcs.png',
+              ),
+              SizedBox(height: 16),
+              PaymentCard(
+                title: 'Pending Payment',
+                amount: 'Rs. 20,247',
+                shipment: '68',
+                logoAsset: 'assets/icon/bluex.jpeg',
+              ),
+              SizedBox(height: 20),
+
+              // Order Status Section
+              Text(
+                'Order Status',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.black,
+                ),
+              ),
+              SizedBox(height: 12),
+              Container(
+                width: double.infinity,
+                padding: EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: Color(0xFFF8F9FA),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Text(
+                  'Delivery Ratio',
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: Color(0xFF666666),
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+        bottomNavigationBar: CustomBottomNavBar(selectedIndex: 0, onMenuTap: () {
+          Get.offAll(() => const MenuScreen());
+        }),
+        floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
+        floatingActionButton: FloatingActionButton(
+          onPressed: () {},
+          backgroundColor: const Color(0xFF0A253B),
+          elevation: 4,
+          shape: const CircleBorder(),
+          child: const Icon(Icons.edit, color: Colors.white, size: 28),
+        ),
+      ),
+    );
+  }
+}
+
+class MetricCard extends StatelessWidget {
+  final String title;
+  final String value;
+
+  const MetricCard({
+    Key? key,
+    required this.title,
+    required this.value,
+  }) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Color(0xFFF8F9FA),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            title,
+            style: TextStyle(
+              fontSize: 12,
+              color: Color(0xFF666666),
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+          SizedBox(height: 8),
+          Text(
+            value,
+            style: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.bold,
+              color: Colors.black,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class PaymentCard extends StatelessWidget {
+  final String title;
+  final String amount;
+  final String shipment;
+  final String logoAsset;
+
+  const PaymentCard({
+    Key? key,
+    required this.title,
+    required this.amount,
+    required this.shipment,
+    required this.logoAsset,
+  }) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Color(0xFFF8F9FA),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Column(
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: Color(0xFF666666),
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                  SizedBox(height: 4),
+                  Text(
+                    amount,
+                    style: TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.black,
+                    ),
+                  ),
+                ],
+              ),
+              Image.asset(
+                logoAsset,
+                width: 64,
+                height: 40,
+                fit: BoxFit.contain,
+              ),
+            ],
+          ),
+          SizedBox(height: 12),
+          Container(
+            height: 1,
+            color: Color(0xFFE0E0E0),
+            margin: EdgeInsets.symmetric(vertical: 8),
+          ),
+          Row(
+            children: [
+              Text(
+                'Shipment: ',
+                style: TextStyle(
+                  fontSize: 14,
+                  color: Color(0xFF666666),
+                ),
+              ),
+              Text(
+                shipment,
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.black,
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class ChartPainter extends CustomPainter {
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = Color(0xFF007AFF)
+      ..strokeWidth = 2
+      ..style = PaintingStyle.stroke;
+
+    final path = Path();
+    
+    // Simple line chart simulation
+    final points = [
+      Offset(0, size.height * 0.7),
+      Offset(size.width * 0.2, size.height * 0.5),
+      Offset(size.width * 0.4, size.height * 0.3),
+      Offset(size.width * 0.6, size.height * 0.6),
+      Offset(size.width * 0.8, size.height * 0.2),
+      Offset(size.width, size.height * 0.4),
+    ];
+
+    path.moveTo(points[0].dx, points[0].dy);
+    for (int i = 1; i < points.length; i++) {
+      path.lineTo(points[i].dx, points[i].dy);
+    }
+
+    canvas.drawPath(path, paint);
+    
+    // Draw dots
+    final dotPaint = Paint()
+      ..color = Color(0xFF007AFF)
+      ..style = PaintingStyle.fill;
+    
+    for (final point in points) {
+      canvas.drawCircle(point, 3, dotPaint);
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
+} 
+
+class CustomBottomNavBar extends StatelessWidget {
+  final int selectedIndex;
+  final VoidCallback? onMenuTap;
+  const CustomBottomNavBar({Key? key, required this.selectedIndex, this.onMenuTap}) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return SafeArea(
+      top: false,
+      child: BottomAppBar(
+        shape: const CircularNotchedRectangle(),
+        notchMargin: 8,
+        elevation: 0,
+        color: Colors.white,
+        child: SizedBox(
+          height: 64,
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceAround,
+            children: [
+              _NavBarItem(
+                icon: Icons.home_outlined,
+                label: 'Home',
+                selected: selectedIndex == 0,
+                onTap: () {},
+              ),
+              _NavBarItem(
+                icon: Icons.shopping_bag_outlined,
+                label: 'Order List',
+                selected: selectedIndex == 1,
+                onTap: () {},
+              ),
+              const SizedBox(width: 56), // Space for FAB
+              _NavBarItem(
+                icon: Icons.tune_outlined,
+                label: 'Reports',
+                selected: selectedIndex == 2,
+                onTap: () {},
+              ),
+              _NavBarItem(
+                icon: Icons.menu,
+                label: 'Menu',
+                selected: selectedIndex == 4,
+                onTap: onMenuTap ?? () {},
+                selectedColor: const Color(0xFF007AFF),
+              ),
             ],
           ),
         ),
       ),
-      bottomNavigationBar: _CustomBottomNav(),
-      floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
-      floatingActionButton: Container(
-        height: 64,
-        width: 64,
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(32),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.08),
-              blurRadius: 16,
-              offset: const Offset(0, 4),
-            ),
-          ],
-        ),
-        child: IconButton(
-          icon: const Icon(Icons.edit, color: Color(0xFF007AFF), size: 32),
-          onPressed: () {},
-        ),
-      ),
     );
   }
 }
 
-class _CustomBottomNav extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      height: 72,
-      decoration: const BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.only(
-          topLeft: Radius.circular(24),
-          topRight: Radius.circular(24),
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: Color(0x11000000),
-            blurRadius: 12,
-            offset: Offset(0, -2),
-          ),
-        ],
-      ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceAround,
-        children: [
-          _NavItem(icon: Icons.home_rounded, label: 'Home', selected: true),
-          _NavItem(icon: Icons.list_alt_rounded, label: 'Order List'),
-          const SizedBox(width: 64), // Space for FAB
-          _NavItem(icon: Icons.bar_chart_rounded, label: 'Reports'),
-          _NavItem(icon: Icons.menu_rounded, label: 'Menu'),
-        ],
-      ),
-    );
-  }
-}
-
-class _NavItem extends StatelessWidget {
+class _NavBarItem extends StatelessWidget {
   final IconData icon;
   final String label;
   final bool selected;
-  const _NavItem({required this.icon, required this.label, this.selected = false});
+  final VoidCallback onTap;
+  final Color? selectedColor;
+
+  const _NavBarItem({
+    Key? key,
+    required this.icon,
+    required this.label,
+    required this.selected,
+    required this.onTap,
+    this.selectedColor,
+  }) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        Icon(icon, color: selected ? Color(0xFF007AFF) : Color(0xFF6B6B6B), size: 28),
-        const SizedBox(height: 4),
-        Text(
-          label,
-          style: GoogleFonts.inter(
-            fontWeight: FontWeight.w500,
-            fontSize: 12,
-            color: selected ? Color(0xFF007AFF) : Color(0xFF6B6B6B),
-          ),
+    final color = selected
+        ? (selectedColor ?? const Color(0xFF007AFF))
+        : const Color(0xFF222222);
+    return Expanded(
+      child: InkWell(
+        onTap: onTap,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const SizedBox(height: 8),
+            Icon(icon, color: color, size: 26),
+            const SizedBox(height: 2),
+            Text(
+              label,
+              style: TextStyle(
+                fontFamily: 'SF Pro Display',
+                fontWeight: selected ? FontWeight.w700 : FontWeight.w400,
+                fontSize: 12,
+                color: color,
+              ),
+            ),
+          ],
         ),
-      ],
+      ),
     );
   }
 } 
