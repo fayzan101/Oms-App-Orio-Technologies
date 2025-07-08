@@ -6,14 +6,103 @@ import '../services/auth_service.dart';
 import 'sign_in_screen.dart';
 import 'report.dart' as report;
 import 'create_order.dart' as create_order;
+import 'order_list_screen.dart';
 
-class MenuScreen extends StatelessWidget {
+class MenuScreen extends StatefulWidget {
   const MenuScreen({Key? key}) : super(key: key);
 
   @override
+  State<MenuScreen> createState() => _MenuScreenState();
+}
+
+class _MenuScreenState extends State<MenuScreen> {
+  bool _isDialogOpen = false;
+
+  Future<void> showSuccessDialog(BuildContext context, {String title = 'Success!', String message = 'Action completed successfully.'}) {
+    return showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) {
+        return Container(
+          width: double.infinity,
+          padding: EdgeInsets.only(
+            left: 0,
+            right: 0,
+            bottom: MediaQuery.of(context).viewInsets.bottom,
+          ),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.vertical(top: Radius.circular(32)),
+          ),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  decoration: BoxDecoration(
+                    color: Color(0xFFF5F5F7),
+                    shape: BoxShape.circle,
+                  ),
+                  padding: EdgeInsets.all(32),
+                  child: Icon(Icons.check_circle_outline, color: Color(0xFF007AFF), size: 64),
+                ),
+                SizedBox(height: 24),
+                Text(
+                  title,
+                  style: TextStyle(
+                    fontFamily: 'SF Pro Display',
+                    fontWeight: FontWeight.w700,
+                    fontSize: 22,
+                    color: Colors.black,
+                  ),
+                ),
+                SizedBox(height: 8),
+                Text(
+                  message,
+                  style: TextStyle(
+                    fontFamily: 'SF Pro Display',
+                    fontWeight: FontWeight.w400,
+                    fontSize: 15,
+                    color: Color(0xFF8E8E93),
+                  ),
+                ),
+                SizedBox(height: 28),
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton(
+                    onPressed: () => Navigator.of(context).pop(),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Color(0xFF007AFF),
+                      elevation: 0,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      padding: EdgeInsets.symmetric(vertical: 14),
+                    ),
+                    child: Text(
+                      'OK',
+                      style: TextStyle(
+                        fontFamily: 'SF Pro Display',
+                        fontWeight: FontWeight.w500,
+                        fontSize: 15,
+                        color: Colors.white,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  @override
   Widget build(BuildContext context) {
-    // Hide only the system navigation bar, keep status bar visible
-    SystemChrome.setEnabledSystemUIMode(SystemUiMode.manual, overlays: [SystemUiOverlay.top]);
+    SystemChrome.setEnabledSystemUIMode(SystemUiMode.manual, overlays: [SystemUiOverlay.top, SystemUiOverlay.bottom]);
 
     return AnnotatedRegion<SystemUiOverlayStyle>(
       value: const SystemUiOverlayStyle(
@@ -165,7 +254,7 @@ class MenuScreen extends StatelessWidget {
             ],
           ),
         ),
-        bottomNavigationBar: CustomBottomNavBar(
+        bottomNavigationBar: _isDialogOpen ? null : CustomBottomNavBar(
           selectedIndex: 4,
           onHomeTap: () {
             Get.offAll(() => DashboardScreen());
@@ -174,13 +263,18 @@ class MenuScreen extends StatelessWidget {
             Get.offAll(() => report.ReportsScreen());
           },
           onMenuTap: () {},
+          onOrderListTap: () {
+            Get.to(() => const OrderListScreen());
+          },
           onPencilTap: () {
             Get.offAll(() => create_order.CreateOrderScreen());
           },
         ),
         floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
         floatingActionButton: FloatingActionButton(
-          onPressed: () {},
+          onPressed: () {
+            Get.offAll(() => create_order.CreateOrderScreen());
+          },
           backgroundColor: const Color(0xFF0A253B),
           elevation: 4,
           shape: const CircleBorder(),
@@ -191,63 +285,50 @@ class MenuScreen extends StatelessWidget {
   }
 }
 
-void showLogoutBottomSheet(BuildContext context) {
-  showModalBottomSheet(
+void showLogoutBottomSheet(BuildContext context) async {
+  final state = context.findAncestorStateOfType<_MenuScreenState>();
+  state?.setState(() => state._isDialogOpen = true);
+  final result = await showModalBottomSheet<bool>(
     context: context,
     isScrollControlled: true,
     backgroundColor: Colors.transparent,
     builder: (context) {
-      return SafeArea(
-        top: false,
-        child: Container(
-          width: double.infinity,
-          decoration: const BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.only(
-              topLeft: Radius.circular(32),
-              topRight: Radius.circular(32),
-            ),
-            boxShadow: [
-              BoxShadow(
-                color: Color(0x22000000),
-                blurRadius: 24,
-                offset: Offset(0, 8),
-              ),
-            ],
-          ),
-          padding: EdgeInsets.fromLTRB(
-            24,
-            32,
-            24,
-            MediaQuery.of(context).padding.bottom,
-          ),
+      return Container(
+        width: double.infinity,
+        padding: EdgeInsets.only(
+          left: 0,
+          right: 0,
+          bottom: MediaQuery.of(context).viewInsets.bottom,
+        ),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(32)),
+        ),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
           child: Column(
-            mainAxisSize: MainAxisSize.min, // This prevents overflow!
+            mainAxisSize: MainAxisSize.min,
             children: [
               Container(
-                decoration: const BoxDecoration(
-                  color: Color(0xFFFFF0F3),
+                decoration: BoxDecoration(
+                  color: Color(0xFFF5F5F7),
                   shape: BoxShape.circle,
                 ),
-                padding: const EdgeInsets.all(24),
-                child: const Icon(
-                  Icons.logout,
-                  color: Color(0xFFE53E3E),
-                  size: 48,
-                ),
+                padding: EdgeInsets.all(32),
+                child: Icon(Icons.delete_outline, color: Color(0xFF007AFF), size: 64),
               ),
-              const SizedBox(height: 24),
-              const Text(
+              SizedBox(height: 24),
+              Text(
                 'Are you Sure',
                 style: TextStyle(
                   fontFamily: 'SF Pro Display',
                   fontWeight: FontWeight.w700,
-                  fontSize: 20,
+                  fontSize: 22,
                   color: Colors.black,
                 ),
               ),
-              const SizedBox(height: 8),
-              const Text(
+              SizedBox(height: 8),
+              Text(
                 'You want to logout',
                 style: TextStyle(
                   fontFamily: 'SF Pro Display',
@@ -256,53 +337,49 @@ void showLogoutBottomSheet(BuildContext context) {
                   color: Color(0xFF8E8E93),
                 ),
               ),
-              const SizedBox(height: 28),
+              SizedBox(height: 28),
               Row(
                 children: [
                   Expanded(
                     child: ElevatedButton(
-                      onPressed: () => Navigator.of(context).pop(),
+                      onPressed: () => Navigator.of(context).pop(false),
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFFF2F2F7),
+                        backgroundColor: Color(0xFFF2F2F7),
                         elevation: 0,
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(8),
                         ),
-                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        padding: EdgeInsets.symmetric(vertical: 14),
                       ),
-                      child: const Text(
+                      child: Text(
                         'No',
                         style: TextStyle(
                           fontFamily: 'SF Pro Display',
                           fontWeight: FontWeight.w500,
-                          fontSize: 13,
+                          fontSize: 15,
                           color: Colors.black,
                         ),
                       ),
                     ),
                   ),
-                  const SizedBox(width: 16),
+                  SizedBox(width: 16),
                   Expanded(
                     child: ElevatedButton(
-                      onPressed: () async {
-                        Navigator.of(context).pop(); // Close the sheet first
-                        await Get.find<AuthService>().logout();
-                        Get.offAll(() => SignInScreen());
-                      },
+                      onPressed: () => Navigator.of(context).pop(true),
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFF007AFF),
+                        backgroundColor: Color(0xFF007AFF),
                         elevation: 0,
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(8),
                         ),
-                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        padding: EdgeInsets.symmetric(vertical: 14),
                       ),
-                      child: const Text(
+                      child: Text(
                         'Yes',
                         style: TextStyle(
                           fontFamily: 'SF Pro Display',
                           fontWeight: FontWeight.w500,
-                          fontSize: 13,
+                          fontSize: 15,
                           color: Colors.white,
                         ),
                       ),
@@ -316,6 +393,14 @@ void showLogoutBottomSheet(BuildContext context) {
       );
     },
   );
+  state?.setState(() => state._isDialogOpen = false);
+  if (result == true) {
+    await Get.find<AuthService>().logout();
+    state?.setState(() => state._isDialogOpen = true);
+    await state?.showSuccessDialog(context, title: 'Logged out!', message: 'You have been logged out successfully.');
+    state?.setState(() => state._isDialogOpen = false);
+    Get.offAll(() => SignInScreen());
+  }
 }
 
 class _MenuItem extends StatelessWidget {
@@ -373,8 +458,9 @@ class CustomBottomNavBar extends StatelessWidget {
   final VoidCallback? onHomeTap;
   final VoidCallback? onReportsTap;
   final VoidCallback? onMenuTap;
+  final VoidCallback? onOrderListTap;
   final VoidCallback? onPencilTap;
-  const CustomBottomNavBar({Key? key, required this.selectedIndex, this.onHomeTap, this.onReportsTap, this.onMenuTap, this.onPencilTap}) : super(key: key);
+  const CustomBottomNavBar({Key? key, required this.selectedIndex, this.onHomeTap, this.onReportsTap, this.onMenuTap, this.onOrderListTap, this.onPencilTap}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
@@ -400,7 +486,7 @@ class CustomBottomNavBar extends StatelessWidget {
                 icon: Icons.shopping_bag_outlined,
                 label: 'Order List',
                 selected: selectedIndex == 1,
-                onTap: () {},
+                onTap: onOrderListTap ?? () {},
               ),
               const SizedBox(width: 56), // Space for FAB
               _NavBarItem(

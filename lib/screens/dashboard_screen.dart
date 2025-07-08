@@ -8,6 +8,7 @@ import 'menu.dart';
 import 'report.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'create_order.dart';
+import 'order_list_screen.dart';
 
 class DashboardScreen extends StatelessWidget {
   DashboardScreen({Key? key}) : super(key: key);
@@ -16,7 +17,8 @@ class DashboardScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
    
-     SystemChrome.setEnabledSystemUIMode(SystemUiMode.manual, overlays: [SystemUiOverlay.top]);
+     SystemChrome.setEnabledSystemUIMode(SystemUiMode.manual, overlays: [SystemUiOverlay.top, SystemUiOverlay.bottom]);
+
     return AnnotatedRegion<SystemUiOverlayStyle>(
       value: const SystemUiOverlayStyle(
         statusBarColor: Colors.white,
@@ -556,6 +558,9 @@ class DashboardScreen extends StatelessWidget {
           onMenuTap: () {
             Get.offAll(() => const MenuScreen());
           },
+          onOrderListTap: () {
+            Get.to(() => const OrderListScreen());
+          },
         ),
       floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
         floatingActionButton: FloatingActionButton(
@@ -750,7 +755,8 @@ class CustomBottomNavBar extends StatelessWidget {
   final VoidCallback? onMenuTap;
   final VoidCallback? onHomeTap;
   final VoidCallback? onReportsTap;
-  const CustomBottomNavBar({Key? key, required this.selectedIndex, this.onMenuTap, this.onHomeTap, this.onReportsTap}) : super(key: key);
+  final VoidCallback? onOrderListTap;
+  const CustomBottomNavBar({Key? key, required this.selectedIndex, this.onMenuTap, this.onHomeTap, this.onReportsTap, this.onOrderListTap}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
@@ -801,7 +807,7 @@ class CustomBottomNavBar extends StatelessWidget {
                     icon: Icons.shopping_bag_outlined,
                     label: 'Order List',
                     selected: selectedIndex == 1,
-                    onTap: () {},
+                    onTap: onOrderListTap ?? () {},
                   ),
                   const SizedBox(width: 56), // Space for FAB
                   _NavBarItem(

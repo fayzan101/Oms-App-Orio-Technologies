@@ -25,6 +25,7 @@ class CreateOrderScreen extends StatefulWidget {
 class _CreateOrderScreenState extends State<CreateOrderScreen> {
   final List<OrderItem> _orders = [];
   final Set<int> _expandedOrders = {};
+  bool _isDialogOpen = false;
 
   void _addOrder(OrderItem item) {
     setState(() {
@@ -142,9 +143,200 @@ class _CreateOrderScreenState extends State<CreateOrderScreen> {
     );
   }
 
+  Future<bool?> showDeleteProductDialog(BuildContext context) {
+    return showModalBottomSheet<bool>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) {
+        return Container(
+          width: double.infinity,
+          padding: EdgeInsets.only(
+            left: 0,
+            right: 0,
+            bottom: MediaQuery.of(context).viewInsets.bottom,
+          ),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.vertical(top: Radius.circular(32)),
+          ),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  decoration: BoxDecoration(
+                    color: Color(0xFFF5F5F7),
+                    shape: BoxShape.circle,
+                  ),
+                  padding: EdgeInsets.all(32),
+                  child: Icon(Icons.delete_outline, color: Color(0xFF007AFF), size: 64),
+                ),
+                SizedBox(height: 24),
+                Text(
+                  'Are you Sure',
+                  style: TextStyle(
+                    fontFamily: 'SF Pro Display',
+                    fontWeight: FontWeight.w700,
+                    fontSize: 22,
+                    color: Colors.black,
+                  ),
+                ),
+                SizedBox(height: 8),
+                Text(
+                  'You want to delete this product',
+                  style: TextStyle(
+                    fontFamily: 'SF Pro Display',
+                    fontWeight: FontWeight.w400,
+                    fontSize: 15,
+                    color: Color(0xFF8E8E93),
+                  ),
+                ),
+                SizedBox(height: 28),
+                Row(
+                  children: [
+                    Expanded(
+                      child: ElevatedButton(
+                        onPressed: () => Navigator.of(context).pop(false),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Color(0xFFF2F2F7),
+                          elevation: 0,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          padding: EdgeInsets.symmetric(vertical: 14),
+                        ),
+                        child: Text(
+                          'No',
+                          style: TextStyle(
+                            fontFamily: 'SF Pro Display',
+                            fontWeight: FontWeight.w500,
+                            fontSize: 15,
+                            color: Colors.black,
+                          ),
+                        ),
+                      ),
+                    ),
+                    SizedBox(width: 16),
+                    Expanded(
+                      child: ElevatedButton(
+                        onPressed: () => Navigator.of(context).pop(true),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Color(0xFF007AFF),
+                          elevation: 0,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          padding: EdgeInsets.symmetric(vertical: 14),
+                        ),
+                        child: Text(
+                          'Yes',
+                          style: TextStyle(
+                            fontFamily: 'SF Pro Display',
+                            fontWeight: FontWeight.w500,
+                            fontSize: 15,
+                            color: Colors.white,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Future<void> showSuccessDialog(BuildContext context) {
+    return showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) {
+        return Container(
+          width: double.infinity,
+          padding: EdgeInsets.only(
+            left: 0,
+            right: 0,
+            bottom: MediaQuery.of(context).viewInsets.bottom,
+          ),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.vertical(top: Radius.circular(32)),
+          ),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  decoration: BoxDecoration(
+                    color: Color(0xFFF5F5F7),
+                    shape: BoxShape.circle,
+                  ),
+                  padding: EdgeInsets.all(32),
+                  child: Icon(Icons.check_circle_outline, color: Color(0xFF007AFF), size: 64),
+                ),
+                SizedBox(height: 24),
+                Text(
+                  'Deleted!',
+                  style: TextStyle(
+                    fontFamily: 'SF Pro Display',
+                    fontWeight: FontWeight.w700,
+                    fontSize: 22,
+                    color: Colors.black,
+                  ),
+                ),
+                SizedBox(height: 8),
+                Text(
+                  'Product has been deleted successfully.',
+                  style: TextStyle(
+                    fontFamily: 'SF Pro Display',
+                    fontWeight: FontWeight.w400,
+                    fontSize: 15,
+                    color: Color(0xFF8E8E93),
+                  ),
+                ),
+                SizedBox(height: 28),
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton(
+                    onPressed: () => Navigator.of(context).pop(),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Color(0xFF007AFF),
+                      elevation: 0,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      padding: EdgeInsets.symmetric(vertical: 14),
+                    ),
+                    child: Text(
+                      'OK',
+                      style: TextStyle(
+                        fontFamily: 'SF Pro Display',
+                        fontWeight: FontWeight.w500,
+                        fontSize: 15,
+                        color: Colors.white,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
-    SystemChrome.setEnabledSystemUIMode(SystemUiMode.manual, overlays: [SystemUiOverlay.top]);
+    SystemChrome.setEnabledSystemUIMode(SystemUiMode.manual, overlays: [SystemUiOverlay.top, SystemUiOverlay.bottom]);
+
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
@@ -152,7 +344,7 @@ class _CreateOrderScreenState extends State<CreateOrderScreen> {
         elevation: 0,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back_ios_new, color: Colors.black, size: 22),
-          onPressed: () => Get.back(),
+          onPressed: () => Get.offAll(() => menu.MenuScreen()),
         ),
         title: const Text(
           'Create Order',
@@ -237,11 +429,27 @@ class _CreateOrderScreenState extends State<CreateOrderScreen> {
                                             const SizedBox(width: 8),
                                             IconButton(
                                               icon: const Icon(Icons.delete_outline, color: Color(0xFF007AFF)),
-                                              onPressed: () {
-                                                setState(() {
-                                                  _orders.removeAt(i);
-                                                  _expandedOrders.remove(i);
-                                                });
+                                              onPressed: () async {
+                                                setState(() => _isDialogOpen = true);
+                                                final confirm = await showDeleteProductDialog(context);
+                                                setState(() => _isDialogOpen = false);
+                                                if (confirm == true) {
+                                                  setState(() {
+                                                    _orders.removeAt(i);
+                                                    // Rebuild expanded set to match new indices
+                                                    final updatedExpanded = <int>{};
+                                                    for (final idx in _expandedOrders) {
+                                                      if (idx < i) updatedExpanded.add(idx);
+                                                      if (idx > i) updatedExpanded.add(idx - 1);
+                                                    }
+                                                    _expandedOrders
+                                                      ..clear()
+                                                      ..addAll(updatedExpanded);
+                                                  });
+                                                  setState(() => _isDialogOpen = true);
+                                                  await showSuccessDialog(context);
+                                                  setState(() => _isDialogOpen = false);
+                                                }
                                               },
                                             ),
                                             const Text('Delete', style: TextStyle(fontFamily: 'SF Pro Display', fontSize: 14)),
@@ -402,7 +610,7 @@ class _CreateOrderScreenState extends State<CreateOrderScreen> {
           ),
         ],
       ),
-      bottomNavigationBar: dash.CustomBottomNavBar(
+      bottomNavigationBar: _isDialogOpen ? null : dash.CustomBottomNavBar(
         selectedIndex: 3,
         onHomeTap: () {
           Get.offAll(() => dash.DashboardScreen());

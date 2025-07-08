@@ -4,13 +4,15 @@ import 'package:get/get.dart';
 import 'dashboard_screen.dart';
 import 'menu.dart';
 import 'create_order.dart' as create_order;
+import 'order_list_screen.dart';
 
 class ReportsScreen extends StatelessWidget {
   const ReportsScreen({Key? key}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
-     SystemChrome.setEnabledSystemUIMode(SystemUiMode.manual, overlays: [SystemUiOverlay.top]);
+     SystemChrome.setEnabledSystemUIMode(SystemUiMode.manual, overlays: [SystemUiOverlay.top, SystemUiOverlay.bottom]);
+
 
     return AnnotatedRegion<SystemUiOverlayStyle>(
       value: const SystemUiOverlayStyle(
@@ -78,6 +80,9 @@ class ReportsScreen extends StatelessWidget {
           onMenuTap: () {
             Get.offAll(() => const MenuScreen());
           },
+          onOrderListTap: () {
+            Get.to(() => const OrderListScreen());
+          },
           onPencilTap: () {
             Get.offAll(() => create_order.CreateOrderScreen());
           },
@@ -137,8 +142,9 @@ class CustomBottomNavBar extends StatelessWidget {
   final VoidCallback? onMenuTap;
   final VoidCallback? onHomeTap;
   final VoidCallback? onReportsTap;
+  final VoidCallback? onOrderListTap;
   final VoidCallback? onPencilTap;
-  const CustomBottomNavBar({Key? key, required this.selectedIndex, this.onMenuTap, this.onHomeTap, this.onReportsTap, this.onPencilTap}) : super(key: key);
+  const CustomBottomNavBar({Key? key, required this.selectedIndex, this.onMenuTap, this.onHomeTap, this.onReportsTap, this.onOrderListTap, this.onPencilTap}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
@@ -189,7 +195,7 @@ class CustomBottomNavBar extends StatelessWidget {
                     icon: Icons.shopping_bag_outlined,
                     label: 'Order List',
                     selected: selectedIndex == 1,
-                    onTap: () {},
+                    onTap: onOrderListTap ?? () {},
                   ),
                   const SizedBox(width: 56), // Space for FAB
                   _NavBarItem(
