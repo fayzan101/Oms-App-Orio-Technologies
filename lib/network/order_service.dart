@@ -2,8 +2,8 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 
 class OrderService {
-  static const String _baseUrl = 'https://oms.getorio.com/api/order/order2';
-  static const String _token = 'QoVDWMtOU9sUzi543rtAVcaeAiEoDH/lQMmuxj4JbjO54gmraIr8QwAloW2F8KEM4PEU9zibMkdCp5RMU3LFqg==';
+  static const String _baseUrl = '';
+  static const String _token = ''
 
   static Future<Map<String, dynamic>> fetchOrders({
     required int startLimit,
