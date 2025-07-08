@@ -7,6 +7,10 @@ import 'sign_in_screen.dart';
 import 'report.dart' as report;
 import 'create_order.dart' as create_order;
 import 'order_list_screen.dart';
+import 'load_sheet_screen.dart';
+import 'profile_screen.dart';
+import 'package:dio/dio.dart';
+import 'rules_screen.dart';
 
 class MenuScreen extends StatefulWidget {
   const MenuScreen({Key? key}) : super(key: key);
@@ -17,6 +21,49 @@ class MenuScreen extends StatefulWidget {
 
 class _MenuScreenState extends State<MenuScreen> {
   bool _isDialogOpen = false;
+  Map<String, dynamic>? profileData;
+  bool isLoading = true;
+  String? error;
+
+  @override
+  void initState() {
+    super.initState();
+    fetchProfile();
+  }
+
+  Future<void> fetchProfile() async {
+    setState(() {
+      isLoading = true;
+      error = null;
+    });
+    try {
+      final dio = Dio();
+      final response = await dio.post(
+        'https://oms.getorio.com/api/profile',
+        data: {
+          "acno": "OR-00009",
+          "userid": 38,
+          "customer_id": 38
+        },
+      );
+      if (response.data['status'] == 1 && response.data['payload'] is List && response.data['payload'].isNotEmpty) {
+        setState(() {
+          profileData = response.data['payload'][0];
+          isLoading = false;
+        });
+      } else {
+        setState(() {
+          error = 'No profile data found.';
+          isLoading = false;
+        });
+      }
+    } catch (e) {
+      setState(() {
+        error = 'Failed to load profile.';
+        isLoading = false;
+      });
+    }
+  }
 
   Future<void> showSuccessDialog(BuildContext context, {String title = 'Success!', String message = 'Action completed successfully.'}) {
     return showModalBottomSheet(
@@ -146,57 +193,67 @@ class _MenuScreenState extends State<MenuScreen> {
                       const SizedBox(width: 16),
                       // Name, Email, Profile Button
                       Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              'Asad Ahmed Khan',
-                              style: const TextStyle(
-                                fontFamily: 'SF Pro Display',
-                                fontWeight: FontWeight.w700,
-                                fontSize: 17,
-                                color: Colors.black,
-                              ),
-                            ),
-                            const SizedBox(height: 2),
-                            Text(
-                              'asadahmedkhan17@gmail.com',
-                              style: const TextStyle(
-                                fontFamily: 'SF Pro Display',
-                                fontWeight: FontWeight.w400,
-                                fontSize: 13,
-                                color: Color(0xFF8E8E93),
-                              ),
-                            ),
-                            const SizedBox(height: 8),
-                            SizedBox(
-                              height: 28,
-                              child: OutlinedButton(
-                                onPressed: () {},
-                                style: OutlinedButton.styleFrom(
-                                  side: const BorderSide(color: Color(0xFF007AFF), width: 1),
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(6),
+                        child: isLoading
+                          ? const Center(child: CircularProgressIndicator())
+                          : error != null
+                            ? Center(child: Text(error!))
+                            : Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    profileData?['first_name'] != null && profileData?['last_name'] != null
+                                      ? '${profileData?['first_name']} ${profileData?['last_name']}'
+                                      : '',
+                                    style: const TextStyle(
+                                      fontFamily: 'SF Pro Display',
+                                      fontWeight: FontWeight.w700,
+                                      fontSize: 18,
+                                      color: Colors.black,
+                                    ),
                                   ),
-                                  padding: const EdgeInsets.symmetric(horizontal: 16),
-                                  minimumSize: const Size(0, 28),
-                                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                                  backgroundColor: Colors.transparent,
-                                  elevation: 0,
-                                ),
-                                child: const Text(
-                                  'Profile',
-                                  style: TextStyle(
-                                    fontFamily: 'SF Pro Display',
-                                    fontWeight: FontWeight.w500,
-                                    fontSize: 13,
-                                    color: Color(0xFF007AFF),
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    profileData?['email'] ?? '',
+                                    style: const TextStyle(
+                                      fontFamily: 'SF Pro Display',
+                                      fontWeight: FontWeight.w400,
+                                      fontSize: 14,
+                                      color: Color(0xFF8E8E93),
+                                    ),
                                   ),
-                                ),
+                                  const SizedBox(height: 8),
+                                  SizedBox(
+                                    height: 28,
+                                    child: OutlinedButton(
+                                      onPressed: () {
+                                        Navigator.of(context).push(
+                                          MaterialPageRoute(builder: (_) => const ProfileScreen()),
+                                        );
+                                      },
+                                      style: OutlinedButton.styleFrom(
+                                        side: const BorderSide(color: Color(0xFF007AFF), width: 1),
+                                        shape: RoundedRectangleBorder(
+                                          borderRadius: BorderRadius.circular(6),
+                                        ),
+                                        padding: const EdgeInsets.symmetric(horizontal: 16),
+                                        minimumSize: const Size(0, 28),
+                                        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                                        backgroundColor: Colors.transparent,
+                                        elevation: 0,
+                                      ),
+                                      child: const Text(
+                                        'Profile',
+                                        style: TextStyle(
+                                          fontFamily: 'SF Pro Display',
+                                          fontWeight: FontWeight.w500,
+                                          fontSize: 13,
+                                          color: Color(0xFF007AFF),
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                ],
                               ),
-                            ),
-                          ],
-                        ),
                       ),
                     ],
                   ),
@@ -235,12 +292,23 @@ class _MenuScreenState extends State<MenuScreen> {
                     _MenuItem(
                       icon: Icons.tune,
                       label: 'Rules',
-                      onTap: () {},
+                      onTap: () {
+                        Navigator.of(context).push(
+                          MaterialPageRoute(builder: (_) => const RulesScreen()),
+                        );
+                      },
                     ),
                     _MenuItem(
                       icon: Icons.play_circle_outline,
                       label: 'Help Videos',
                       onTap: () {},
+                    ),
+                    _MenuItem(
+                      icon: Icons.description_outlined,
+                      label: 'Load Sheet',
+                      onTap: () {
+                        Get.to(() => const LoadSheetScreen());
+                      },
                     ),
                     _MenuItem(
                       icon: Icons.power_settings_new,

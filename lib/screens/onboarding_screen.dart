@@ -18,7 +18,7 @@ class OnboardingScreen extends StatelessWidget {
         systemNavigationBarColor: Colors.transparent,
         systemNavigationBarIconBrightness: Brightness.light,
         systemNavigationBarDividerColor: Colors.transparent,
-        systemStatusBarContrastEnforced: false,
+        systemNavigationBarContrastEnforced: false, // ✅ Added this line
       ),
       child: Scaffold(
         resizeToAvoidBottomInset: false,

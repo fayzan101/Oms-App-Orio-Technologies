@@ -7,6 +7,7 @@ import 'controllers/sign_in_controller.dart';
 import 'controllers/dashboard_controller.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'screens/onboarding_screen.dart';
+import 'screens/courier_insights_screen.dart';
 
 void main() {
   runApp(const MyApp());
@@ -39,6 +40,7 @@ class MyApp extends StatelessWidget {
       }),
       getPages: [
         GetPage(name: '/dashboard', page: () => DashboardScreen()),
+        GetPage(name: '/courier-insights', page: () => CourierInsightsScreen()),
       ],
       unknownRoute: GetPage(
         name: '/notfound',

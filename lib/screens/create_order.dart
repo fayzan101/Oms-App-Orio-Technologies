@@ -359,11 +359,6 @@ class _CreateOrderScreenState extends State<CreateOrderScreen> {
       ),
       body: Column(
         children: [
-          Container(
-            width: double.infinity,
-            height: 1,
-            color: Color(0xFFE0E0E0),
-          ),
           Expanded(
             child: SingleChildScrollView(
               child: Column(

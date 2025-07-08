@@ -33,7 +33,8 @@ class DashboardScreen extends StatelessWidget {
         extendBodyBehindAppBar: false,
         backgroundColor: Colors.white,
         appBar: AppBar(
-      backgroundColor: Colors.white,
+      backgroundColor: Colors.transparent,
+      automaticallyImplyLeading: false,
           elevation: 0,
           systemOverlayStyle: SystemUiOverlayStyle.dark,
           title: SvgPicture.asset(
@@ -54,21 +55,7 @@ class DashboardScreen extends StatelessWidget {
           ],
           bottom: PreferredSize(
             preferredSize: Size.fromHeight(1),
-            child: Container(
-              height: 1,
-              color: const Color(0xFFB0B0B0),
-              child: DecoratedBox(
-                decoration: BoxDecoration(
-                  boxShadow: [
-                    BoxShadow(
-                      color: Color(0x22000000),
-                      blurRadius: 4,
-                      offset: Offset(0, 2),
-                    ),
-                  ],
-                ),
-              ),
-            ),
+            child: SizedBox.shrink(),
         ),
       ),
       body: SafeArea(
@@ -770,8 +757,8 @@ class CustomBottomNavBar extends StatelessWidget {
             left: 0,
             right: 0,
             child: Container(
-              height: 1,
-              color: const Color(0xFFB0B0B0),
+              height: 4,
+              color: Color(0xFFB0B0B0), // bold grey
               // Add a subtle shadow below the line
               child: DecoratedBox(
                 decoration: BoxDecoration(

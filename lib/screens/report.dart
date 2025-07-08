@@ -5,6 +5,9 @@ import 'dashboard_screen.dart';
 import 'menu.dart';
 import 'create_order.dart' as create_order;
 import 'order_list_screen.dart';
+import 'cod_statement_screen.dart';
+import 'ageing_report_screen.dart';
+import 'load_sheet_screen.dart';
 
 class ReportsScreen extends StatelessWidget {
   const ReportsScreen({Key? key}) : super(key: key);
@@ -21,7 +24,6 @@ class ReportsScreen extends StatelessWidget {
         statusBarBrightness: Brightness.light,
         systemNavigationBarColor: Colors.white,
         systemNavigationBarIconBrightness: Brightness.dark,
-        systemNavigationBarDividerColor: Colors.transparent,
       ),
       child: Scaffold(
         backgroundColor: Colors.white,
@@ -51,22 +53,40 @@ class ReportsScreen extends StatelessWidget {
             mainAxisSpacing: 20,
             crossAxisSpacing: 20,
             childAspectRatio: 1.1,
-            children: const [
+            children: [
               _ReportCard(
                 icon: Icons.assignment_outlined,
                 label: 'COD Statements',
+                onTap: () {
+                  Navigator.of(context).push(
+                    MaterialPageRoute(builder: (_) => CODStatementScreen()),
+                  );
+                },
               ),
               _ReportCard(
                 icon: Icons.show_chart_outlined,
                 label: 'Ageing Report',
+                onTap: () {
+                  Navigator.of(context).push(
+                    MaterialPageRoute(builder: (_) => const AgeingReportScreen()),
+                  );
+                },
               ),
               _ReportCard(
                 icon: Icons.grid_view_rounded,
                 label: 'Courier Insights Report',
+                onTap: () {
+                  Get.toNamed('/courier-insights');
+                },
               ),
               _ReportCard(
                 icon: Icons.description_outlined,
                 label: 'Load Sheet',
+                onTap: () {
+                  Navigator.of(context).push(
+                    MaterialPageRoute(builder: (_) => const LoadSheetScreen()),
+                  );
+                },
               ),
             ],
           ),
@@ -105,7 +125,8 @@ class ReportsScreen extends StatelessWidget {
 class _ReportCard extends StatelessWidget {
   final IconData icon;
   final String label;
-  const _ReportCard({required this.icon, required this.label});
+  final VoidCallback onTap;
+  const _ReportCard({required this.icon, required this.label, required this.onTap});
 
   @override
   Widget build(BuildContext context) {
@@ -114,7 +135,7 @@ class _ReportCard extends StatelessWidget {
       borderRadius: BorderRadius.circular(16),
       child: InkWell(
         borderRadius: BorderRadius.circular(16),
-        onTap: () {},
+        onTap: onTap,
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [

@@ -4,6 +4,7 @@ import 'report.dart' as report;
 import 'menu.dart' as menu;
 import 'create_order.dart' as create_order;
 import '../network/order_service.dart';
+import 'filter_screen.dart';
 
 class OrderListScreen extends StatefulWidget {
   const OrderListScreen({Key? key}) : super(key: key);
@@ -21,15 +22,40 @@ class _OrderListScreenState extends State<OrderListScreen> {
   final ScrollController _scrollController = ScrollController();
   final Set<int> expanded = {};
 
+  // Report summary state
+  int totalOrders = 0;
+  int fulfilledOrders = 0;
+  int deliveredOrders = 0;
+  int returnedOrders = 0;
+
   @override
   void initState() {
     super.initState();
+    fetchReportSummary();
     fetchOrders();
     _scrollController.addListener(() {
       if (_scrollController.position.pixels >= _scrollController.position.maxScrollExtent - 200 && !isLoading && hasMore) {
         fetchOrders();
       }
     });
+  }
+
+  Future<void> fetchReportSummary() async {
+    try {
+      final summary = await OrderService.fetchReportSummary(
+        acno: 'OR-00009',
+        startDate: '2025-01-01',
+        endDate: '2025-03-21',
+      );
+      setState(() {
+        totalOrders = int.tryParse(summary['orders']?['total']?.toString() ?? '0') ?? 0;
+        fulfilledOrders = int.tryParse(summary['booked_orders']?['total']?.toString() ?? '0') ?? 0;
+        deliveredOrders = int.tryParse(summary['delivered_orders']?['total']?.toString() ?? '0') ?? 0;
+        returnedOrders = int.tryParse(summary['returned_orders']?['total']?.toString() ?? '0') ?? 0;
+      });
+    } catch (e) {
+      // Optionally handle error
+    }
   }
 
   Future<void> fetchOrders() async {
@@ -86,6 +112,14 @@ class _OrderListScreenState extends State<OrderListScreen> {
             onPressed: () {},
           ),
           IconButton(
+            icon: const Icon(Icons.filter_list, color: Colors.black),
+            onPressed: () {
+              Navigator.of(context).push(
+                MaterialPageRoute(builder: (_) => const FilterScreen()),
+              );
+            },
+          ),
+          IconButton(
             icon: const Icon(Icons.calendar_today_outlined, color: Colors.black),
             onPressed: () {},
           ),
@@ -108,10 +142,10 @@ class _OrderListScreenState extends State<OrderListScreen> {
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  _SummaryColumn(label: 'Total', value: '675'),
-                  _SummaryColumn(label: 'Fulfilled', value: '200'),
-                  _SummaryColumn(label: 'Delivered', value: '300'),
-                  _SummaryColumn(label: 'Returns', value: '175'),
+                  _SummaryColumn(label: 'Total', value: totalOrders.toString()),
+                  _SummaryColumn(label: 'Fulfilled', value: fulfilledOrders.toString()),
+                  _SummaryColumn(label: 'Delivered', value: deliveredOrders.toString()),
+                  _SummaryColumn(label: 'Returns', value: returnedOrders.toString()),
                 ],
               ),
             ),
