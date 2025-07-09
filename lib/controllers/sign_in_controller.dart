@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../services/auth_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import '../utils/custom_snackbar.dart';
 
 class SignInController extends GetxController {
   var obscurePassword = true.obs;
@@ -88,15 +89,7 @@ class SignInController extends GetxController {
       print('Navigating to dashboard...');
       Get.offAllNamed('/dashboard');
       Future.delayed(const Duration(milliseconds: 300), () {
-        Get.snackbar(
-          'Success',
-          'Login successful!',
-          snackPosition: SnackPosition.BOTTOM,
-          backgroundColor: Colors.green,
-          colorText: Colors.white,
-          margin: const EdgeInsets.all(16),
-          borderRadius: 12,
-        );
+        customSnackBar('Success', 'Login successful!');
       });
     } else {
       emailError.value = true;

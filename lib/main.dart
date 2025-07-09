@@ -19,10 +19,32 @@ class MyApp extends StatelessWidget {
   Future<Widget> _getInitialScreen() async {
     final prefs = await SharedPreferences.getInstance();
     final rememberMe = prefs.getBool('remember_me') ?? false;
-    final isLoggedIn = await Get.find<AuthService>().isLoggedIn();
-    if (rememberMe && isLoggedIn) {
-      return DashboardScreen();
+    
+    if (rememberMe) {
+      // Check if we have saved credentials
+      final savedEmail = prefs.getString('remember_email') ?? '';
+      final savedPassword = prefs.getString('remember_password') ?? '';
+      
+      if (savedEmail.isNotEmpty && savedPassword.isNotEmpty) {
+        // Try to login with saved credentials
+        final authService = Get.find<AuthService>();
+        final loginSuccess = await authService.login(savedEmail, savedPassword);
+        
+        if (loginSuccess) {
+          return DashboardScreen();
+        } else {
+          // Login failed, clear saved credentials and go to onboarding
+          await prefs.remove('remember_email');
+          await prefs.remove('remember_password');
+          await prefs.setBool('remember_me', false);
+          return OnboardingScreen();
+        }
+      } else {
+        // No saved credentials, go to onboarding
+        return OnboardingScreen();
+      }
     } else {
+      // Remember me not checked, go to onboarding
       return OnboardingScreen();
     }
   }
