@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../models/notification_model.dart';
 import '../services/notification_service.dart';
+import '../widgets/custom_nav_bar.dart';
 
 class NotificationScreen extends StatelessWidget {
   NotificationScreen({Key? key}) : super(key: key);
@@ -94,26 +95,10 @@ class NotificationScreen extends StatelessWidget {
                                 IconButton(
                                   icon: const Icon(Icons.delete, color: Color(0xFF007AFF)),
                                   onPressed: () {
-                                    showDialog(
-                                      context: context,
-                                      builder: (ctx) => AlertDialog(
-                                        title: const Text('Delete Notification'),
-                                        content: const Text('Are you sure you want to delete this notification?'),
-                                        actions: [
-                                          TextButton(
-                                            onPressed: () => Navigator.of(ctx).pop(),
-                                            child: const Text('Cancel'),
-                                          ),
-                                          TextButton(
-                                            onPressed: () {
-                                              // Implement delete logic
-                                              Navigator.of(ctx).pop();
-                                            },
-                                            child: const Text('Delete', style: TextStyle(color: Colors.red)),
-                                          ),
-                                        ],
-                                      ),
-                                    );
+                                    _showDeleteConfirmation(context, () {
+                                      // TODO: Implement actual delete logic here
+                                      _showDeleteSuccess(context);
+                                    });
                                   },
                                 ),
                                 const Text('Delete', style: TextStyle(color: Color(0xFF007AFF), fontWeight: FontWeight.w500)),
@@ -138,22 +123,14 @@ class NotificationScreen extends StatelessWidget {
         child: const Icon(Icons.edit, color: Colors.white),
       ),
       floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
-      bottomNavigationBar: BottomAppBar(
-        shape: const CircularNotchedRectangle(),
-        notchMargin: 8,
-        child: SizedBox(
-          height: 64,
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceAround,
-            children: [
-              _navBarItem(Icons.home, 'Home', '/dashboard'),
-              _navBarItem(Icons.list_alt, 'Order List', '/order-list'),
-              const SizedBox(width: 48), // Space for FAB
-              _navBarItem(Icons.bar_chart, 'Reports', '/reports'),
-              _navBarItem(Icons.menu, 'Menu', '/menu'),
-            ],
-          ),
-        ),
+      bottomNavigationBar: CustomNavBar(
+        selectedIndex: 3, // or the appropriate index for this screen
+        onTabSelected: (index) {
+          if (index == 0) Get.offAllNamed('/dashboard');
+          if (index == 1) Get.offAllNamed('/order-list');
+          if (index == 2) Get.offAllNamed('/reports');
+          if (index == 3) Get.offAllNamed('/menu');
+        },
       ),
     );
   }
@@ -189,6 +166,155 @@ class NotificationScreen extends StatelessWidget {
           Text(label, style: const TextStyle(fontSize: 12, color: Color(0xFF0A2A3A))),
         ],
       ),
+    );
+  }
+
+  void _showDeleteConfirmation(BuildContext context, VoidCallback onConfirm) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) {
+        return Container(
+          width: double.infinity,
+          padding: EdgeInsets.only(
+            left: 0,
+            right: 0,
+            bottom: MediaQuery.of(context).viewInsets.bottom,
+          ),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.vertical(top: Radius.circular(32)),
+          ),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFE6F0FF),
+                    shape: BoxShape.circle,
+                  ),
+                  padding: const EdgeInsets.all(32),
+                  child: const Icon(Icons.delete_outline, color: Color(0xFF007AFF), size: 64),
+                ),
+                const SizedBox(height: 24),
+                const Text(
+                  'Are you Sure',
+                  style: TextStyle(fontWeight: FontWeight.w700, fontSize: 22, color: Colors.black),
+                ),
+                const SizedBox(height: 8),
+                const Text(
+                  'You want to delete this notification',
+                  style: TextStyle(fontWeight: FontWeight.w400, fontSize: 15, color: Color(0xFF8E8E93)),
+                ),
+                const SizedBox(height: 28),
+                Row(
+                  children: [
+                    Expanded(
+                      child: ElevatedButton(
+                        onPressed: () => Navigator.of(context).pop(),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFFF2F2F7),
+                          elevation: 0,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          padding: const EdgeInsets.symmetric(vertical: 14),
+                        ),
+                        child: const Text('No', style: TextStyle(fontWeight: FontWeight.w500, fontSize: 15, color: Colors.black)),
+                      ),
+                    ),
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: ElevatedButton(
+                        onPressed: () {
+                          Navigator.of(context).pop();
+                          onConfirm();
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFF007AFF),
+                          elevation: 0,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          padding: const EdgeInsets.symmetric(vertical: 14),
+                        ),
+                        child: const Text('Yes', style: TextStyle(fontWeight: FontWeight.w500, fontSize: 15, color: Colors.white)),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  void _showDeleteSuccess(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) {
+        return Container(
+          width: double.infinity,
+          padding: EdgeInsets.only(
+            left: 0,
+            right: 0,
+            bottom: MediaQuery.of(context).viewInsets.bottom,
+          ),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.vertical(top: Radius.circular(32)),
+          ),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFE6F0FF),
+                    shape: BoxShape.circle,
+                  ),
+                  padding: const EdgeInsets.all(32),
+                  child: const Icon(Icons.check, color: Color(0xFF007AFF), size: 64),
+                ),
+                const SizedBox(height: 24),
+                const Text(
+                  'Success!',
+                  style: TextStyle(fontWeight: FontWeight.w700, fontSize: 22, color: Colors.black),
+                ),
+                const SizedBox(height: 8),
+                const Text(
+                  'You have successfully deleted notification',
+                  style: TextStyle(fontWeight: FontWeight.w400, fontSize: 15, color: Color(0xFF8E8E93)),
+                ),
+                const SizedBox(height: 28),
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton(
+                    onPressed: () => Navigator.of(context).pop(),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF007AFF),
+                      elevation: 0,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                    ),
+                    child: const Text('Ok', style: TextStyle(fontWeight: FontWeight.w500, fontSize: 15, color: Colors.white)),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
     );
   }
 } 

@@ -1,8 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import '../models/notification_model.dart';
+import '../widgets/custom_nav_bar.dart';
 
 class AddNotificationScreen extends StatefulWidget {
-  const AddNotificationScreen({Key? key}) : super(key: key);
+  final bool isEdit;
+  final NotificationModel? notification;
+  const AddNotificationScreen({Key? key, this.isEdit = false, this.notification}) : super(key: key);
 
   @override
   State<AddNotificationScreen> createState() => _AddNotificationScreenState();
@@ -11,13 +15,28 @@ class AddNotificationScreen extends StatefulWidget {
 class _AddNotificationScreenState extends State<AddNotificationScreen> {
   final _formKey = GlobalKey<FormState>();
   String? selectedStatus;
-  final TextEditingController messageController = TextEditingController(text: 'Your Message, Thanks {{CUSTOMER_NAME}} for placing the order. Your order amount is {{ORDER_AMOUNT}}.');
+  final TextEditingController messageController = TextEditingController();
   bool whatsapp = true;
   bool email = true;
   bool sms = true;
   bool isActive = true;
 
   final List<String> statuses = ['Confirmed', 'New', 'Processing', 'Delivered', 'Cancelled'];
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.isEdit && widget.notification != null) {
+      selectedStatus = widget.notification!.statusName;
+      messageController.text = widget.notification!.message;
+      whatsapp = widget.notification!.isWhatsapp == 'Y';
+      email = widget.notification!.isEmail == 'Y';
+      sms = widget.notification!.isSms == 'Y';
+      isActive = widget.notification!.status == 'Y';
+    } else {
+      messageController.text = 'Your Message, Thanks {{CUSTOMER_NAME}} for placing the order. Your order amount is {{ORDER_AMOUNT}}.';
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -27,7 +46,7 @@ class _AddNotificationScreenState extends State<AddNotificationScreen> {
           icon: const Icon(Icons.arrow_back),
           onPressed: () => Get.back(),
         ),
-        title: const Text('Add Notification'),
+        title: Text(widget.isEdit ? 'Edit Notification' : 'Add Notification'),
       ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
@@ -83,7 +102,7 @@ class _AddNotificationScreenState extends State<AddNotificationScreen> {
                       // Implement save logic
                     }
                   },
-                  child: const Text('Save', style: TextStyle(fontSize: 18, color: Colors.white)),
+                  child: Text(widget.isEdit ? 'Update' : 'Save', style: const TextStyle(fontSize: 18, color: Colors.white)),
                 ),
               ),
               const SizedBox(height: 32),
@@ -97,22 +116,14 @@ class _AddNotificationScreenState extends State<AddNotificationScreen> {
         child: const Icon(Icons.edit, color: Colors.white),
       ),
       floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
-      bottomNavigationBar: BottomAppBar(
-        shape: const CircularNotchedRectangle(),
-        notchMargin: 8,
-        child: SizedBox(
-          height: 64,
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceAround,
-            children: [
-              _navBarItem(Icons.home, 'Home', '/dashboard'),
-              _navBarItem(Icons.list_alt, 'Order List', '/order-list'),
-              const SizedBox(width: 48), // Space for FAB
-              _navBarItem(Icons.bar_chart, 'Reports', '/reports'),
-              _navBarItem(Icons.menu, 'Menu', '/menu'),
-            ],
-          ),
-        ),
+      bottomNavigationBar: CustomNavBar(
+        selectedIndex: 3, // or the appropriate index for this screen
+        onTabSelected: (index) {
+          if (index == 0) Get.offAllNamed('/dashboard');
+          if (index == 1) Get.offAllNamed('/order-list');
+          if (index == 2) Get.offAllNamed('/reports');
+          if (index == 3) Get.offAllNamed('/menu');
+        },
       ),
     );
   }

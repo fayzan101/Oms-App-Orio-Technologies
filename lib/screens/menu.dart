@@ -11,6 +11,7 @@ import 'load_sheet_screen.dart';
 import 'profile_screen.dart';
 import 'package:dio/dio.dart';
 import 'rules_screen.dart';
+import '../widgets/custom_nav_bar.dart';
 
 class MenuScreen extends StatefulWidget {
   const MenuScreen({Key? key}) : super(key: key);
@@ -305,7 +306,9 @@ class _MenuScreenState extends State<MenuScreen> {
                     _MenuItem(
                       icon: Icons.play_circle_outline,
                       label: 'Help Videos',
-                      onTap: () {},
+                      onTap: () {
+                        Get.toNamed('/help-videos');
+                      },
                     ),
                     _MenuItem(
                       icon: Icons.description_outlined,
@@ -326,20 +329,13 @@ class _MenuScreenState extends State<MenuScreen> {
             ],
           ),
         ),
-        bottomNavigationBar: _isDialogOpen ? null : CustomBottomNavBar(
-          selectedIndex: 4,
-          onHomeTap: () {
-            Get.offAll(() => DashboardScreen());
-          },
-          onReportsTap: () {
-            Get.offAll(() => report.ReportsScreen());
-          },
-          onMenuTap: () {},
-          onOrderListTap: () {
-            Get.to(() => const OrderListScreen());
-          },
-          onPencilTap: () {
-            Get.offAll(() => create_order.CreateOrderScreen());
+        bottomNavigationBar: CustomNavBar(
+          selectedIndex: 3,
+          onTabSelected: (index) {
+            if (index == 0) Get.offAllNamed('/dashboard');
+            if (index == 1) Get.offAllNamed('/order-list');
+            if (index == 2) Get.offAllNamed('/reports');
+            if (index == 3) Get.offAllNamed('/menu');
           },
         ),
         floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,

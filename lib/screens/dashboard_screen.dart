@@ -9,6 +9,7 @@ import 'report.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'create_order.dart';
 import 'order_list_screen.dart';
+import '../widgets/custom_nav_bar.dart';
 
 class DashboardScreen extends StatelessWidget {
   DashboardScreen({Key? key}) : super(key: key);
@@ -536,17 +537,13 @@ class DashboardScreen extends StatelessWidget {
         ),
       ),
         ),
-        bottomNavigationBar: CustomBottomNavBar(
+        bottomNavigationBar: CustomNavBar(
           selectedIndex: 0,
-          onHomeTap: () {},
-          onReportsTap: () {
-            Get.offAll(() => const ReportsScreen());
-          },
-          onMenuTap: () {
-            Get.offAll(() => const MenuScreen());
-          },
-          onOrderListTap: () {
-            Get.to(() => const OrderListScreen());
+          onTabSelected: (index) {
+            if (index == 0) Get.offAllNamed('/dashboard');
+            if (index == 1) Get.offAllNamed('/order-list');
+            if (index == 2) Get.offAllNamed('/reports');
+            if (index == 3) Get.offAllNamed('/menu');
           },
         ),
       floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,

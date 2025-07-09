@@ -1,9 +1,7 @@
 import 'package:flutter/material.dart';
-import 'dashboard_screen.dart';
-import 'order_list_screen.dart';
-import 'report.dart' as report;
-import 'dashboard_screen.dart' as dash;
-import 'menu.dart';
+import 'package:get/get.dart';
+import '../widgets/custom_nav_bar.dart';
+import 'create_rule_screen.dart';
 
 class RulesScreen extends StatelessWidget {
   const RulesScreen({Key? key}) : super(key: key);
@@ -11,41 +9,25 @@ class RulesScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
       appBar: AppBar(
-        backgroundColor: Colors.white,
-        elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new, color: Colors.black, size: 22),
-          onPressed: () => Navigator.of(context).pop(),
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () => Get.back(),
         ),
-        title: const Text(
-          'Rules',
-          style: TextStyle(
-            fontFamily: 'SF Pro Display',
-            fontWeight: FontWeight.w700,
-            fontSize: 20,
-            color: Colors.black,
-          ),
-        ),
-        centerTitle: false,
+        title: const Text('Rules'),
       ),
       body: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 24),
+        padding: const EdgeInsets.symmetric(horizontal: 24.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
+            const Divider(height: 1, thickness: 1),
             const SizedBox(height: 32),
             const Align(
               alignment: Alignment.centerLeft,
               child: Text(
                 'Launch Rules',
-                style: TextStyle(
-                  fontFamily: 'SF Pro Display',
-                  fontWeight: FontWeight.w700,
-                  fontSize: 18,
-                  color: Colors.black,
-                ),
+                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
               ),
             ),
             const SizedBox(height: 8),
@@ -53,35 +35,25 @@ class RulesScreen extends StatelessWidget {
               alignment: Alignment.centerLeft,
               child: Text(
                 'This section allows you to create Orio Rules,\nUse Orio Rules to automate your flows.',
-                style: TextStyle(
-                  fontFamily: 'SF Pro Display',
-                  fontWeight: FontWeight.w400,
-                  fontSize: 14,
-                  color: Color(0xFF8E8E93),
+                style: TextStyle(fontSize: 15, color: Color(0xFF8E8E93)),
+              ),
+            ),
+            const SizedBox(height: 32),
+            // Placeholder for illustration
+            Center(
+              child: SizedBox(
+                height: 160,
+                child: Image.asset(
+                  'assets/rules_illustration.png',
+                  fit: BoxFit.contain,
+                  errorBuilder: (c, e, s) => Icon(Icons.rule, size: 120, color: Colors.grey[300]),
                 ),
               ),
             ),
             const SizedBox(height: 32),
-            // Illustration
-            Expanded(
-              child: Center(
-                child: Image.asset(
-                  'assets/icon/graph.png', // Replace with your illustration asset
-                  width: 220,
-                  height: 160,
-                  fit: BoxFit.contain,
-                ),
-              ),
-            ),
-            const SizedBox(height: 16),
             const Text(
               'No rule available please create rule!',
-              style: TextStyle(
-                fontFamily: 'SF Pro Display',
-                fontWeight: FontWeight.w400,
-                fontSize: 15,
-                color: Color(0xFF8E8E93),
-              ),
+              style: TextStyle(fontSize: 15, color: Color(0xFF8E8E93)),
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 24),
@@ -89,61 +61,34 @@ class RulesScreen extends StatelessWidget {
               width: double.infinity,
               height: 48,
               child: ElevatedButton(
-                onPressed: () {},
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: Color(0xFF007AFF),
+                  backgroundColor: const Color(0xFF007AFF),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(8),
                   ),
-                  elevation: 0,
                 ),
-                child: const Text(
-                  'Create Rule',
-                  style: TextStyle(
-                    fontFamily: 'SF Pro Display',
-                    fontWeight: FontWeight.w500,
-                    fontSize: 16,
-                    color: Colors.white,
-                  ),
-                ),
+                onPressed: () {
+                  Get.to(() => const CreateRuleScreen());
+                },
+                child: const Text('Create Rule', style: TextStyle(fontSize: 18, color: Colors.white)),
               ),
             ),
-            const SizedBox(height: 32),
           ],
         ),
       ),
-      floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
       floatingActionButton: FloatingActionButton(
+        backgroundColor: const Color(0xFF0A2A3A),
         onPressed: () {},
-        backgroundColor: const Color(0xFF0A253B),
         child: const Icon(Icons.edit, color: Colors.white),
-        elevation: 4,
       ),
-      bottomNavigationBar: dash.CustomBottomNavBar(
-        selectedIndex: 4,
-        onHomeTap: () {
-          Navigator.of(context).pushAndRemoveUntil(
-            MaterialPageRoute(builder: (_) => dash.DashboardScreen()),
-            (route) => false,
-          );
-        },
-        onOrderListTap: () {
-          Navigator.of(context).pushAndRemoveUntil(
-            MaterialPageRoute(builder: (_) => OrderListScreen()),
-            (route) => false,
-          );
-        },
-        onReportsTap: () {
-          Navigator.of(context).pushAndRemoveUntil(
-            MaterialPageRoute(builder: (_) => report.ReportsScreen()),
-            (route) => false,
-          );
-        },
-        onMenuTap: () {
-          Navigator.of(context).pushAndRemoveUntil(
-            MaterialPageRoute(builder: (_) => MenuScreen()),
-            (route) => false,
-          );
+      floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
+      bottomNavigationBar: CustomNavBar(
+        selectedIndex: 2,
+        onTabSelected: (index) {
+          if (index == 0) Get.offAllNamed('/dashboard');
+          if (index == 1) Get.offAllNamed('/order-list');
+          if (index == 2) Get.offAllNamed('/reports');
+          if (index == 3) Get.offAllNamed('/menu');
         },
       ),
     );

@@ -1,8 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import '../models/courier_account.dart';
+import '../widgets/custom_nav_bar.dart';
 
 class AddCourierCompanyScreen extends StatefulWidget {
-  const AddCourierCompanyScreen({Key? key}) : super(key: key);
+  final CourierAccount? courierAccount;
+  final bool isEdit;
+  const AddCourierCompanyScreen({Key? key, this.courierAccount, this.isEdit = false}) : super(key: key);
 
   @override
   State<AddCourierCompanyScreen> createState() => _AddCourierCompanyScreenState();
@@ -21,8 +25,24 @@ class _AddCourierCompanyScreenState extends State<AddCourierCompanyScreen> {
   final TextEditingController passwordController = TextEditingController();
   final TextEditingController apiKeyController = TextEditingController();
 
-  final List<String> couriers = ['TCS', 'Leopards', 'BlueEx', 'CallCourier'];
+  final List<String> couriers = ['TCS', 'Leopards', 'Blue Ex', 'CallCourier'];
   final List<String> statuses = ['Active', 'Inactive'];
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.courierAccount != null) {
+      final c = widget.courierAccount!;
+      selectedCourier = c.courierName;
+      accountTitleController.text = c.accountTitle;
+      accountNoController.text = c.courierAcno;
+      userController.text = c.courierUser;
+      passwordController.text = c.courierPassword;
+      apiKeyController.text = c.courierApikey;
+      selectedStatus = c.status.toLowerCase() == 'active' ? 'Active' : 'Inactive';
+      isDefault = c.isDefault == '1';
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -32,7 +52,7 @@ class _AddCourierCompanyScreenState extends State<AddCourierCompanyScreen> {
           icon: const Icon(Icons.arrow_back),
           onPressed: () => Get.back(),
         ),
-        title: const Text('Add Courier Companies'),
+        title: Text(widget.isEdit ? 'Edit Courier Companies' : 'Add Courier Companies'),
       ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
@@ -42,7 +62,10 @@ class _AddCourierCompanyScreenState extends State<AddCourierCompanyScreen> {
             children: [
               DropdownButtonFormField<String>(
                 value: selectedCourier,
-                decoration: _inputDecoration('Select Courier'),
+                decoration: _inputDecoration('Select Courier').copyWith(
+                  isDense: true,
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                ),
                 items: couriers.map((c) => DropdownMenuItem(value: c, child: Text(c))).toList(),
                 onChanged: (val) => setState(() => selectedCourier = val),
                 validator: (val) => val == null ? 'Please select a courier' : null,
@@ -117,10 +140,10 @@ class _AddCourierCompanyScreenState extends State<AddCourierCompanyScreen> {
                       // Implement save logic
                     }
                   },
-                  child: const Text('Save', style: TextStyle(fontSize: 18, color: Colors.white)),
+                  child: Text(widget.isEdit ? 'Update' : 'Save', style: const TextStyle(fontSize: 18, color: Colors.white)),
                 ),
               ),
-              const SizedBox(height: 32), // Add extra space below the Save button
+              const SizedBox(height: 32),
             ],
           ),
         ),
@@ -131,22 +154,14 @@ class _AddCourierCompanyScreenState extends State<AddCourierCompanyScreen> {
         child: const Icon(Icons.edit, color: Colors.white),
       ),
       floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
-      bottomNavigationBar: BottomAppBar(
-        shape: const CircularNotchedRectangle(),
-        notchMargin: 8,
-        child: SizedBox(
-          height: 64,
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceAround,
-            children: [
-              _navBarItem(Icons.home, 'Home', '/dashboard'),
-              _navBarItem(Icons.list_alt, 'Order List', '/order-list'),
-              const SizedBox(width: 48), // Space for FAB
-              _navBarItem(Icons.bar_chart, 'Reports', '/reports'),
-              _navBarItem(Icons.menu, 'Menu', '/menu'),
-            ],
-          ),
-        ),
+      bottomNavigationBar: CustomNavBar(
+        selectedIndex: 3, // or the appropriate index for this screen
+        onTabSelected: (index) {
+          if (index == 0) Get.offAllNamed('/dashboard');
+          if (index == 1) Get.offAllNamed('/order-list');
+          if (index == 2) Get.offAllNamed('/reports');
+          if (index == 3) Get.offAllNamed('/menu');
+        },
       ),
     );
   }

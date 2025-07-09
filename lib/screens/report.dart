@@ -8,6 +8,7 @@ import 'order_list_screen.dart';
 import 'cod_statement_screen.dart';
 import 'ageing_report_screen.dart';
 import 'load_sheet_screen.dart';
+import '../widgets/custom_nav_bar.dart';
 
 class ReportsScreen extends StatelessWidget {
   const ReportsScreen({Key? key}) : super(key: key);
@@ -91,20 +92,13 @@ class ReportsScreen extends StatelessWidget {
             ],
           ),
         ),
-        bottomNavigationBar: CustomBottomNavBar(
+        bottomNavigationBar: CustomNavBar(
           selectedIndex: 2,
-          onHomeTap: () {
-            Get.offAll(() => DashboardScreen());
-          },
-          onReportsTap: () {},
-          onMenuTap: () {
-            Get.offAll(() => const MenuScreen());
-          },
-          onOrderListTap: () {
-            Get.to(() => const OrderListScreen());
-          },
-          onPencilTap: () {
-            Get.offAll(() => create_order.CreateOrderScreen());
+          onTabSelected: (index) {
+            if (index == 0) Get.offAllNamed('/dashboard');
+            if (index == 1) Get.offAllNamed('/order-list');
+            if (index == 2) Get.offAllNamed('/reports');
+            if (index == 3) Get.offAllNamed('/menu');
           },
         ),
         floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,

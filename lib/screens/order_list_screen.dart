@@ -5,6 +5,7 @@ import 'menu.dart' as menu;
 import 'create_order.dart' as create_order;
 import '../network/order_service.dart';
 import 'filter_screen.dart';
+import '../widgets/custom_nav_bar.dart';
 
 class OrderListScreen extends StatefulWidget {
   const OrderListScreen({Key? key}) : super(key: key);
@@ -243,28 +244,13 @@ class _OrderListScreenState extends State<OrderListScreen> {
           ],
         ),
       ),
-      bottomNavigationBar: dash.CustomBottomNavBar(
+      bottomNavigationBar: CustomNavBar(
         selectedIndex: 1,
-        onHomeTap: () {
-          Navigator.of(context).pushAndRemoveUntil(
-            MaterialPageRoute(builder: (_) => dash.DashboardScreen()),
-            (route) => false,
-          );
-        },
-        onOrderListTap: () {
-          // Already on Order List, do nothing or maybe pop to root
-        },
-        onReportsTap: () {
-          Navigator.of(context).pushAndRemoveUntil(
-            MaterialPageRoute(builder: (_) => report.ReportsScreen()),
-            (route) => false,
-          );
-        },
-        onMenuTap: () {
-          Navigator.of(context).pushAndRemoveUntil(
-            MaterialPageRoute(builder: (_) => menu.MenuScreen()),
-            (route) => false,
-          );
+        onTabSelected: (index) {
+          if (index == 0) Navigator.of(context).pushAndRemoveUntil(MaterialPageRoute(builder: (_) => dash.DashboardScreen()), (route) => false);
+          if (index == 1) Navigator.of(context).pushAndRemoveUntil(MaterialPageRoute(builder: (_) => OrderListScreen()), (route) => false);
+          if (index == 2) Navigator.of(context).pushAndRemoveUntil(MaterialPageRoute(builder: (_) => report.ReportsScreen()), (route) => false);
+          if (index == 3) Navigator.of(context).pushAndRemoveUntil(MaterialPageRoute(builder: (_) => menu.MenuScreen()), (route) => false);
         },
       ),
       floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,

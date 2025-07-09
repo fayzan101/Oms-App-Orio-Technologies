@@ -13,6 +13,9 @@ import 'screens/add_courier_company_screen.dart';
 import 'screens/notification_screen.dart';
 import 'screens/add_notification_screen.dart';
 import 'screens/menu.dart';
+import 'screens/help_videos_screen.dart';
+import 'screens/order_list_screen.dart';
+import 'screens/report.dart';
 
 void main() {
   runApp(const MyApp());
@@ -67,12 +70,16 @@ class MyApp extends StatelessWidget {
       }),
       getPages: [
         GetPage(name: '/dashboard', page: () => DashboardScreen()),
+        GetPage(name: '/order-list', page: () => OrderListScreen()),
+        GetPage(name: '/reports', page: () => ReportsScreen()),
         GetPage(name: '/courier-companies', page: () => CourierCompaniesScreen()),
         GetPage(name: '/add-courier', page: () => AddCourierCompanyScreen()),
         GetPage(name: '/notifications', page: () => NotificationScreen()),
         GetPage(name: '/add-notification', page: () => AddNotificationScreen()),
+        GetPage(name: '/edit-notification', page: () => AddNotificationScreen(isEdit: true)),
         GetPage(name: '/courier-insights', page: () => CourierInsightsScreen()),
         GetPage(name: '/menu', page: () => MenuScreen()),
+        GetPage(name: '/help-videos', page: () => HelpVideosScreen()),
       ],
       unknownRoute: GetPage(
         name: '/notfound',
