@@ -3,6 +3,7 @@ import 'dashboard_screen.dart' as dash;
 import 'report.dart' as report;
 import 'menu.dart' as menu;
 import 'create_order.dart' as create_order;
+import 'create_cn_screen.dart';
 import '../network/order_service.dart';
 import 'filter_screen.dart';
 import 'search_screen.dart';
@@ -172,9 +173,8 @@ class _OrderListScreenState extends State<OrderListScreen> {
                 const Spacer(),
                 GestureDetector(
                   onTap: () {
-                    Navigator.of(context).pushAndRemoveUntil(
-                      MaterialPageRoute(builder: (_) => create_order.CreateOrderScreen()),
-                      (route) => false,
+                    Navigator.of(context).push(
+                      MaterialPageRoute(builder: (_) => const CreateCnScreen()),
                     );
                   },
                   child: const Text('Create CN', style: TextStyle(fontFamily: 'SF Pro Display', fontWeight: FontWeight.w500, fontSize: 15, color: Color(0xFF007AFF), decoration: TextDecoration.underline)),
