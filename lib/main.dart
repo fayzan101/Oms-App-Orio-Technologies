@@ -8,6 +8,11 @@ import 'controllers/dashboard_controller.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'screens/onboarding_screen.dart';
 import 'screens/courier_insights_screen.dart';
+import 'screens/courier_companies_screen.dart';
+import 'screens/add_courier_company_screen.dart';
+import 'screens/notification_screen.dart';
+import 'screens/add_notification_screen.dart';
+import 'screens/menu.dart';
 
 void main() {
   runApp(const MyApp());
@@ -62,7 +67,12 @@ class MyApp extends StatelessWidget {
       }),
       getPages: [
         GetPage(name: '/dashboard', page: () => DashboardScreen()),
+        GetPage(name: '/courier-companies', page: () => CourierCompaniesScreen()),
+        GetPage(name: '/add-courier', page: () => AddCourierCompanyScreen()),
+        GetPage(name: '/notifications', page: () => NotificationScreen()),
+        GetPage(name: '/add-notification', page: () => AddNotificationScreen()),
         GetPage(name: '/courier-insights', page: () => CourierInsightsScreen()),
+        GetPage(name: '/menu', page: () => MenuScreen()),
       ],
       unknownRoute: GetPage(
         name: '/notfound',

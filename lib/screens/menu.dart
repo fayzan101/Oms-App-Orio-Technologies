@@ -282,12 +282,16 @@ class _MenuScreenState extends State<MenuScreen> {
                     _MenuItem(
                       icon: Icons.local_shipping_outlined,
                       label: 'Courier Companies',
-                      onTap: () {},
+                      onTap: () {
+                        Get.toNamed('/courier-companies');
+                      },
                     ),
                     _MenuItem(
                       icon: Icons.notifications_none_outlined,
                       label: 'Notifications',
-                      onTap: () {},
+                      onTap: () {
+                        Get.toNamed('/notifications');
+                      },
                     ),
                     _MenuItem(
                       icon: Icons.tune,
