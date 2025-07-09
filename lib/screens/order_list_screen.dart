@@ -5,6 +5,7 @@ import 'menu.dart' as menu;
 import 'create_order.dart' as create_order;
 import '../network/order_service.dart';
 import 'filter_screen.dart';
+import 'search_screen.dart';
 import '../widgets/custom_nav_bar.dart';
 
 class OrderListScreen extends StatefulWidget {
@@ -110,7 +111,11 @@ class _OrderListScreenState extends State<OrderListScreen> {
         actions: [
           IconButton(
             icon: const Icon(Icons.search, color: Colors.black),
-            onPressed: () {},
+            onPressed: () {
+              Navigator.of(context).push(
+                MaterialPageRoute(builder: (_) => const SearchScreen()),
+              );
+            },
           ),
           IconButton(
             icon: const Icon(Icons.filter_list, color: Colors.black),
@@ -166,12 +171,24 @@ class _OrderListScreenState extends State<OrderListScreen> {
                 const Text('Select All', style: TextStyle(fontFamily: 'SF Pro Display', fontWeight: FontWeight.w500, fontSize: 15)),
                 const Spacer(),
                 GestureDetector(
-                  onTap: () {},
+                  onTap: () {
+                    Navigator.of(context).pushAndRemoveUntil(
+                      MaterialPageRoute(builder: (_) => create_order.CreateOrderScreen()),
+                      (route) => false,
+                    );
+                  },
                   child: const Text('Create CN', style: TextStyle(fontFamily: 'SF Pro Display', fontWeight: FontWeight.w500, fontSize: 15, color: Color(0xFF007AFF), decoration: TextDecoration.underline)),
                 ),
                 const SizedBox(width: 16),
                 GestureDetector(
-                  onTap: () {},
+                  onTap: () {
+                    showModalBottomSheet(
+                      context: context,
+                      isScrollControlled: true,
+                      backgroundColor: Colors.transparent,
+                      builder: (context) => const _BulkTrackingBottomSheet(),
+                    );
+                  },
                   child: const Text('Bulk Tracking', style: TextStyle(fontFamily: 'SF Pro Display', fontWeight: FontWeight.w500, fontSize: 15, color: Color(0xFF007AFF), decoration: TextDecoration.underline)),
                 ),
               ],
@@ -283,6 +300,108 @@ class _SummaryColumn extends StatelessWidget {
         const SizedBox(height: 2),
         Text(label, style: const TextStyle(fontFamily: 'SF Pro Display', fontWeight: FontWeight.w400, fontSize: 13, color: Color(0xFF8E8E93))),
       ],
+    );
+  }
+}
+
+class _BulkTrackingBottomSheet extends StatelessWidget {
+  const _BulkTrackingBottomSheet({Key? key}) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: EdgeInsets.only(
+        left: 0,
+        right: 0,
+        bottom: MediaQuery.of(context).viewInsets.bottom,
+      ),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(20, 20, 20, 32),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const Text(
+                  'Bulk Tracking',
+                  style: TextStyle(
+                    fontWeight: FontWeight.w700,
+                    fontSize: 18,
+                    fontFamily: 'SF Pro Display',
+                  ),
+                ),
+                IconButton(
+                  icon: const Icon(Icons.close),
+                  onPressed: () => Navigator.of(context).pop(),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            _trackingDetailRow('Status', 'Shipped'),
+            _trackingDetailRow('CN#', '5024657241'),
+            _trackingDetailRow('Date', '2023-07-25'),
+            _trackingDetailRow('Customer', 'Asad Ahmed Khan'),
+            _trackingDetailRow('COD', '4200'),
+            _trackingDetailRow('From To', 'Lahore   Karachi'),
+            const SizedBox(height: 12),
+            const Text(
+              'Courier Shipping Label: 5024657241',
+              style: TextStyle(fontWeight: FontWeight.w700, fontSize: 15, fontFamily: 'SF Pro Display'),
+            ),
+            const SizedBox(height: 4),
+            const Text(
+              'August 8th, 2023 12:09:00 - Order information received pending at Shippers end.',
+              style: TextStyle(fontWeight: FontWeight.w400, fontSize: 13, fontFamily: 'SF Pro Display', color: Color(0xFF6B7280)),
+            ),
+            const Divider(height: 28),
+            _trackingDetailRow('Status', 'Shipped'),
+            _trackingDetailRow('CN#', '5024657241'),
+            _trackingDetailRow('Date', '2023-07-25'),
+            _trackingDetailRow('Customer', 'Asad Ahmed Khan'),
+            _trackingDetailRow('COD', '4200'),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _trackingDetailRow(String label, String value) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          SizedBox(
+            width: 100,
+            child: Text(
+              label,
+              style: const TextStyle(
+                fontWeight: FontWeight.w600,
+                fontFamily: 'SF Pro Display',
+                fontSize: 15,
+              ),
+            ),
+          ),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              value,
+              style: const TextStyle(
+                fontWeight: FontWeight.w400,
+                fontFamily: 'SF Pro Display',
+                fontSize: 15,
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 } 

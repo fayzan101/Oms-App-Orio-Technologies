@@ -4,6 +4,7 @@ import 'filter_screen.dart';
 import 'dashboard_screen.dart' as dash;
 import 'menu.dart' as menu;
 import 'report.dart' as report;
+import 'search_screen.dart';
 
 class AgeingReportScreen extends StatefulWidget {
   const AgeingReportScreen({Key? key}) : super(key: key);
@@ -77,7 +78,11 @@ class _AgeingReportScreenState extends State<AgeingReportScreen> {
         actions: [
           IconButton(
             icon: const Icon(Icons.search, color: Colors.black),
-            onPressed: () {},
+            onPressed: () {
+              Navigator.of(context).push(
+                MaterialPageRoute(builder: (_) => const SearchScreen()),
+              );
+            },
           ),
           IconButton(
             icon: const Icon(Icons.filter_list, color: Colors.black),

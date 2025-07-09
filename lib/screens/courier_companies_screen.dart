@@ -4,6 +4,7 @@ import '../models/courier_account.dart';
 import '../services/courier_service.dart';
 import 'add_courier_company_screen.dart'; // Added import for AddCourierCompanyScreen
 import '../widgets/custom_nav_bar.dart';
+import 'search_screen.dart';
 
 class CourierCompaniesScreen extends StatelessWidget {
   CourierCompaniesScreen({Key? key}) : super(key: key);
@@ -17,8 +18,12 @@ class CourierCompaniesScreen extends StatelessWidget {
         title: const Text('Couriers Companies'),
         actions: [
           IconButton(
-            icon: const Icon(Icons.search),
-            onPressed: () {},
+            icon: const Icon(Icons.search, color: Colors.black),
+            onPressed: () {
+              Navigator.of(context).push(
+                MaterialPageRoute(builder: (_) => const SearchScreen()),
+              );
+            },
           ),
         ],
       ),

@@ -16,6 +16,7 @@ import 'screens/menu.dart';
 import 'screens/help_videos_screen.dart';
 import 'screens/order_list_screen.dart';
 import 'screens/report.dart';
+import 'screens/profile_screen.dart';
 
 void main() {
   runApp(const MyApp());
@@ -80,6 +81,7 @@ class MyApp extends StatelessWidget {
         GetPage(name: '/courier-insights', page: () => CourierInsightsScreen()),
         GetPage(name: '/menu', page: () => MenuScreen()),
         GetPage(name: '/help-videos', page: () => HelpVideosScreen()),
+        GetPage(name: '/profile', page: () => ProfileScreen()),
       ],
       unknownRoute: GetPage(
         name: '/notfound',

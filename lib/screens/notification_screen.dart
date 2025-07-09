@@ -3,6 +3,7 @@ import 'package:get/get.dart';
 import '../models/notification_model.dart';
 import '../services/notification_service.dart';
 import '../widgets/custom_nav_bar.dart';
+import 'search_screen.dart';
 
 class NotificationScreen extends StatelessWidget {
   NotificationScreen({Key? key}) : super(key: key);
@@ -17,7 +18,11 @@ class NotificationScreen extends StatelessWidget {
         actions: [
           IconButton(
             icon: const Icon(Icons.search),
-            onPressed: () {},
+            onPressed: () {
+              Navigator.of(context).push(
+                MaterialPageRoute(builder: (_) => const SearchScreen()),
+              );
+            },
           ),
         ],
       ),

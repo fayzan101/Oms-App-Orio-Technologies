@@ -10,6 +10,9 @@ import 'package:fl_chart/fl_chart.dart';
 import 'create_order.dart';
 import 'order_list_screen.dart';
 import '../widgets/custom_nav_bar.dart';
+import 'notification_screen.dart';
+import 'dashboard_notification_screen.dart';
+import 'search_screen.dart';
 
 class DashboardScreen extends StatelessWidget {
   DashboardScreen({Key? key}) : super(key: key);
@@ -47,8 +50,20 @@ class DashboardScreen extends StatelessWidget {
           actions: [
                         IconButton(
               icon: Icon(Icons.notifications_outlined, color: Colors.black),
-                          onPressed: () {},
+                          onPressed: () {
+                            Navigator.of(context).push(
+                              MaterialPageRoute(builder: (_) => DashboardNotificationScreen()),
+                            );
+                          },
                         ),
+                       IconButton(
+              icon: Icon(Icons.search, color: Colors.black),
+              onPressed: () {
+                Navigator.of(context).push(
+                  MaterialPageRoute(builder: (_) => const SearchScreen()),
+                );
+              },
+            ),
                         IconButton(
               icon: Icon(Icons.calendar_today_outlined, color: Colors.black),
                           onPressed: () {},

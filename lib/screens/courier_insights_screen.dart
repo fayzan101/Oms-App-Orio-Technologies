@@ -4,6 +4,7 @@ import 'filter_screen.dart';
 import 'dashboard_screen.dart' as dash;
 import 'menu.dart' as menu;
 import 'report.dart' as report;
+import 'search_screen.dart';
 
 class CourierInsightsScreen extends StatefulWidget {
   const CourierInsightsScreen({Key? key}) : super(key: key);
@@ -67,12 +68,13 @@ class _CourierInsightsScreenState extends State<CourierInsightsScreen> {
         ),
         centerTitle: false,
         actions: [
-          Padding(
-            padding: const EdgeInsets.only(right: 8.0),
-            child: IconButton(
-              icon: const Icon(Icons.search, color: Colors.black),
-              onPressed: () {},
-            ),
+          IconButton(
+            icon: const Icon(Icons.search, color: Colors.black),
+            onPressed: () {
+              Navigator.of(context).push(
+                MaterialPageRoute(builder: (_) => const SearchScreen()),
+              );
+            },
           ),
           Padding(
             padding: const EdgeInsets.only(right: 8.0),

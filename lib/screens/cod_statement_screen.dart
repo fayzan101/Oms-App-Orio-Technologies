@@ -3,6 +3,7 @@ import 'package:dio/dio.dart';
 import 'dashboard_screen.dart' as dash;
 import 'menu.dart' as menu;
 import 'report.dart' as report;
+import 'search_screen.dart';
 
 class CODStatement {
   final String refNo;
@@ -89,7 +90,11 @@ class _CODStatementScreenState extends State<CODStatementScreen> {
         actions: [
           IconButton(
             icon: const Icon(Icons.search, color: Colors.black),
-            onPressed: () {},
+            onPressed: () {
+              Navigator.of(context).push(
+                MaterialPageRoute(builder: (_) => const SearchScreen()),
+              );
+            },
           ),
           IconButton(
             icon: const Icon(Icons.calendar_today_outlined, color: Colors.black),
