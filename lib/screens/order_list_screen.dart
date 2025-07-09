@@ -8,6 +8,7 @@ import '../network/order_service.dart';
 import 'filter_screen.dart';
 import 'search_screen.dart';
 import '../widgets/custom_nav_bar.dart';
+import 'quick_edit_screen.dart';
 
 class OrderListScreen extends StatefulWidget {
   const OrderListScreen({Key? key}) : super(key: key);
@@ -82,6 +83,199 @@ class _OrderListScreenState extends State<OrderListScreen> {
     }
   }
 
+  void _showDeleteOrderDialog(BuildContext context, VoidCallback onConfirm) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) {
+        return Container(
+          width: double.infinity,
+          padding: EdgeInsets.only(
+            left: 0,
+            right: 0,
+            bottom: MediaQuery.of(context).viewInsets.bottom,
+          ),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.vertical(top: Radius.circular(32)),
+          ),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                Container(
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFEFF6FF),
+                    shape: BoxShape.circle,
+                  ),
+                  padding: const EdgeInsets.all(24),
+                  child: Icon(Icons.delete_outline, size: 56, color: Color(0xFF007AFF)),
+                ),
+                const SizedBox(height: 24),
+                const Text(
+                  'Are you Sure',
+                  style: TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.w700,
+                    fontFamily: 'SF Pro Display',
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 8),
+                const Text(
+                  'You want to delete this order',
+                  style: TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w400,
+                    fontFamily: 'SF Pro Display',
+                    color: Color(0xFF6B7280),
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 32),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                  children: [
+                    Expanded(
+                      child: ElevatedButton(
+                        onPressed: () => Navigator.of(context).pop(false),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFFF3F4F6),
+                          foregroundColor: const Color(0xFF111827),
+                          elevation: 0,
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                          padding: const EdgeInsets.symmetric(vertical: 14),
+                        ),
+                        child: const Text('No', style: TextStyle(fontWeight: FontWeight.w600)),
+                      ),
+                    ),
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: ElevatedButton(
+                        onPressed: () {
+                          Navigator.of(context).pop(true);
+                          onConfirm();
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFF007AFF),
+                          foregroundColor: Colors.white,
+                          elevation: 0,
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                          padding: const EdgeInsets.symmetric(vertical: 14),
+                        ),
+                        child: const Text('Yes', style: TextStyle(fontWeight: FontWeight.w600)),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  void _showTrackingDialog(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) {
+        return Container(
+          width: double.infinity,
+          padding: EdgeInsets.only(
+            left: 0,
+            right: 0,
+            bottom: MediaQuery.of(context).viewInsets.bottom,
+          ),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+          ),
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(20, 20, 20, 32),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    const Text(
+                      'Tracking',
+                      style: TextStyle(
+                        fontWeight: FontWeight.w700,
+                        fontSize: 18,
+                        fontFamily: 'SF Pro Display',
+                      ),
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.close),
+                      onPressed: () => Navigator.of(context).pop(),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                _trackingDetailRow('Status', 'Shipped'),
+                _trackingDetailRow('CN#', '5024657241'),
+                _trackingDetailRow('Date', '2023-07-25'),
+                _trackingDetailRow('Customer', 'Asad Ahmed Khan'),
+                _trackingDetailRow('COD', '4200'),
+                _trackingDetailRow('From To', 'Lahore   Karachi'),
+                const SizedBox(height: 12),
+                const Text(
+                  'Courier Shipping Label: 5024657241',
+                  style: TextStyle(fontWeight: FontWeight.w700, fontSize: 15, fontFamily: 'SF Pro Display'),
+                ),
+                const SizedBox(height: 4),
+                const Text(
+                  'August 8th, 2023 12:09:00 - Order information received pending at Shippers end.',
+                  style: TextStyle(fontWeight: FontWeight.w400, fontSize: 13, fontFamily: 'SF Pro Display', color: Color(0xFF6B7280)),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _trackingDetailRow(String label, String value) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: Row(
+        children: [
+          SizedBox(
+            width: 100,
+            child: Text(
+              label,
+              style: const TextStyle(
+                fontWeight: FontWeight.w600,
+                fontFamily: 'SF Pro Display',
+                fontSize: 15,
+              ),
+            ),
+          ),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              value,
+              style: const TextStyle(
+                fontWeight: FontWeight.w400,
+                fontFamily: 'SF Pro Display',
+                fontSize: 15,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   void dispose() {
     _scrollController.dispose();
@@ -94,6 +288,9 @@ class _OrderListScreenState extends State<OrderListScreen> {
       backgroundColor: Colors.white,
       appBar: AppBar(
         backgroundColor: Colors.white,
+        shadowColor: Colors.white,
+        foregroundColor: Colors.black,
+        surfaceTintColor: Colors.white,
         elevation: 0,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back_ios_new, color: Colors.black, size: 22),
@@ -248,6 +445,63 @@ class _OrderListScreenState extends State<OrderListScreen> {
                                   Text('Courier Name:  ${order['courier_name'] ?? ''}'),
                                   Text('Remarks:  ${order['remarks'] ?? ''}'),
                                   // Add more fields as needed
+                                  const SizedBox(height: 16),
+                                  Row(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      const Text('Action', style: TextStyle(fontWeight: FontWeight.w700)),
+                                      const SizedBox(width: 32),
+                                      Column(
+                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                        children: [
+                                          GestureDetector(
+                                            onTap: () {
+                                              _showDeleteOrderDialog(context, () {
+                                                setState(() {
+                                                  orders.removeAt(i);
+                                                });
+                                              });
+                                            },
+                                            child: Row(
+                                              children: const [
+                                                Icon(Icons.delete_outline, color: Color(0xFF007AFF)),
+                                                SizedBox(width: 4),
+                                                Text('Delete', style: TextStyle(color: Color(0xFF007AFF), fontWeight: FontWeight.w500)),
+                                              ],
+                                            ),
+                                          ),
+                                          SizedBox(height: 8),
+                                          GestureDetector(
+                                            onTap: () {
+                                              Navigator.of(context).push(
+                                                MaterialPageRoute(builder: (_) => const QuickEditScreen()),
+                                              );
+                                            },
+                                            child: Row(
+                                              children: const [
+                                                Icon(Icons.edit, color: Color(0xFF007AFF)),
+                                                SizedBox(width: 4),
+                                                Text('Quick Edit', style: TextStyle(color: Color(0xFF007AFF), fontWeight: FontWeight.w500)),
+                                              ],
+                                            ),
+                                          ),
+                                          SizedBox(height: 8),
+                                          GestureDetector(
+                                            onTap: () {
+                                              _showTrackingDialog(context);
+                                            },
+                                            child: Row(
+                                              children: const [
+                                                Icon(Icons.place_outlined, color: Color(0xFF007AFF)),
+                                                SizedBox(width: 4),
+                                                Text('Tracking', style: TextStyle(color: Color(0xFF007AFF), fontWeight: FontWeight.w500)),
+                                              ],
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ],
+                                  ),
                                 ],
                               ),
                             ),
@@ -344,23 +598,6 @@ class _BulkTrackingBottomSheet extends StatelessWidget {
               ],
             ),
             const SizedBox(height: 12),
-            _trackingDetailRow('Status', 'Shipped'),
-            _trackingDetailRow('CN#', '5024657241'),
-            _trackingDetailRow('Date', '2023-07-25'),
-            _trackingDetailRow('Customer', 'Asad Ahmed Khan'),
-            _trackingDetailRow('COD', '4200'),
-            _trackingDetailRow('From To', 'Lahore   Karachi'),
-            const SizedBox(height: 12),
-            const Text(
-              'Courier Shipping Label: 5024657241',
-              style: TextStyle(fontWeight: FontWeight.w700, fontSize: 15, fontFamily: 'SF Pro Display'),
-            ),
-            const SizedBox(height: 4),
-            const Text(
-              'August 8th, 2023 12:09:00 - Order information received pending at Shippers end.',
-              style: TextStyle(fontWeight: FontWeight.w400, fontSize: 13, fontFamily: 'SF Pro Display', color: Color(0xFF6B7280)),
-            ),
-            const Divider(height: 28),
             _trackingDetailRow('Status', 'Shipped'),
             _trackingDetailRow('CN#', '5024657241'),
             _trackingDetailRow('Date', '2023-07-25'),

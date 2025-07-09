@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../widgets/custom_nav_bar.dart';
+import 'rules_screen.dart'; // Added import for RulesScreen
+import 'orio_rule_detail_screen.dart'; // Import the new OrioRuleDetailScreen
 
 class CreateRuleScreen extends StatefulWidget {
   const CreateRuleScreen({Key? key}) : super(key: key);
@@ -77,22 +79,63 @@ class _CreateRuleScreenState extends State<CreateRuleScreen> {
               const SizedBox(height: 16),
               _dropdown('If Trigger', triggers, trigger, (val) => setState(() => trigger = val)),
               const SizedBox(height: 16),
-              GestureDetector(
-                onTap: () {
-                  _showSelectConditionsSheet(context, (selected) {
-                    setState(() {
-                      condition = selected;
+              // Condition selection UI
+              if (condition == 'Weight') ...[
+                // Weight Condition UI Block
+                const SizedBox(height: 16),
+                _dropdown('Weight', ['Weight'], 'Weight', (_) {}),
+                const SizedBox(height: 12),
+                _dropdown('Equal to', ['Equal to', 'Greater than', 'Less than'], null, (_) {}),
+                const SizedBox(height: 12),
+                TextFormField(
+                  decoration: _inputDecoration('Enter Weight in KG'),
+                  keyboardType: TextInputType.number,
+                ),
+                const SizedBox(height: 16),
+                Row(
+                  children: [
+                    Expanded(
+                      child: OutlinedButton(
+                        onPressed: () {},
+                        style: OutlinedButton.styleFrom(
+                          side: const BorderSide(color: Color(0xFF007AFF)),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                        ),
+                        child: const Text('Delete Conditions', style: TextStyle(color: Color(0xFF007AFF))),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: OutlinedButton(
+                        onPressed: () {},
+                        style: OutlinedButton.styleFrom(
+                          side: const BorderSide(color: Color(0xFF007AFF)),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                        ),
+                        child: const Text('Add Conditions', style: TextStyle(color: Color(0xFF007AFF))),
+                      ),
+                    ),
+                  ],
+                ),
+              ] else ...[
+                const SizedBox(height: 16),
+                GestureDetector(
+                  onTap: () {
+                    _showSelectConditionsSheet(context, (selected) {
+                      setState(() {
+                        condition = selected;
+                      });
                     });
-                  });
-                },
-                child: AbsorbPointer(
-                  child: TextFormField(
-                    decoration: _inputDecoration('Select Condition'),
-                    controller: TextEditingController(text: condition),
-                    validator: (val) => val == null || val.isEmpty ? 'Please select condition' : null,
+                  },
+                  child: AbsorbPointer(
+                    child: TextFormField(
+                      decoration: _inputDecoration('Select Condition'),
+                      controller: TextEditingController(text: condition),
+                      validator: (val) => val == null || val.isEmpty ? 'Please select condition' : null,
+                    ),
                   ),
                 ),
-              ),
+              ],
               const SizedBox(height: 16),
               _dropdown('Then', thenActions, thenAction, (val) => setState(() => thenAction = val)),
               const SizedBox(height: 16),
@@ -114,7 +157,22 @@ class _CreateRuleScreenState extends State<CreateRuleScreen> {
                   ),
                   onPressed: () {
                     if (_formKey.currentState!.validate()) {
-                      // Implement add rule logic
+                      showModalBottomSheet(
+                        context: context,
+                        isScrollControlled: true,
+                        backgroundColor: Colors.transparent,
+                        builder: (context) => _RuleConfirmBottomSheet(
+                          onYes: () {
+                            Navigator.of(context).pop();
+                            showModalBottomSheet(
+                              context: context,
+                              isScrollControlled: true,
+                              backgroundColor: Colors.transparent,
+                              builder: (context) => const _RuleSuccessBottomSheet(),
+                            );
+                          },
+                        ),
+                      );
                     }
                   },
                   child: const Text('Add Rule', style: TextStyle(fontSize: 18, color: Colors.white)),
@@ -257,6 +315,165 @@ class _CreateRuleScreenState extends State<CreateRuleScreen> {
           },
         );
       },
+    );
+  }
+}
+
+class _RuleSuccessBottomSheet extends StatelessWidget {
+  const _RuleSuccessBottomSheet({Key? key}) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: EdgeInsets.only(
+        left: 0,
+        right: 0,
+        bottom: MediaQuery.of(context).viewInsets.bottom,
+      ),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.vertical(top: Radius.circular(32)),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            Container(
+              decoration: BoxDecoration(
+                color: const Color(0xFFE6F0FF),
+                shape: BoxShape.circle,
+              ),
+              padding: const EdgeInsets.all(32),
+              child: const Icon(Icons.check, color: Color(0xFF007AFF), size: 64),
+            ),
+            const SizedBox(height: 24),
+            const Text(
+              'Success!',
+              style: TextStyle(fontWeight: FontWeight.w700, fontSize: 22, color: Colors.black),
+            ),
+            const SizedBox(height: 8),
+            const Text(
+              'Rule added successfully',
+              style: TextStyle(fontWeight: FontWeight.w400, fontSize: 15, color: Color(0xFF8E8E93)),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 28),
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                onPressed: () {
+                  Navigator.of(context).pop();
+                  Get.offAll(() => const OrioRuleDetailScreen());
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF007AFF),
+                  elevation: 0,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                ),
+                child: const Text('Ok', style: TextStyle(fontWeight: FontWeight.w500, fontSize: 15, color: Colors.white)),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _RuleConfirmBottomSheet extends StatelessWidget {
+  final VoidCallback onYes;
+  const _RuleConfirmBottomSheet({Key? key, required this.onYes}) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: EdgeInsets.only(
+        left: 0,
+        right: 0,
+        bottom: MediaQuery.of(context).viewInsets.bottom,
+      ),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.vertical(top: Radius.circular(32)),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            Container(
+              decoration: BoxDecoration(
+                color: const Color(0xFFEFF6FF),
+                shape: BoxShape.circle,
+              ),
+              padding: const EdgeInsets.all(24),
+              child: const Icon(Icons.help_outline, size: 56, color: Color(0xFF007AFF)),
+            ),
+            const SizedBox(height: 24),
+            const Text(
+              'Are you Sure',
+              style: TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.w700,
+                fontFamily: 'SF Pro Display',
+              ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 8),
+            const Text(
+              'You want to add this rule',
+              style: TextStyle(
+                fontSize: 15,
+                fontWeight: FontWeight.w400,
+                fontFamily: 'SF Pro Display',
+                color: Color(0xFF6B7280),
+              ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 32),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              children: [
+                Expanded(
+                  child: ElevatedButton(
+                    onPressed: () => Navigator.of(context).pop(),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFFF3F4F6),
+                      foregroundColor: const Color(0xFF111827),
+                      elevation: 0,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                    ),
+                    child: const Text('No', style: TextStyle(fontWeight: FontWeight.w600)),
+                  ),
+                ),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: ElevatedButton(
+                    onPressed: onYes,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF007AFF),
+                      foregroundColor: Colors.white,
+                      elevation: 0,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                    ),
+                    child: const Text('Yes', style: TextStyle(fontWeight: FontWeight.w600)),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
     );
   }
 } 

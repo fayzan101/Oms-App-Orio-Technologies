@@ -46,6 +46,103 @@ class _CourierInsightsScreenState extends State<CourierInsightsScreen> {
     }
   }
 
+  void _showTrackingDialog(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) {
+        return Container(
+          width: double.infinity,
+          padding: EdgeInsets.only(
+            left: 0,
+            right: 0,
+            bottom: MediaQuery.of(context).viewInsets.bottom,
+          ),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+          ),
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(20, 20, 20, 32),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    const Text(
+                      'Tracking',
+                      style: TextStyle(
+                        fontWeight: FontWeight.w700,
+                        fontSize: 18,
+                        fontFamily: 'SF Pro Display',
+                      ),
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.close),
+                      onPressed: () => Navigator.of(context).pop(),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                _trackingDetailRow('Status', 'Booked'),
+                _trackingDetailRow('CN#', '5024657241'),
+                _trackingDetailRow('Date', '2023-07-25'),
+                _trackingDetailRow('Customer', 'Asad Ahmed Khan'),
+                _trackingDetailRow('COD', '4200'),
+                _trackingDetailRow('From To', 'Lahore   Karachi'),
+                const SizedBox(height: 12),
+                const Text(
+                  'Courier Shipping Label: 5024657241',
+                  style: TextStyle(fontWeight: FontWeight.w700, fontSize: 15, fontFamily: 'SF Pro Display'),
+                ),
+                const SizedBox(height: 4),
+                const Text(
+                  'August 8th, 2023 12:09:00 - Order information received pending at Shippers end.',
+                  style: TextStyle(fontWeight: FontWeight.w400, fontSize: 13, fontFamily: 'SF Pro Display', color: Color(0xFF6B7280)),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _trackingDetailRow(String label, String value) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: Row(
+        children: [
+          SizedBox(
+            width: 100,
+            child: Text(
+              label,
+              style: const TextStyle(
+                fontWeight: FontWeight.w600,
+                fontFamily: 'SF Pro Display',
+                fontSize: 15,
+              ),
+            ),
+          ),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              value,
+              style: const TextStyle(
+                fontWeight: FontWeight.w400,
+                fontFamily: 'SF Pro Display',
+                fontSize: 15,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -62,7 +159,7 @@ class _CourierInsightsScreenState extends State<CourierInsightsScreen> {
           style: TextStyle(
             fontFamily: 'SF Pro Display',
             fontWeight: FontWeight.w700,
-            fontSize: 20,
+            fontSize: 14,
             color: Colors.black,
           ),
         ),
@@ -164,6 +261,26 @@ class _CourierInsightsScreenState extends State<CourierInsightsScreen> {
                                             Text('Order Date:   ${report['created_date'] ?? ''}'),
                                             Text('Remarks:   ${report['tags_name'] ?? ''}'),
                                             // Add more fields as needed
+                                            const SizedBox(height: 10),
+                                            Row(
+                                              crossAxisAlignment: CrossAxisAlignment.start,
+                                              children: [
+                                                const Text('Action:', style: TextStyle(fontWeight: FontWeight.w700)),
+                                                const SizedBox(width: 32),
+                                                GestureDetector(
+                                                  onTap: () {
+                                                    _showTrackingDialog(context);
+                                                  },
+                                                  child: Row(
+                                                    children: const [
+                                                      Icon(Icons.place_outlined, color: Color(0xFF007AFF)),
+                                                      SizedBox(width: 4),
+                                                      Text('Tracking', style: TextStyle(color: Color(0xFF007AFF), fontWeight: FontWeight.w500)),
+                                                    ],
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
                                           ],
                                         ),
                                       ),

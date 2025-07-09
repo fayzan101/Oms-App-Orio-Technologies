@@ -13,10 +13,18 @@ import '../widgets/custom_nav_bar.dart';
 import 'notification_screen.dart';
 import 'dashboard_notification_screen.dart';
 import 'search_screen.dart';
+import 'calendar_screen.dart'; // Import the new CalendarScreen
 
-class DashboardScreen extends StatelessWidget {
+class DashboardScreen extends StatefulWidget {
   DashboardScreen({Key? key}) : super(key: key);
+
+  @override
+  State<DashboardScreen> createState() => _DashboardScreenState();
+}
+
+class _DashboardScreenState extends State<DashboardScreen> {
   final DashboardController controller = Get.find<DashboardController>();
+  DateTime? _selectedDate;
 
   @override
   Widget build(BuildContext context) {
@@ -33,21 +41,24 @@ class DashboardScreen extends StatelessWidget {
         systemNavigationBarDividerColor: Colors.transparent,
       ),
       child: Scaffold(
-      extendBody: true,
-        extendBodyBehindAppBar: false,
+      extendBody: false,
+      extendBodyBehindAppBar: false,
+      backgroundColor: Colors.white,
+      appBar: AppBar(
         backgroundColor: Colors.white,
-        appBar: AppBar(
-      backgroundColor: Colors.transparent,
-      automaticallyImplyLeading: false,
-          elevation: 0,
-          systemOverlayStyle: SystemUiOverlayStyle.dark,
-          title: SvgPicture.asset(
-            'assets/frame.svg',
-            width: 50,
-            height: 30,
-                        color: Color(0xFF007AFF),
-                      ),
-          actions: [
+        elevation: 0,
+        shadowColor: Colors.white,
+        foregroundColor: Colors.white,
+        surfaceTintColor: Colors.white,
+        automaticallyImplyLeading: false,
+        systemOverlayStyle: SystemUiOverlayStyle.dark,
+        title: SvgPicture.asset(
+          'assets/frame.svg',
+          width: 50,
+          height: 30,
+          color: Color(0xFF007AFF),
+        ),
+        actions: [
                         IconButton(
               icon: Icon(Icons.notifications_outlined, color: Colors.black),
                           onPressed: () {
@@ -65,8 +76,15 @@ class DashboardScreen extends StatelessWidget {
               },
             ),
                         IconButton(
-              icon: Icon(Icons.calendar_today_outlined, color: Colors.black),
-                          onPressed: () {},
+              icon: const Icon(Icons.calendar_today_outlined, color: Color(0xFF007AFF)),
+              onPressed: () async {
+                final picked = await Get.to(() => const CalendarScreen());
+                if (picked != null && picked is DateTime) {
+                  setState(() {
+                    _selectedDate = picked;
+                  });
+                }
+              },
             ),
           ],
           bottom: PreferredSize(
@@ -100,7 +118,9 @@ class DashboardScreen extends StatelessWidget {
                           borderRadius: BorderRadius.circular(20),
                         ),
                         child: Text(
-                          'Last 3 Days',
+                          _selectedDate != null
+                              ? 'Last ${DateTime.now().difference(_selectedDate!).inDays + 1} Day${DateTime.now().difference(_selectedDate!).inDays == 0 ? '' : 's'}'
+                              : 'Last 3 Days',
                           style: TextStyle(
                             color: Color(0xFF007AFF),
                             fontSize: 12,
