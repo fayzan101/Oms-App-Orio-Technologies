@@ -3,6 +3,9 @@ import 'package:dio/dio.dart';
 import 'dashboard_screen.dart';
 import 'order_list_screen.dart';
 import 'report.dart' as report;
+import 'change_password_screen.dart';
+import '../widgets/custom_nav_bar.dart';
+import 'package:get/get.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({Key? key}) : super(key: key);
@@ -167,7 +170,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         children: [
                           Expanded(
                             child: OutlinedButton(
-                              onPressed: () {},
+                              onPressed: () {
+                                Get.to(() => const ChangePasswordScreen());
+                              },
                               style: OutlinedButton.styleFrom(
                                 side: const BorderSide(color: Color(0xFFB0B0B0), width: 1.5),
                                 backgroundColor: const Color(0xFFF5F5F7),
@@ -203,27 +208,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
         child: const Icon(Icons.edit, color: Colors.white),
         elevation: 4,
       ),
-      bottomNavigationBar: CustomBottomNavBar(
-        selectedIndex: 4,
-        onHomeTap: () {
-          Navigator.of(context).pushAndRemoveUntil(
-            MaterialPageRoute(builder: (_) => DashboardScreen()),
-            (route) => false,
-          );
+      bottomNavigationBar: CustomNavBar(
+        selectedIndex: 3,
+        onTabSelected: (index) {
+          if (index == 0) Get.offAllNamed('/dashboard');
+          if (index == 1) Get.offAllNamed('/order-list');
+          if (index == 2) Get.offAllNamed('/reports');
+          if (index == 3) Get.offAllNamed('/menu');
         },
-        onOrderListTap: () {
-          Navigator.of(context).pushAndRemoveUntil(
-            MaterialPageRoute(builder: (_) => OrderListScreen()),
-            (route) => false,
-          );
-        },
-        onReportsTap: () {
-          Navigator.of(context).pushAndRemoveUntil(
-            MaterialPageRoute(builder: (_) => report.ReportsScreen()),
-            (route) => false,
-          );
-        },
-        onMenuTap: () {},
       ),
     );
   }
