@@ -14,6 +14,7 @@ import 'notification_screen.dart';
 import 'dashboard_notification_screen.dart';
 import 'search_screen.dart';
 import 'calendar_screen.dart'; // Import the new CalendarScreen
+import '../utils/Layout/app_bottom_bar.dart';
 
 class DashboardScreen extends StatefulWidget {
   DashboardScreen({Key? key}) : super(key: key);
@@ -572,15 +573,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
         ),
       ),
         ),
-        bottomNavigationBar: CustomNavBar(
-          selectedIndex: 0,
-          onTabSelected: (index) {
-            if (index == 0) Get.offAllNamed('/dashboard');
-            if (index == 1) Get.offAllNamed('/order-list');
-            if (index == 2) Get.offAllNamed('/reports');
-            if (index == 3) Get.offAllNamed('/menu');
-          },
-        ),
+        bottomNavigationBar: const AppBottomBar(currentTab: 0),
       floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
         floatingActionButton: FloatingActionButton(
           onPressed: () {

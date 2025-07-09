@@ -3,6 +3,7 @@ import 'package:get/get.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../services/auth_service.dart';
 import '../widgets/custom_nav_bar.dart';
+import '../utils/custom_snackbar.dart';
 
 class ChangePasswordScreen extends StatefulWidget {
   const ChangePasswordScreen({Key? key}) : super(key: key);
@@ -46,23 +47,7 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
 
     // Validate that new password and confirm password match
     if (newPasswordController.text != confirmPasswordController.text) {
-      Get.snackbar(
-        'Error',
-        'New password and confirm password do not match',
-        snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: const Color(0xFFFFEBEE), // light red
-        colorText: const Color(0xFFD32F2F),
-        margin: const EdgeInsets.all(16),
-        borderRadius: 8,
-        duration: const Duration(seconds: 3),
-        boxShadows: [
-          BoxShadow(
-            color: Colors.black12,
-            blurRadius: 8,
-            offset: Offset(0, 2),
-          ),
-        ],
-      );
+      customSnackBar('Error', 'New password and confirm password do not match');
       return;
     }
 
@@ -80,23 +65,7 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
       );
 
       if (success) {
-        Get.snackbar(
-          'Success',
-          'Password updated successfully',
-          snackPosition: SnackPosition.BOTTOM,
-          backgroundColor: const Color(0xFFB9F6CA), // light green
-          colorText: const Color(0xFF183046),
-          margin: const EdgeInsets.all(16),
-          borderRadius: 8,
-          duration: const Duration(seconds: 3),
-          boxShadows: [
-            BoxShadow(
-              color: Colors.black12,
-              blurRadius: 8,
-              offset: Offset(0, 2),
-            ),
-          ],
-        );
+        customSnackBar('Success', 'Password updated successfully');
         
         // Clear the form
         oldPasswordController.clear();
@@ -108,44 +77,12 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
           Get.back();
         });
       } else {
-        Get.snackbar(
-          'Error',
-          _authService.errorMessage.value.isNotEmpty 
-              ? _authService.errorMessage.value 
-              : 'Failed to change password. Please try again.',
-          snackPosition: SnackPosition.BOTTOM,
-          backgroundColor: const Color(0xFFFFEBEE), // light red
-          colorText: const Color(0xFFD32F2F),
-          margin: const EdgeInsets.all(16),
-          borderRadius: 8,
-          duration: const Duration(seconds: 3),
-          boxShadows: [
-            BoxShadow(
-              color: Colors.black12,
-              blurRadius: 8,
-              offset: Offset(0, 2),
-            ),
-          ],
-        );
+        customSnackBar('Error', _authService.errorMessage.value.isNotEmpty 
+            ? _authService.errorMessage.value 
+            : 'Failed to change password. Please try again.');
       }
     } catch (e) {
-      Get.snackbar(
-        'Error',
-        'An unexpected error occurred. Please try again.',
-        snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: const Color(0xFFFFEBEE), // light red
-        colorText: const Color(0xFFD32F2F),
-        margin: const EdgeInsets.all(16),
-        borderRadius: 8,
-        duration: const Duration(seconds: 3),
-        boxShadows: [
-          BoxShadow(
-            color: Colors.black12,
-            blurRadius: 8,
-            offset: Offset(0, 2),
-          ),
-        ],
-      );
+      customSnackBar('Error', 'An unexpected error occurred. Please try again.');
     } finally {
       setState(() {
         _isLoading = false;

@@ -3,6 +3,7 @@ import 'package:get/get.dart';
 import '../models/notification_model.dart';
 import '../services/notification_service.dart';
 import '../widgets/custom_nav_bar.dart';
+import '../utils/custom_snackbar.dart';
 import 'notification_screen.dart';
 
 class AddNotificationScreen extends StatefulWidget {
@@ -58,14 +59,7 @@ class _AddNotificationScreenState extends State<AddNotificationScreen> {
     if (!_formKey.currentState!.validate()) return;
     
     if (selectedStatus == null) {
-      Get.snackbar(
-        'Error',
-        'Please select a status',
-        snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: Colors.red,
-        colorText: Colors.white,
-        duration: const Duration(seconds: 3),
-      );
+      customSnackBar('Error', 'Please select a status');
       return;
     }
 
@@ -104,38 +98,17 @@ class _AddNotificationScreenState extends State<AddNotificationScreen> {
       }
 
       if (success) {
-        Get.snackbar(
-          'Success',
-          widget.isEdit ? 'Notification updated successfully!' : 'Notification created successfully!',
-          snackPosition: SnackPosition.BOTTOM,
-          backgroundColor: Colors.green,
-          colorText: Colors.white,
-          duration: const Duration(seconds: 3),
-        );
+        customSnackBar('Success', widget.isEdit ? 'Notification updated successfully!' : 'Notification created successfully!');
         
         // Navigate back to notification screen
         Get.off(() => NotificationScreen());
       } else {
-        Get.snackbar(
-          'Error',
-          widget.isEdit ? 'Failed to update notification' : 'Failed to create notification',
-          snackPosition: SnackPosition.BOTTOM,
-          backgroundColor: Colors.red,
-          colorText: Colors.white,
-          duration: const Duration(seconds: 3),
-        );
+        customSnackBar('Error', widget.isEdit ? 'Failed to update notification' : 'Failed to create notification');
       }
     } catch (e) {
-      Get.snackbar(
-        'Error',
-        widget.isEdit 
-          ? 'Failed to update notification: ${e.toString()}'
-          : 'Failed to create notification: ${e.toString()}',
-        snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: Colors.red,
-        colorText: Colors.white,
-        duration: const Duration(seconds: 3),
-      );
+      customSnackBar('Error', widget.isEdit 
+        ? 'Failed to update notification: ${e.toString()}'
+        : 'Failed to create notification: ${e.toString()}');
     } finally {
       setState(() {
         isLoading = false;

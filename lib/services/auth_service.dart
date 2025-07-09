@@ -135,6 +135,37 @@ class AuthService extends GetxService {
     }
   }
 
+  // Update Customer Profile method
+  Future<bool> updateCustomerProfile(CustomerProfile profile) async {
+    try {
+      isLoading.value = true;
+      errorMessage.value = '';
+
+      final response = await _apiService.post('customer/updateProfile', data: profile.toJson());
+
+      if (response.statusCode == 200) {
+        // Check if the response indicates success
+        if (response.data['status'] == 1 || response.data['success'] == true) {
+          return true;
+        } else {
+          errorMessage.value = response.data['message'] ?? 'Failed to update profile.';
+          return false;
+        }
+      } else {
+        errorMessage.value = response.data['message'] ?? 'Failed to update profile.';
+        return false;
+      }
+    } on DioException catch (e) {
+      errorMessage.value = e.message ?? 'Network error occurred';
+      return false;
+    } catch (e) {
+      errorMessage.value = 'An unexpected error occurred';
+      return false;
+    } finally {
+      isLoading.value = false;
+    }
+  }
+
   // Save user data to SharedPreferences
   Future<void> _saveUserData(User user) async {
     try {

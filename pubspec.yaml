@@ -37,6 +37,7 @@ flutter:
     - assets/icon/tcs.png 
     - assets/icon/bluex.jpeg
     - assets/icon/graph.png
+    - assets/icon/create.png
 
 flutter_icons:
   android: true

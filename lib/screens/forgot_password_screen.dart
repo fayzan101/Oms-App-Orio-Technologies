@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../services/auth_service.dart';
+import '../utils/custom_snackbar.dart';
 import 'reset_password_screen.dart';
 
 class ForgotPasswordScreen extends StatefulWidget {
@@ -25,23 +26,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
 
   Future<void> _resetPassword() async {
     if (_emailController.text.trim().isEmpty) {
-      Get.snackbar(
-        'Error',
-        'Please enter your email address',
-        snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: const Color(0xFFFFEBEE), // light red
-        colorText: const Color(0xFFD32F2F),
-        margin: const EdgeInsets.all(16),
-        borderRadius: 8,
-        duration: const Duration(seconds: 3),
-        boxShadows: [
-          BoxShadow(
-            color: Colors.black12,
-            blurRadius: 8,
-            offset: Offset(0, 2),
-          ),
-        ],
-      );
+      customSnackBar('Error', 'Please enter your email address');
       return;
     }
 
@@ -53,66 +38,18 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
       final success = await _authService.forgotPassword(_emailController.text.trim());
       
       if (success) {
-        Get.snackbar(
-          'Success',
-          'Password reset link has been sent to your email',
-          snackPosition: SnackPosition.BOTTOM,
-          backgroundColor: const Color(0xFFB9F6CA), // light green
-          colorText: const Color(0xFF183046),
-          margin: const EdgeInsets.all(16),
-          borderRadius: 8,
-          duration: const Duration(seconds: 3),
-          boxShadows: [
-            BoxShadow(
-              color: Colors.black12,
-              blurRadius: 8,
-              offset: Offset(0, 2),
-            ),
-          ],
-        );
+        customSnackBar('Success', 'Password reset link has been sent to your email');
         
         Future.delayed(const Duration(seconds: 2), () {
           Get.to(() => ResetPasswordScreen());
         });
       } else {
-        Get.snackbar(
-          'Error',
-          _authService.errorMessage.value.isNotEmpty 
-              ? _authService.errorMessage.value 
-              : 'Failed to send reset email. Please try again.',
-          snackPosition: SnackPosition.BOTTOM,
-          backgroundColor: const Color(0xFFFFEBEE), // light red
-          colorText: const Color(0xFFD32F2F),
-          margin: const EdgeInsets.all(16),
-          borderRadius: 8,
-          duration: const Duration(seconds: 3),
-          boxShadows: [
-            BoxShadow(
-              color: Colors.black12,
-              blurRadius: 8,
-              offset: Offset(0, 2),
-            ),
-          ],
-        );
+        customSnackBar('Error', _authService.errorMessage.value.isNotEmpty 
+            ? _authService.errorMessage.value 
+            : 'Failed to send reset email. Please try again.');
       }
     } catch (e) {
-      Get.snackbar(
-        'Error',
-        'Invalid email address',
-        snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: const Color(0xFFFFEBEE), // light red
-        colorText: const Color(0xFFD32F2F),
-        margin: const EdgeInsets.all(16),
-        borderRadius: 8,
-        duration: const Duration(seconds: 3),
-        boxShadows: [
-          BoxShadow(
-            color: Colors.black12,
-            blurRadius: 8,
-            offset: Offset(0, 2),
-          ),
-        ],
-      );
+      customSnackBar('Error', 'Invalid email address');
     } finally {
       setState(() {
         _isLoading = false;

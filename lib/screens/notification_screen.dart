@@ -3,6 +3,7 @@ import 'package:get/get.dart';
 import '../models/notification_model.dart';
 import '../services/notification_service.dart';
 import '../widgets/custom_nav_bar.dart';
+import '../utils/custom_snackbar.dart';
 import 'search_screen.dart';
 
 class NotificationScreen extends StatefulWidget {
@@ -157,36 +158,15 @@ class _NotificationScreenState extends State<NotificationScreen> {
       );
 
       if (success) {
-        Get.snackbar(
-          'Success',
-          'Notification deleted successfully!',
-          snackPosition: SnackPosition.BOTTOM,
-          backgroundColor: Colors.green,
-          colorText: Colors.white,
-          duration: const Duration(seconds: 3),
-        );
+        customSnackBar('Success', 'Notification deleted successfully!');
         
         // Refresh the screen to show updated list
         setState(() {});
       } else {
-        Get.snackbar(
-          'Error',
-          'Failed to delete notification',
-          snackPosition: SnackPosition.BOTTOM,
-          backgroundColor: Colors.red,
-          colorText: Colors.white,
-          duration: const Duration(seconds: 3),
-        );
+        customSnackBar('Error', 'Failed to delete notification');
       }
     } catch (e) {
-      Get.snackbar(
-        'Error',
-        'Failed to delete notification: ${e.toString()}',
-        snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: Colors.red,
-        colorText: Colors.white,
-        duration: const Duration(seconds: 3),
-      );
+      customSnackBar('Error', 'Failed to delete notification: ${e.toString()}');
     }
   }
 
