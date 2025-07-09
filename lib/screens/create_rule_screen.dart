@@ -57,12 +57,13 @@ class _CreateRuleScreenState extends State<CreateRuleScreen> {
                   ),
                 ),
                 child: const Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+                  crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
-                    Text('Attention!', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16)),
+                    Text('Attention!', textAlign: TextAlign.center, style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16)),
                     SizedBox(height: 4),
                     Text(
                       'Rules will automatically apply in intervals of 10 minutes after the rule is added.',
+                      textAlign: TextAlign.center,
                       style: TextStyle(color: Colors.white, fontSize: 13),
                     ),
                   ],
@@ -76,7 +77,22 @@ class _CreateRuleScreenState extends State<CreateRuleScreen> {
               const SizedBox(height: 16),
               _dropdown('If Trigger', triggers, trigger, (val) => setState(() => trigger = val)),
               const SizedBox(height: 16),
-              _dropdown('Select Condition', conditions, condition, (val) => setState(() => condition = val)),
+              GestureDetector(
+                onTap: () {
+                  _showSelectConditionsSheet(context, (selected) {
+                    setState(() {
+                      condition = selected;
+                    });
+                  });
+                },
+                child: AbsorbPointer(
+                  child: TextFormField(
+                    decoration: _inputDecoration('Select Condition'),
+                    controller: TextEditingController(text: condition),
+                    validator: (val) => val == null || val.isEmpty ? 'Please select condition' : null,
+                  ),
+                ),
+              ),
               const SizedBox(height: 16),
               _dropdown('Then', thenActions, thenAction, (val) => setState(() => thenAction = val)),
               const SizedBox(height: 16),
@@ -146,6 +162,101 @@ class _CreateRuleScreenState extends State<CreateRuleScreen> {
       filled: true,
       fillColor: const Color(0xFFF7F8FA),
       contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+    );
+  }
+
+  void _showSelectConditionsSheet(BuildContext context, ValueChanged<String> onSelected) {
+    final List<String> conditions = [
+      'Weight',
+      'Payment Method',
+      'City List',
+      'Order Value',
+      'Platform',
+      'Address Keywords',
+    ];
+    TextEditingController searchController = TextEditingController();
+    List<String> filtered = List.from(conditions);
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) {
+        return StatefulBuilder(
+          builder: (context, setState) {
+            return Container(
+              width: double.infinity,
+              padding: EdgeInsets.only(
+                left: 0,
+                right: 0,
+                bottom: MediaQuery.of(context).viewInsets.bottom,
+              ),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.vertical(top: Radius.circular(32)),
+              ),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Row(
+                      children: [
+                        const Expanded(
+                          child: Text(
+                            'Select Conditions',
+                            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+                          ),
+                        ),
+                        IconButton(
+                          icon: const Icon(Icons.close),
+                          onPressed: () => Navigator.of(context).pop(),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 12),
+                    Container(
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFF7F8FA),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: TextField(
+                        controller: searchController,
+                        decoration: const InputDecoration(
+                          hintText: 'Search',
+                          border: InputBorder.none,
+                          prefixIcon: Icon(Icons.search),
+                          contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                        ),
+                        onChanged: (val) {
+                          setState(() {
+                            filtered = conditions
+                                .where((c) => c.toLowerCase().contains(val.toLowerCase()))
+                                .toList();
+                          });
+                        },
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    ...filtered.map((c) => Column(
+                          children: [
+                            ListTile(
+                              title: Text(c),
+                              onTap: () {
+                                onSelected(c);
+                                Navigator.of(context).pop();
+                              },
+                            ),
+                            const Divider(height: 1),
+                          ],
+                        )),
+                  ],
+                ),
+              ),
+            );
+          },
+        );
+      },
     );
   }
 } 

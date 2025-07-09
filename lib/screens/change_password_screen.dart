@@ -59,7 +59,7 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
                   ),
                   onPressed: () {
                     if (_formKey.currentState!.validate()) {
-                      // Implement update password logic
+                      _showSuccessDialog(context);
                     }
                   },
                   child: const Text('Updated', style: TextStyle(fontSize: 18, color: Colors.white)),
@@ -105,6 +105,72 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
         ),
       ),
       validator: (val) => val == null || val.isEmpty ? 'Enter $label' : null,
+    );
+  }
+
+  void _showSuccessDialog(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) {
+        return Container(
+          width: double.infinity,
+          padding: EdgeInsets.only(
+            left: 0,
+            right: 0,
+            bottom: MediaQuery.of(context).viewInsets.bottom,
+          ),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.vertical(top: Radius.circular(32)),
+          ),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFE6F0FF),
+                    shape: BoxShape.circle,
+                  ),
+                  padding: const EdgeInsets.all(32),
+                  child: const Icon(Icons.check, color: Color(0xFF007AFF), size: 64),
+                ),
+                const SizedBox(height: 24),
+                const Text(
+                  'Success!',
+                  style: TextStyle(fontWeight: FontWeight.w700, fontSize: 22, color: Colors.black),
+                ),
+                const SizedBox(height: 8),
+                const Text(
+                  'Password updated successfully',
+                  style: TextStyle(fontWeight: FontWeight.w400, fontSize: 15, color: Color(0xFF8E8E93)),
+                ),
+                const SizedBox(height: 28),
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton(
+                    onPressed: () {
+                      Get.offAllNamed('/profile', arguments: {'showSuccess': true});
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF007AFF),
+                      elevation: 0,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                    ),
+                    child: const Text('Ok', style: TextStyle(fontWeight: FontWeight.w500, fontSize: 15, color: Colors.white)),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
     );
   }
 } 
