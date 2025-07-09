@@ -5,19 +5,28 @@ import '../services/notification_service.dart';
 import '../widgets/custom_nav_bar.dart';
 import 'search_screen.dart';
 
-class NotificationScreen extends StatelessWidget {
+class NotificationScreen extends StatefulWidget {
   NotificationScreen({Key? key}) : super(key: key);
 
+  @override
+  State<NotificationScreen> createState() => _NotificationScreenState();
+}
+
+class _NotificationScreenState extends State<NotificationScreen> {
   final NotificationService _notificationService = NotificationService();
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Notifications'),
+        title: const Text('Notifications', style: TextStyle(color: Colors.black)),
+        backgroundColor: Colors.white,
+        shadowColor: Colors.white,
+        surfaceTintColor: Colors.white,
+        iconTheme: const IconThemeData(color: Colors.black),
         actions: [
           IconButton(
-            icon: const Icon(Icons.search),
+            icon: const Icon(Icons.search, color: Colors.black),
             onPressed: () {
               Navigator.of(context).push(
                 MaterialPageRoute(builder: (_) => const SearchScreen()),
@@ -101,8 +110,7 @@ class NotificationScreen extends StatelessWidget {
                                   icon: const Icon(Icons.delete, color: Color(0xFF007AFF)),
                                   onPressed: () {
                                     _showDeleteConfirmation(context, () {
-                                      // TODO: Implement actual delete logic here
-                                      _showDeleteSuccess(context);
+                                      _deleteNotification(notification);
                                     });
                                   },
                                 ),
@@ -128,6 +136,7 @@ class NotificationScreen extends StatelessWidget {
         child: const Icon(Icons.edit, color: Colors.white),
       ),
       floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
+      resizeToAvoidBottomInset: false,
       bottomNavigationBar: CustomNavBar(
         selectedIndex: 3, // or the appropriate index for this screen
         onTabSelected: (index) {
@@ -138,6 +147,47 @@ class NotificationScreen extends StatelessWidget {
         },
       ),
     );
+  }
+
+  Future<void> _deleteNotification(NotificationModel notification) async {
+    try {
+      final success = await _notificationService.deleteNotification(
+        int.tryParse(notification.id) ?? 0,
+        'OR-00009',
+      );
+
+      if (success) {
+        Get.snackbar(
+          'Success',
+          'Notification deleted successfully!',
+          snackPosition: SnackPosition.BOTTOM,
+          backgroundColor: Colors.green,
+          colorText: Colors.white,
+          duration: const Duration(seconds: 3),
+        );
+        
+        // Refresh the screen to show updated list
+        setState(() {});
+      } else {
+        Get.snackbar(
+          'Error',
+          'Failed to delete notification',
+          snackPosition: SnackPosition.BOTTOM,
+          backgroundColor: Colors.red,
+          colorText: Colors.white,
+          duration: const Duration(seconds: 3),
+        );
+      }
+    } catch (e) {
+      Get.snackbar(
+        'Error',
+        'Failed to delete notification: ${e.toString()}',
+        snackPosition: SnackPosition.BOTTOM,
+        backgroundColor: Colors.red,
+        colorText: Colors.white,
+        duration: const Duration(seconds: 3),
+      );
+    }
   }
 
   Widget _infoRow(String label, String value) {

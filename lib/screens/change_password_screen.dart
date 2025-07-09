@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import '../services/auth_service.dart';
 import '../widgets/custom_nav_bar.dart';
 
 class ChangePasswordScreen extends StatefulWidget {
@@ -14,13 +16,147 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
   final TextEditingController oldPasswordController = TextEditingController();
   final TextEditingController newPasswordController = TextEditingController();
   final TextEditingController confirmPasswordController = TextEditingController();
+  final AuthService _authService = Get.find<AuthService>();
+  
   bool obscureOld = true;
   bool obscureNew = true;
   bool obscureConfirm = true;
+  bool _isLoading = false;
+  String _userId = '';
+  String _acno = '';
+
+  @override
+  void initState() {
+    super.initState();
+    _loadUserData();
+  }
+
+  Future<void> _loadUserData() async {
+    final prefs = await SharedPreferences.getInstance();
+    setState(() {
+      _userId = prefs.getString('user_id') ?? '';
+      _acno = prefs.getString('acno') ?? '';
+    });
+  }
+
+  Future<void> _changePassword() async {
+    if (!_formKey.currentState!.validate()) {
+      return;
+    }
+
+    // Validate that new password and confirm password match
+    if (newPasswordController.text != confirmPasswordController.text) {
+      Get.snackbar(
+        'Error',
+        'New password and confirm password do not match',
+        snackPosition: SnackPosition.BOTTOM,
+        backgroundColor: const Color(0xFFFFEBEE), // light red
+        colorText: const Color(0xFFD32F2F),
+        margin: const EdgeInsets.all(16),
+        borderRadius: 8,
+        duration: const Duration(seconds: 3),
+        boxShadows: [
+          BoxShadow(
+            color: Colors.black12,
+            blurRadius: 8,
+            offset: Offset(0, 2),
+          ),
+        ],
+      );
+      return;
+    }
+
+    setState(() {
+      _isLoading = true;
+    });
+
+    try {
+      final success = await _authService.changePassword(
+        userId: _userId,
+        acno: _acno,
+        oldPassword: oldPasswordController.text,
+        newPassword: newPasswordController.text,
+        confirmPassword: confirmPasswordController.text,
+      );
+
+      if (success) {
+        Get.snackbar(
+          'Success',
+          'Password updated successfully',
+          snackPosition: SnackPosition.BOTTOM,
+          backgroundColor: const Color(0xFFB9F6CA), // light green
+          colorText: const Color(0xFF183046),
+          margin: const EdgeInsets.all(16),
+          borderRadius: 8,
+          duration: const Duration(seconds: 3),
+          boxShadows: [
+            BoxShadow(
+              color: Colors.black12,
+              blurRadius: 8,
+              offset: Offset(0, 2),
+            ),
+          ],
+        );
+        
+        // Clear the form
+        oldPasswordController.clear();
+        newPasswordController.clear();
+        confirmPasswordController.clear();
+        
+        // Navigate back after a short delay
+        Future.delayed(const Duration(seconds: 2), () {
+          Get.back();
+        });
+      } else {
+        Get.snackbar(
+          'Error',
+          _authService.errorMessage.value.isNotEmpty 
+              ? _authService.errorMessage.value 
+              : 'Failed to change password. Please try again.',
+          snackPosition: SnackPosition.BOTTOM,
+          backgroundColor: const Color(0xFFFFEBEE), // light red
+          colorText: const Color(0xFFD32F2F),
+          margin: const EdgeInsets.all(16),
+          borderRadius: 8,
+          duration: const Duration(seconds: 3),
+          boxShadows: [
+            BoxShadow(
+              color: Colors.black12,
+              blurRadius: 8,
+              offset: Offset(0, 2),
+            ),
+          ],
+        );
+      }
+    } catch (e) {
+      Get.snackbar(
+        'Error',
+        'An unexpected error occurred. Please try again.',
+        snackPosition: SnackPosition.BOTTOM,
+        backgroundColor: const Color(0xFFFFEBEE), // light red
+        colorText: const Color(0xFFD32F2F),
+        margin: const EdgeInsets.all(16),
+        borderRadius: 8,
+        duration: const Duration(seconds: 3),
+        boxShadows: [
+          BoxShadow(
+            color: Colors.black12,
+            blurRadius: 8,
+            offset: Offset(0, 2),
+          ),
+        ],
+      );
+    } finally {
+      setState(() {
+        _isLoading = false;
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      resizeToAvoidBottomInset: false,
       appBar: AppBar(
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
@@ -57,12 +193,17 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
                       borderRadius: BorderRadius.circular(8),
                     ),
                   ),
-                  onPressed: () {
-                    if (_formKey.currentState!.validate()) {
-                      _showSuccessDialog(context);
-                    }
-                  },
-                  child: const Text('Updated', style: TextStyle(fontSize: 18, color: Colors.white)),
+                  onPressed: _isLoading ? null : _changePassword,
+                  child: _isLoading
+                      ? const SizedBox(
+                          width: 20,
+                          height: 20,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                          ),
+                        )
+                      : const Text('Update Password', style: TextStyle(fontSize: 18, color: Colors.white)),
                 ),
               ),
             ],
@@ -104,72 +245,14 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
           onPressed: toggle,
         ),
       ),
-      validator: (val) => val == null || val.isEmpty ? 'Enter $label' : null,
-    );
-  }
-
-  void _showSuccessDialog(BuildContext context) {
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (context) {
-        return Container(
-          width: double.infinity,
-          padding: EdgeInsets.only(
-            left: 0,
-            right: 0,
-            bottom: MediaQuery.of(context).viewInsets.bottom,
-          ),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.vertical(top: Radius.circular(32)),
-          ),
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Container(
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFE6F0FF),
-                    shape: BoxShape.circle,
-                  ),
-                  padding: const EdgeInsets.all(32),
-                  child: const Icon(Icons.check, color: Color(0xFF007AFF), size: 64),
-                ),
-                const SizedBox(height: 24),
-                const Text(
-                  'Success!',
-                  style: TextStyle(fontWeight: FontWeight.w700, fontSize: 22, color: Colors.black),
-                ),
-                const SizedBox(height: 8),
-                const Text(
-                  'Password updated successfully',
-                  style: TextStyle(fontWeight: FontWeight.w400, fontSize: 15, color: Color(0xFF8E8E93)),
-                ),
-                const SizedBox(height: 28),
-                SizedBox(
-                  width: double.infinity,
-                  child: ElevatedButton(
-                    onPressed: () {
-                      Get.offAllNamed('/profile', arguments: {'showSuccess': true});
-                    },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF007AFF),
-                      elevation: 0,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      padding: const EdgeInsets.symmetric(vertical: 14),
-                    ),
-                    child: const Text('Ok', style: TextStyle(fontWeight: FontWeight.w500, fontSize: 15, color: Colors.white)),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        );
+      validator: (val) {
+        if (val == null || val.isEmpty) {
+          return 'Enter $label';
+        }
+        if (label == 'New Password' && val.length < 6) {
+          return 'Password must be at least 6 characters';
+        }
+        return null;
       },
     );
   }

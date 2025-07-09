@@ -19,7 +19,7 @@ class CustomNavBar extends StatelessWidget {
           decoration: const BoxDecoration(
             color: Colors.white,
             border: Border(
-              top: BorderSide(color: Color(0xFF222222), width: 0.5), // dark grey top border
+              top: BorderSide(color: Color(0xFF222222), width: 0.3), // dark grey top border
             ),
           ),
           child: BottomAppBar(

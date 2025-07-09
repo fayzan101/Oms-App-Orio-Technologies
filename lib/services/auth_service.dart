@@ -63,6 +63,78 @@ class AuthService extends GetxService {
     }
   }
 
+  // Forgot Password method
+  Future<bool> forgotPassword(String email) async {
+    try {
+      isLoading.value = true;
+      errorMessage.value = '';
+
+      final data = {'email': email};
+      final response = await _apiService.post('forgetpassword', data: data);
+
+      // You can check for a status/message in response.data if needed
+      if (response.statusCode == 200) {
+        return true;
+      } else {
+        errorMessage.value = response.data['message'] ?? 'Failed to send reset email.';
+        return false;
+      }
+    } on DioException catch (e) {
+      errorMessage.value = e.message ?? 'Network error occurred';
+      return false;
+    } catch (e) {
+      errorMessage.value = 'Invalid email address';
+      return false;
+    } finally {
+      isLoading.value = false;
+    }
+  }
+
+  // Change Password method
+  Future<bool> changePassword({
+    required String userId,
+    required String acno,
+    required String oldPassword,
+    required String newPassword,
+    required String confirmPassword,
+  }) async {
+    try {
+      isLoading.value = true;
+      errorMessage.value = '';
+
+      final data = {
+        'userid': int.tryParse(userId) ?? 0,
+        'acno': acno,
+        'old_password': oldPassword,
+        'new_password': newPassword,
+        'confirm_password': confirmPassword,
+      };
+
+      final response = await _apiService.post('auth/change_password', data: data);
+
+      if (response.statusCode == 200) {
+        // Check if the response indicates success
+        if (response.data['status'] == 1 || response.data['success'] == true) {
+          return true;
+        } else {
+          errorMessage.value = response.data['message'] ?? 'Failed to change password.';
+          return false;
+        }
+      } else {
+        errorMessage.value = response.data['message'] ?? 'Failed to change password.';
+        return false;
+      }
+    } on DioException catch (e) {
+      errorMessage.value = e.message ?? 'Network error occurred';
+      return false;
+    } catch (e) {
+      errorMessage.value = 'Old password is incorrect';
+      return false;
+    } finally {
+      isLoading.value = false;
+    }
+  }
+
   // Save user data to SharedPreferences
   Future<void> _saveUserData(User user) async {
     try {

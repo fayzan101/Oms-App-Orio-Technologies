@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../models/notification_model.dart';
+import '../services/notification_service.dart';
 import '../widgets/custom_nav_bar.dart';
 import 'notification_screen.dart';
 
@@ -15,14 +16,26 @@ class AddNotificationScreen extends StatefulWidget {
 
 class _AddNotificationScreenState extends State<AddNotificationScreen> {
   final _formKey = GlobalKey<FormState>();
+  final NotificationService _notificationService = NotificationService();
   String? selectedStatus;
   final TextEditingController messageController = TextEditingController();
+  final TextEditingController subjectController = TextEditingController();
   bool whatsapp = true;
   bool email = true;
   bool sms = true;
   bool isActive = true;
+  bool isLoading = false;
 
   final List<String> statuses = ['Confirmed', 'New', 'Processing', 'Delivered', 'Cancelled'];
+  
+  // Map status names to status IDs
+  final Map<String, int> statusIdMap = {
+    'Confirmed': 1,
+    'New': 2,
+    'Processing': 3,
+    'Delivered': 4,
+    'Cancelled': 5,
+  };
 
   @override
   void initState() {
@@ -30,12 +43,103 @@ class _AddNotificationScreenState extends State<AddNotificationScreen> {
     if (widget.isEdit && widget.notification != null) {
       selectedStatus = widget.notification!.statusName;
       messageController.text = widget.notification!.message;
+      subjectController.text = widget.notification!.subject;
       whatsapp = widget.notification!.isWhatsapp == 'Y';
       email = widget.notification!.isEmail == 'Y';
       sms = widget.notification!.isSms == 'Y';
       isActive = widget.notification!.status == 'Y';
     } else {
       messageController.text = 'Your Message, Thanks {{CUSTOMER_NAME}} for placing the order. Your order amount is {{ORDER_AMOUNT}}.';
+      subjectController.text = 'Order Notification';
+    }
+  }
+
+  Future<void> _saveNotification() async {
+    if (!_formKey.currentState!.validate()) return;
+    
+    if (selectedStatus == null) {
+      Get.snackbar(
+        'Error',
+        'Please select a status',
+        snackPosition: SnackPosition.BOTTOM,
+        backgroundColor: Colors.red,
+        colorText: Colors.white,
+        duration: const Duration(seconds: 3),
+      );
+      return;
+    }
+
+    setState(() {
+      isLoading = true;
+    });
+
+    try {
+      bool success;
+      
+      if (widget.isEdit && widget.notification != null) {
+        // Edit existing notification
+        success = await _notificationService.editNotification(
+          id: int.tryParse(widget.notification!.id) ?? 0,
+          acno: 'OR-00009',
+          message: messageController.text.trim(),
+          statusId: statusIdMap[selectedStatus!] ?? 2,
+          subject: subjectController.text.trim(),
+          isEmail: email ? 'Y' : 'N',
+          isWhatsapp: whatsapp ? 'Y' : 'N',
+          isSms: sms ? 'Y' : 'N',
+          status: isActive ? 'Y' : 'N',
+        );
+      } else {
+        // Create new notification
+        success = await _notificationService.createNotification(
+          acno: 'OR-00009',
+          message: messageController.text.trim(),
+          statusId: statusIdMap[selectedStatus!] ?? 2,
+          subject: subjectController.text.trim(),
+          isEmail: email ? 'Y' : 'N',
+          isWhatsapp: whatsapp ? 'Y' : 'N',
+          isSms: sms ? 'Y' : 'N',
+          status: isActive ? 'Y' : 'N',
+        );
+      }
+
+      if (success) {
+        Get.snackbar(
+          'Success',
+          widget.isEdit ? 'Notification updated successfully!' : 'Notification created successfully!',
+          snackPosition: SnackPosition.BOTTOM,
+          backgroundColor: Colors.green,
+          colorText: Colors.white,
+          duration: const Duration(seconds: 3),
+        );
+        
+        // Navigate back to notification screen
+        Get.off(() => NotificationScreen());
+      } else {
+        Get.snackbar(
+          'Error',
+          widget.isEdit ? 'Failed to update notification' : 'Failed to create notification',
+          snackPosition: SnackPosition.BOTTOM,
+          backgroundColor: Colors.red,
+          colorText: Colors.white,
+          duration: const Duration(seconds: 3),
+        );
+      }
+    } catch (e) {
+      Get.snackbar(
+        'Error',
+        widget.isEdit 
+          ? 'Failed to update notification: ${e.toString()}'
+          : 'Failed to create notification: ${e.toString()}',
+        snackPosition: SnackPosition.BOTTOM,
+        backgroundColor: Colors.red,
+        colorText: Colors.white,
+        duration: const Duration(seconds: 3),
+      );
+    } finally {
+      setState(() {
+        isLoading = false;
+      });
     }
   }
 
@@ -48,6 +152,10 @@ class _AddNotificationScreenState extends State<AddNotificationScreen> {
           onPressed: () => Get.back(),
         ),
         title: Text(widget.isEdit ? 'Edit Notification' : 'Add Notification'),
+        backgroundColor: Colors.white,
+        shadowColor: Colors.white,
+        foregroundColor: Colors.white,
+        surfaceTintColor: Colors.white,
       ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
@@ -61,6 +169,12 @@ class _AddNotificationScreenState extends State<AddNotificationScreen> {
                 items: statuses.map((s) => DropdownMenuItem(value: s, child: Text(s))).toList(),
                 onChanged: (val) => setState(() => selectedStatus = val),
                 validator: (val) => val == null ? 'Please select status' : null,
+              ),
+              const SizedBox(height: 16),
+              TextFormField(
+                controller: subjectController,
+                decoration: _inputDecoration('Subject'),
+                validator: (val) => val == null || val.isEmpty ? 'Enter subject' : null,
               ),
               const SizedBox(height: 16),
               TextFormField(
@@ -98,18 +212,17 @@ class _AddNotificationScreenState extends State<AddNotificationScreen> {
                       borderRadius: BorderRadius.circular(8),
                     ),
                   ),
-                  onPressed: () {
-                    if (_formKey.currentState!.validate()) {
-                      showModalBottomSheet(
-                        context: context,
-                        isScrollControlled: true,
-                        backgroundColor: Colors.transparent,
-                        builder: (context) => const _NotificationSuccessBottomSheet(),
-                      );
-                      // Implement save logic here if needed
-                    }
-                  },
-                  child: Text(widget.isEdit ? 'Update' : 'Save', style: const TextStyle(fontSize: 18, color: Colors.white)),
+                  onPressed: isLoading ? null : _saveNotification,
+                  child: isLoading 
+                    ? const SizedBox(
+                        height: 20,
+                        width: 20,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                        ),
+                      )
+                    : Text(widget.isEdit ? 'Update' : 'Save', style: const TextStyle(fontSize: 18, color: Colors.white)),
                 ),
               ),
               const SizedBox(height: 32),
@@ -123,6 +236,7 @@ class _AddNotificationScreenState extends State<AddNotificationScreen> {
         child: const Icon(Icons.edit, color: Colors.white),
       ),
       floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
+      resizeToAvoidBottomInset: false,
       bottomNavigationBar: CustomNavBar(
         selectedIndex: 3, // or the appropriate index for this screen
         onTabSelected: (index) {
@@ -170,75 +284,6 @@ class _AddNotificationScreenState extends State<AddNotificationScreen> {
           const SizedBox(height: 2),
           Text(label, style: const TextStyle(fontSize: 12, color: Color(0xFF0A2A3A))),
         ],
-      ),
-    );
-  }
-}
-
-class _NotificationSuccessBottomSheet extends StatelessWidget {
-  const _NotificationSuccessBottomSheet({Key? key}) : super(key: key);
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: double.infinity,
-      padding: EdgeInsets.only(
-        left: 0,
-        right: 0,
-        bottom: MediaQuery.of(context).viewInsets.bottom,
-      ),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.vertical(top: Radius.circular(32)),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            Container(
-              decoration: BoxDecoration(
-                color: const Color(0xFFE6F0FF),
-                shape: BoxShape.circle,
-              ),
-              padding: const EdgeInsets.all(32),
-              child: const Icon(Icons.check, color: Color(0xFF007AFF), size: 64),
-            ),
-            const SizedBox(height: 24),
-            const Text(
-              'Success!',
-              style: TextStyle(fontWeight: FontWeight.w700, fontSize: 22, color: Colors.black),
-            ),
-            const SizedBox(height: 8),
-            const Text(
-              'Notification added successfully',
-              style: TextStyle(fontWeight: FontWeight.w400, fontSize: 15, color: Color(0xFF8E8E93)),
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 28),
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton(
-                onPressed: () {
-                  Navigator.of(context).popUntil((route) => route.isFirst);
-                  Navigator.of(context).pushReplacement(
-                    MaterialPageRoute(builder: (_) => NotificationScreen()),
-                  );
-                },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF007AFF),
-                  elevation: 0,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  padding: const EdgeInsets.symmetric(vertical: 14),
-                ),
-                child: const Text('Ok', style: TextStyle(fontWeight: FontWeight.w500, fontSize: 15, color: Colors.white)),
-              ),
-            ),
-          ],
-        ),
       ),
     );
   }

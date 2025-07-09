@@ -21,7 +21,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
         title: const Text('Calendar'),
       ),
       body: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
+        mainAxisAlignment: MainAxisAlignment.start,
         children: [
           Center(
             child: CalendarDatePicker(
