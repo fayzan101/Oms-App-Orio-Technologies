@@ -12,6 +12,7 @@ import '../models/load_sheet_model.dart';
 import '../models/load_sheet_detail_model.dart';
 import '../utils/custom_snackbar.dart';
 import 'calendar_screen.dart';
+import '../widgets/custom_date_selector.dart';
 
 class LoadSheetScreen extends StatefulWidget {
   const LoadSheetScreen({Key? key}) : super(key: key);
@@ -137,7 +138,42 @@ class _LoadSheetScreenState extends State<LoadSheetScreen> {
           ),
           IconButton(
             icon: const Icon(Icons.calendar_today_outlined, color: Colors.black),
-            onPressed: _selectDateRange,
+            onPressed: () async {
+              final picked = await showDialog<DateTimeRange>(
+                context: context,
+                barrierDismissible: true,
+                builder: (context) => Dialog(
+                  insetPadding: EdgeInsets.zero,
+                  backgroundColor: Colors.transparent,
+                  child: Container(
+                    width: double.infinity,
+                    height: MediaQuery.of(context).size.height,
+                    color: Colors.white,
+                    child: SafeArea(
+                      child: SingleChildScrollView(
+                        padding: EdgeInsets.only(
+                          left: 20,
+                          right: 20,
+                          top: 20,
+                          bottom: MediaQuery.of(context).viewInsets.bottom + 20,
+                        ),
+                        child: CustomDateSelector(
+                          initialStartDate: _startDate,
+                          initialEndDate: _endDate,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              );
+              if (picked != null) {
+                setState(() {
+                  _startDate = picked.start;
+                  _endDate = picked.end;
+                });
+                await _loadLoadSheets();
+              }
+            },
           ),
         ],
       ),

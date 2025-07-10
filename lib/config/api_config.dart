@@ -22,6 +22,7 @@ class ApiConfig {
   static const String courierAccountsEndpoint = 'courier/getcourieraccounts';
   static const String profileEndpoint = 'profile';
   static const String dashboardEndpoint = 'dashboard-reporting';
+  static const String statementEndpoint = 'statement/index';
   
   // Timeout configurations
   static const int connectTimeout = 30; // seconds

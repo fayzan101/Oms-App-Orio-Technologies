@@ -17,6 +17,7 @@ dependencies:
   dio: ^5.4.0
   flutter_svg: ^2.0.7 
   fl_chart: ^0.63.0
+  table_calendar: ^3.2.0
 
 dev_dependencies:
   flutter_test:

@@ -7,6 +7,7 @@ import 'report.dart' as report;
 import 'search_screen.dart';
 import 'package:get/get.dart';
 import 'calendar_screen.dart';
+import '../widgets/custom_date_selector.dart';
 
 class CourierInsightsScreen extends StatefulWidget {
   const CourierInsightsScreen({Key? key}) : super(key: key);
@@ -20,6 +21,8 @@ class _CourierInsightsScreenState extends State<CourierInsightsScreen> {
   List<Map<String, dynamic>> reports = [];
   bool isLoading = true;
   final Set<int> expanded = {};
+  DateTime _startDate = DateTime.now().subtract(const Duration(days: 30));
+  DateTime _endDate = DateTime.now();
 
   @override
   void initState() {
@@ -28,14 +31,18 @@ class _CourierInsightsScreenState extends State<CourierInsightsScreen> {
   }
 
   Future<void> fetchCourierInsights() async {
-    setState(() => isLoading = true);
+    setState(() {
+      isLoading = true;
+    });
+    final startDateStr = _startDate.toIso8601String().split('T')[0];
+    final endDateStr = _endDate.toIso8601String().split('T')[0];
     try {
       final data = await OrderService.fetchCourierInsights(
         acno: 'OR-00009',
         startLimit: 1,
         endLimit: 50000,
-        startDate: '2024-02-20',
-        endDate: '2025-03-21',
+        startDate: startDateStr,
+        endDate: endDateStr,
       );
       setState(() {
         reports = data;
@@ -48,7 +55,7 @@ class _CourierInsightsScreenState extends State<CourierInsightsScreen> {
     }
   }
 
-  void _showTrackingDialog(BuildContext context) {
+  void _showTrackingDialog(BuildContext context, Map<String, dynamic> report) {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -89,21 +96,21 @@ class _CourierInsightsScreenState extends State<CourierInsightsScreen> {
                   ],
                 ),
                 const SizedBox(height: 12),
-                _trackingDetailRow('Status', 'Booked'),
-                _trackingDetailRow('CN#', '5024657241'),
-                _trackingDetailRow('Date', '2023-07-25'),
-                _trackingDetailRow('Customer', 'Asad Ahmed Khan'),
-                _trackingDetailRow('COD', '4200'),
-                _trackingDetailRow('From To', 'Lahore   Karachi'),
+                _trackingDetailRow('Status', report['status_name'] ?? '-'),
+                _trackingDetailRow('CN#', report['consigment_no'] ?? '-'),
+                _trackingDetailRow('Date', _formatDate(report['created_date'])),
+                _trackingDetailRow('Customer', report['consignee_name'] ?? '-'),
+                _trackingDetailRow('COD', report['order_amount'] ?? '-'),
+                _trackingDetailRow('From To', '${report['origin_city'] ?? '-'}   ${report['destination_city'] ?? '-'}'),
                 const SizedBox(height: 12),
-                const Text(
-                  'Courier Shipping Label: 5024657241',
-                  style: TextStyle(fontWeight: FontWeight.w700, fontSize: 15, fontFamily: 'SF Pro Display'),
+                Text(
+                  'Courier Shipping Label: ${report['consigment_no'] ?? '-'}',
+                  style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 15, fontFamily: 'SF Pro Display'),
                 ),
                 const SizedBox(height: 4),
-                const Text(
-                  'August 8th, 2023 12:09:00 - Order information received pending at Shippers end.',
-                  style: TextStyle(fontWeight: FontWeight.w400, fontSize: 13, fontFamily: 'SF Pro Display', color: Color(0xFF6B7280)),
+                Text(
+                  report['tracking_remarks'] ?? '-',
+                  style: const TextStyle(fontWeight: FontWeight.w400, fontSize: 13, fontFamily: 'SF Pro Display', color: Color(0xFF6B7280)),
                 ),
               ],
             ),
@@ -152,6 +159,10 @@ class _CourierInsightsScreenState extends State<CourierInsightsScreen> {
       appBar: AppBar(
         backgroundColor: Colors.white,
         elevation: 0,
+        shadowColor: Colors.white,
+        foregroundColor: Colors.white,
+        surfaceTintColor: Colors.white,
+        automaticallyImplyLeading: false,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back_ios_new, color: Colors.black, size: 22),
           onPressed: () => Navigator.of(context).pop(),
@@ -161,10 +172,13 @@ class _CourierInsightsScreenState extends State<CourierInsightsScreen> {
           style: TextStyle(
             fontFamily: 'SF Pro Display',
             fontWeight: FontWeight.w700,
-            fontSize: 14,
+            fontSize: 18,
             color: Colors.black,
+            overflow: TextOverflow.ellipsis,
           ),
+          maxLines: 1,
         ),
+        titleSpacing: 0,
         centerTitle: false,
         actions: [
           IconButton(
@@ -186,14 +200,44 @@ class _CourierInsightsScreenState extends State<CourierInsightsScreen> {
               },
             ),
           ),
-          Padding(
-            padding: const EdgeInsets.only(right: 16.0),
-            child: IconButton(
-              icon: const Icon(Icons.calendar_today_outlined, color: Colors.black),
-              onPressed: () {
-                Get.to(() => const CalendarScreen());
-              },
-            ),
+          IconButton(
+            icon: const Icon(Icons.calendar_today_outlined, color: Colors.black),
+            onPressed: () async {
+              final picked = await showDialog<DateTimeRange>(
+                context: context,
+                barrierDismissible: true,
+                builder: (context) => Dialog(
+                  insetPadding: EdgeInsets.zero,
+                  backgroundColor: Colors.transparent,
+                  child: Container(
+                    width: double.infinity,
+                    height: MediaQuery.of(context).size.height,
+                    color: Colors.white,
+                    child: SafeArea(
+                      child: SingleChildScrollView(
+                        padding: EdgeInsets.only(
+                          left: 20,
+                          right: 20,
+                          top: 20,
+                          bottom: MediaQuery.of(context).viewInsets.bottom + 20,
+                        ),
+                        child: CustomDateSelector(
+                          initialStartDate: _startDate,
+                          initialEndDate: _endDate,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              );
+              if (picked != null) {
+                setState(() {
+                  _startDate = picked.start;
+                  _endDate = picked.end;
+                });
+                await fetchCourierInsights();
+              }
+            },
           ),
         ],
       ),
@@ -243,8 +287,14 @@ class _CourierInsightsScreenState extends State<CourierInsightsScreen> {
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
                                     ListTile(
-                                      title: const Text('Order ID', style: TextStyle(fontWeight: FontWeight.bold)),
-                                      subtitle: Text(report['id']?.toString() ?? ''),
+                                      title: Row(
+                                        mainAxisAlignment: MainAxisAlignment.start,
+                                        children: [
+                                          const Text('Order ID', style: TextStyle(fontWeight: FontWeight.bold)),
+                                          const SizedBox(width: 6),
+                                          Text(report['id']?.toString() ?? '', style: const TextStyle(fontWeight: FontWeight.w500)),
+                                        ],
+                                      ),
                                       trailing: Icon(isExpanded ? Icons.keyboard_arrow_up_rounded : Icons.keyboard_arrow_down_rounded),
                                     ),
                                     if (isExpanded)
@@ -253,18 +303,36 @@ class _CourierInsightsScreenState extends State<CourierInsightsScreen> {
                                         child: Column(
                                           crossAxisAlignment: CrossAxisAlignment.start,
                                           children: [
-                                            Text('Consignee:   ${report['consignee_name'] ?? ''}'),
-                                            Text('Origin City:   ${report['origin_city'] ?? ''}'),
-                                            Text('Destination City:   ${report['destination_city'] ?? ''}'),
-                                            Text('Status:   ${report['status_name'] ?? ''}'),
-                                            Text('Amount:   ${report['order_amount'] ?? ''}'),
-                                            Text('Consignee Contact:   ${report['contact'] ?? ''}'),
-                                            Text('Order Ref:   ${report['order_ref'] ?? ''}'),
-                                            Text('Store Name:   ${report['account_title'] ?? ''}'),
-                                            Text('Courier Name:   ${report['courier_name'] ?? ''}'),
-                                            Text('Order Date:   ${report['created_date'] ?? ''}'),
-                                            Text('Remarks:   ${report['tags_name'] ?? ''}'),
-                                            // Add more fields as needed
+                                            _insightDetailRow('Order ID', report['id']?.toString() ?? ''),
+                                            _insightDetailRow('Name', report['consignee_name'] ?? ''),
+                                            _insightDetailRow('Contact', report['contact'] ?? ''),
+                                            _insightDetailRow('Date', _formatDate(report['created_date'])),
+                                            _insightDetailRow('Booking Date', _formatDate(report['booking_date'])),
+                                            _insightDetailRow('City', report['origin_city'] ?? ''),
+                                            _insightDetailRow('Web Order ID', report['order_ref'] ?? ''),
+                                            _insightDetailRow('Net Payable', '-'),
+                                            _insightDetailRow('Payment Type', report['payment_type'] ?? ''),
+                                            _insightDetailRow('Amount', report['order_amount'] ?? ''),
+                                            Row(
+                                              crossAxisAlignment: CrossAxisAlignment.center,
+                                              children: [
+                                                const SizedBox(
+                                                  width: 120,
+                                                  child: Text('Courier', style: TextStyle(fontWeight: FontWeight.w600, fontFamily: 'SF Pro Display', fontSize: 15)),
+                                                ),
+                                                _courierLogoOrText(report['courier_name'] ?? ''),
+                                              ],
+                                            ),
+                                            _insightDetailRow('Account', report['account_title'] ?? ''),
+                                            _insightDetailRow('CN', report['consigment_no'] ?? ''),
+                                            _insightDetailRow('No of Days', report['deliverytime'] ?? ''),
+                                            _insightDetailRow('Status', report['status_name'] ?? ''),
+                                            _insightDetailRow('Last Mile Date', _formatDate(report['delivered_date'])),
+                                            _insightDetailRow('Payment Status', report['payment_status'] == '1' ? 'Paid' : 'Unpaid'),
+                                            _insightDetailRow('Invoice No', report['invoice_no'] ?? ''),
+                                            _insightDetailRow('Invoice Date', _formatDate(report['settlement_date'])),
+                                            _insightDetailRow('Charges', report['charges'] ?? '-'),
+                                            _insightDetailRow('Tags', report['tags_name'] ?? ''),
                                             const SizedBox(height: 10),
                                             Row(
                                               crossAxisAlignment: CrossAxisAlignment.start,
@@ -273,7 +341,7 @@ class _CourierInsightsScreenState extends State<CourierInsightsScreen> {
                                                 const SizedBox(width: 32),
                                                 GestureDetector(
                                                   onTap: () {
-                                                    _showTrackingDialog(context);
+                                                    _showTrackingDialog(context, report);
                                                   },
                                                   child: Row(
                                                     children: const [
@@ -329,5 +397,50 @@ class _CourierInsightsScreenState extends State<CourierInsightsScreen> {
         child: const Icon(Icons.edit, color: Colors.white, size: 28),
       ),
     );
+  }
+}
+
+Widget _insightDetailRow(String label, String value) {
+  return Padding(
+    padding: const EdgeInsets.only(bottom: 4),
+    child: Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        SizedBox(
+          width: 120,
+          child: Text(label, style: const TextStyle(fontWeight: FontWeight.w600, fontFamily: 'SF Pro Display', fontSize: 15)),
+        ),
+        Expanded(
+          child: Text(value, style: const TextStyle(fontWeight: FontWeight.w400, fontFamily: 'SF Pro Display', fontSize: 15)),
+        ),
+      ],
+    ),
+  );
+}
+
+Widget _courierLogoOrText(String courierName) {
+  final normalized = courierName.trim().toLowerCase().replaceAll(' ', '').replaceAll('-', '').replaceAll('_', '');
+  final assetMap = {
+    'blueex': 'assets/icon/bluex.jpeg',
+    'tcs': 'assets/icon/tcs.png',
+    // Add more mappings as needed
+  };
+  final asset = assetMap[normalized];
+  if (asset != null) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 4),
+      child: Image.asset(asset, height: 24, width: 60, fit: BoxFit.contain),
+    );
+  }
+  return Text(courierName, style: const TextStyle(fontWeight: FontWeight.w500, fontFamily: 'SF Pro Display', fontSize: 15));
+}
+
+String _formatDate(dynamic dateString) {
+  if (dateString == null || dateString.toString().isEmpty || dateString == '--') return '-';
+  try {
+    final date = DateTime.parse(dateString.toString().split(' ')[0]);
+    return '${date.day}-${date.month}-${date.year}';
+  } catch (e) {
+    return dateString.toString();
   }
 } 

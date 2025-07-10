@@ -14,6 +14,7 @@ import 'dashboard_notification_screen.dart';
 import 'search_screen.dart';
 import 'calendar_screen.dart'; // Import the new CalendarScreen
 import '../utils/Layout/app_bottom_bar.dart';
+import '../widgets/custom_date_selector.dart';
 
 class DashboardScreen extends StatefulWidget {
   DashboardScreen({Key? key}) : super(key: key);
@@ -24,7 +25,15 @@ class DashboardScreen extends StatefulWidget {
 
 class _DashboardScreenState extends State<DashboardScreen> {
   final DashboardController controller = Get.find<DashboardController>();
-  DateTime? _selectedDate;
+  DateTime _startDate = DateTime.now().subtract(const Duration(days: 30));
+  DateTime _endDate = DateTime.now();
+
+  @override
+  void initState() {
+    super.initState();
+    // Optionally, fetch dashboard data here if needed
+    // controller.fetchDashboardData(startDate: _startDate, endDate: _endDate);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -78,11 +87,46 @@ class _DashboardScreenState extends State<DashboardScreen> {
                         IconButton(
               icon: const Icon(Icons.calendar_today_outlined, color: Color(0xFF007AFF)),
               onPressed: () async {
-                final picked = await Get.to(() => const CalendarScreen());
-                if (picked != null && picked is DateTime) {
+                final picked = await showDialog<DateTimeRange>(
+                  context: context,
+                  barrierDismissible: true,
+                  builder: (context) => Dialog(
+                    insetPadding: EdgeInsets.zero,
+                    backgroundColor: Colors.transparent,
+                    child: Container(
+                      width: double.infinity,
+                      height: MediaQuery.of(context).size.height,
+                      color: Colors.white,
+                      child: SafeArea(
+                        child: SingleChildScrollView(
+                          padding: EdgeInsets.only(
+                            left: 20,
+                            right: 20,
+                            top: 20,
+                            bottom: MediaQuery.of(context).viewInsets.bottom + 20,
+                          ),
+                          child: CustomDateSelector(
+                            initialStartDate: _startDate,
+                            initialEndDate: _endDate,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                );
+                if (picked != null) {
                   setState(() {
-                    _selectedDate = picked;
+                    _startDate = picked.start;
+                    _endDate = picked.end;
                   });
+                  // Call the controller's fetch method if available
+                  if (controller.fetchDashboardData != null) {
+                    final startStr = _startDate.toIso8601String().split('T')[0];
+                    final endStr = _endDate.toIso8601String().split('T')[0];
+                    controller.fetchDashboardData(startDate: startStr, endDate: endStr);
+                  } else {
+                    setState(() {});
+                  }
                 }
               },
             ),
