@@ -139,21 +139,35 @@ class StatementService {
 
   Future<List<Map<String, dynamic>>> fetchCityList(String acno) async {
     final url = Uri.parse('https://oms.getorio.com/api/rules/citylist');
+    print('Fetching city list for acno: $acno');
+    print('City list URL: $url');
+    
     final response = await http.post(
       url,
       headers: {'Content-Type': 'application/json'},
       body: jsonEncode({'acno': acno}),
     );
+    
+    print('City list response status: ${response.statusCode}');
+    print('City list response body: ${response.body}');
+    
     if (response.statusCode == 200) {
       final data = jsonDecode(response.body);
+      print('City list decoded data: $data');
+      print('City list data type: ${data.runtimeType}');
+      
       if (data is List) {
+        print('City list is List, length: ${data.length}');
         return data.cast<Map<String, dynamic>>();
       } else if (data is Map && data['payload'] is List) {
+        print('City list has payload, length: ${(data['payload'] as List).length}');
         return (data['payload'] as List).cast<Map<String, dynamic>>();
       } else {
+        print('City list unexpected format: $data');
         throw Exception('Unexpected response format');
       }
     } else {
+      print('City list failed with status: ${response.statusCode}');
       throw Exception('Failed to load city list');
     }
   }

@@ -68,13 +68,22 @@ class _FilterScreenState extends State<FilterScreen> {
     try {
       final service = StatementService();
       final cityData = await service.fetchCityList('OR-00009');
+      print('Filter screen received city data: $cityData');
+      print('City data length: ${cityData.length}');
+      
+      final cityNames = cityData.map((e) => e['name']?.toString() ?? '').where((e) => e.isNotEmpty).toList();
+      print('Extracted city names: $cityNames');
+      print('City names length: ${cityNames.length}');
+      
       setState(() {
-        cities = cityData.map((e) => e['city_name']?.toString() ?? '').where((e) => e.isNotEmpty).toList();
+        cities = cityNames;
         _isLoadingCities = false;
       });
+      print('Cities list updated: $cities');
     } catch (e) {
+      print('Error fetching cities: $e');
       setState(() {
-        _cityError = 'Failed to load cities';
+        _cityError = 'Failed to load cities: $e';
         _isLoadingCities = false;
       });
     }
@@ -204,14 +213,16 @@ class _FilterDropdown extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    print('_FilterDropdown build - hint: $hint, items: $items, items length: ${items.length}');
+    
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
       child: DropdownButtonFormField<String>(
         value: value,
         items: items.map((e) => DropdownMenuItem(value: e, child: Text(e))).toList(),
-        onChanged: onChanged,
+        onChanged: items.isNotEmpty ? onChanged : null,
         decoration: InputDecoration(
-          hintText: hint,
+          hintText: items.isNotEmpty ? hint : 'No items available',
           hintStyle: const TextStyle(
             fontFamily: 'SF Pro Display',
             fontWeight: FontWeight.w400,
