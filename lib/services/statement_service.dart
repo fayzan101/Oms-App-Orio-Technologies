@@ -4,6 +4,8 @@ import '../models/statement_model.dart';
 import '../network/api_service.dart';
 import '../services/auth_service.dart';
 import '../config/api_config.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
 
 class StatementService {
   final ApiService _apiService = ApiService();
@@ -111,6 +113,27 @@ class StatementService {
     } catch (e) {
       print('Statement error: $e');
       throw Exception('An unexpected error occurred: $e');
+    }
+  }
+
+  Future<List<Map<String, dynamic>>> fetchShopNames(String acno) async {
+    final url = Uri.parse('https://oms.getorio.com/api/platform/shopnames');
+    final response = await http.post(
+      url,
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({'acno': acno}),
+    );
+    if (response.statusCode == 200) {
+      final data = jsonDecode(response.body);
+      if (data is List) {
+        return data.cast<Map<String, dynamic>>();
+      } else if (data is Map && data['payload'] is List) {
+        return (data['payload'] as List).cast<Map<String, dynamic>>();
+      } else {
+        throw Exception('Unexpected response format');
+      }
+    } else {
+      throw Exception('Failed to load shop names');
     }
   }
 

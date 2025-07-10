@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../services/statement_service.dart';
 
 class FilterScreen extends StatefulWidget {
   const FilterScreen({Key? key}) : super(key: key);
@@ -14,9 +15,12 @@ class _FilterScreenState extends State<FilterScreen> {
   String? selectedCity;
 
   final List<String> orders = ['Order 1', 'Order 2', 'Order 3'];
-  final List<String> platforms = ['Platform 1', 'Platform 2', 'Platform 3'];
+  List<String> platforms = [];
   final List<String> couriers = ['Courier 1', 'Courier 2', 'Courier 3'];
   final List<String> cities = ['City 1', 'City 2', 'City 3'];
+
+  bool _isLoadingPlatforms = false;
+  String? _platformError;
 
   void resetFilters() {
     setState(() {
@@ -25,6 +29,32 @@ class _FilterScreenState extends State<FilterScreen> {
       selectedCourier = null;
       selectedCity = null;
     });
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchPlatforms();
+  }
+
+  Future<void> _fetchPlatforms() async {
+    setState(() {
+      _isLoadingPlatforms = true;
+      _platformError = null;
+    });
+    try {
+      final service = StatementService();
+      final shops = await service.fetchShopNames('OR-00009');
+      setState(() {
+        platforms = shops.map((e) => e['website_name']?.toString() ?? '').where((e) => e.isNotEmpty).toList();
+        _isLoadingPlatforms = false;
+      });
+    } catch (e) {
+      setState(() {
+        _platformError = 'Failed to load platforms';
+        _isLoadingPlatforms = false;
+      });
+    }
   }
 
   @override
@@ -59,12 +89,22 @@ class _FilterScreenState extends State<FilterScreen> {
               items: orders,
               onChanged: (val) => setState(() => selectedOrder = val),
             ),
-            _FilterDropdown(
-              hint: 'Select Platforms',
-              value: selectedPlatform,
-              items: platforms,
-              onChanged: (val) => setState(() => selectedPlatform = val),
-            ),
+            _isLoadingPlatforms
+                ? const Padding(
+                    padding: EdgeInsets.symmetric(vertical: 16),
+                    child: Center(child: CircularProgressIndicator()),
+                  )
+                : _platformError != null
+                    ? Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        child: Text(_platformError!, style: const TextStyle(color: Colors.red)),
+                      )
+                    : _FilterDropdown(
+                        hint: 'Select Platforms',
+                        value: selectedPlatform,
+                        items: platforms,
+                        onChanged: (val) => setState(() => selectedPlatform = val),
+                      ),
             _FilterDropdown(
               hint: 'Select Courier',
               value: selectedCourier,
