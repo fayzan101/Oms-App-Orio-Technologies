@@ -17,10 +17,12 @@ class _FilterScreenState extends State<FilterScreen> {
   final List<String> orders = ['Order 1', 'Order 2', 'Order 3'];
   List<String> platforms = [];
   final List<String> couriers = ['Courier 1', 'Courier 2', 'Courier 3'];
-  final List<String> cities = ['City 1', 'City 2', 'City 3'];
+  List<String> cities = [];
 
   bool _isLoadingPlatforms = false;
+  bool _isLoadingCities = false;
   String? _platformError;
+  String? _cityError;
 
   void resetFilters() {
     setState(() {
@@ -35,6 +37,7 @@ class _FilterScreenState extends State<FilterScreen> {
   void initState() {
     super.initState();
     _fetchPlatforms();
+    _fetchCities();
   }
 
   Future<void> _fetchPlatforms() async {
@@ -46,13 +49,33 @@ class _FilterScreenState extends State<FilterScreen> {
       final service = StatementService();
       final shops = await service.fetchShopNames('OR-00009');
       setState(() {
-        platforms = shops.map((e) => e['website_name']?.toString() ?? '').where((e) => e.isNotEmpty).toList();
+        platforms = shops.map((e) => e['platform_name']?.toString() ?? '').where((e) => e.isNotEmpty).toList();
         _isLoadingPlatforms = false;
       });
     } catch (e) {
       setState(() {
         _platformError = 'Failed to load platforms';
         _isLoadingPlatforms = false;
+      });
+    }
+  }
+
+  Future<void> _fetchCities() async {
+    setState(() {
+      _isLoadingCities = true;
+      _cityError = null;
+    });
+    try {
+      final service = StatementService();
+      final cityData = await service.fetchCityList('OR-00009');
+      setState(() {
+        cities = cityData.map((e) => e['city_name']?.toString() ?? '').where((e) => e.isNotEmpty).toList();
+        _isLoadingCities = false;
+      });
+    } catch (e) {
+      setState(() {
+        _cityError = 'Failed to load cities';
+        _isLoadingCities = false;
       });
     }
   }
@@ -111,12 +134,22 @@ class _FilterScreenState extends State<FilterScreen> {
               items: couriers,
               onChanged: (val) => setState(() => selectedCourier = val),
             ),
-            _FilterDropdown(
-              hint: 'Select Cities',
-              value: selectedCity,
-              items: cities,
-              onChanged: (val) => setState(() => selectedCity = val),
-            ),
+            _isLoadingCities
+                ? const Padding(
+                    padding: EdgeInsets.symmetric(vertical: 16),
+                    child: Center(child: CircularProgressIndicator()),
+                  )
+                : _cityError != null
+                    ? Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        child: Text(_cityError!, style: const TextStyle(color: Colors.red)),
+                      )
+                    : _FilterDropdown(
+                        hint: 'Select Cities',
+                        value: selectedCity,
+                        items: cities,
+                        onChanged: (val) => setState(() => selectedCity = val),
+                      ),
             const SizedBox(height: 24),
             SizedBox(
               width: double.infinity,

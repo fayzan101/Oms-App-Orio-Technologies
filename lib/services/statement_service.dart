@@ -137,6 +137,27 @@ class StatementService {
     }
   }
 
+  Future<List<Map<String, dynamic>>> fetchCityList(String acno) async {
+    final url = Uri.parse('https://oms.getorio.com/api/rules/citylist');
+    final response = await http.post(
+      url,
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({'acno': acno}),
+    );
+    if (response.statusCode == 200) {
+      final data = jsonDecode(response.body);
+      if (data is List) {
+        return data.cast<Map<String, dynamic>>();
+      } else if (data is Map && data['payload'] is List) {
+        return (data['payload'] as List).cast<Map<String, dynamic>>();
+      } else {
+        throw Exception('Unexpected response format');
+      }
+    } else {
+      throw Exception('Failed to load city list');
+    }
+  }
+
   // Helper method to get current month statement
   Future<StatementModel> getCurrentMonthStatement({
     String? acno,
