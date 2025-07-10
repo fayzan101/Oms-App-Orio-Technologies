@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 import 'dashboard_screen.dart' as dash;
 import 'report.dart' as report;
 import 'menu.dart' as menu;
@@ -7,8 +8,8 @@ import 'create_cn_screen.dart';
 import '../network/order_service.dart';
 import 'filter_screen.dart';
 import 'search_screen.dart';
-import '../widgets/custom_nav_bar.dart';
 import 'quick_edit_screen.dart';
+import '../utils/Layout/app_bottom_bar.dart';
 
 class OrderListScreen extends StatefulWidget {
   const OrderListScreen({Key? key}) : super(key: key);
@@ -515,15 +516,7 @@ class _OrderListScreenState extends State<OrderListScreen> {
           ],
         ),
       ),
-      bottomNavigationBar: CustomNavBar(
-        selectedIndex: 1,
-        onTabSelected: (index) {
-          if (index == 0) Navigator.of(context).pushAndRemoveUntil(MaterialPageRoute(builder: (_) => dash.DashboardScreen()), (route) => false);
-          if (index == 1) Navigator.of(context).pushAndRemoveUntil(MaterialPageRoute(builder: (_) => OrderListScreen()), (route) => false);
-          if (index == 2) Navigator.of(context).pushAndRemoveUntil(MaterialPageRoute(builder: (_) => report.ReportsScreen()), (route) => false);
-          if (index == 3) Navigator.of(context).pushAndRemoveUntil(MaterialPageRoute(builder: (_) => menu.MenuScreen()), (route) => false);
-        },
-      ),
+      bottomNavigationBar: const AppBottomBar(currentTab: 1),
       floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
       floatingActionButton: FloatingActionButton(
         onPressed: () {

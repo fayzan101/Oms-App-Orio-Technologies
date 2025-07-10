@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import '../widgets/custom_nav_bar.dart';
 import 'order_list_screen.dart';
+import '../utils/Layout/app_bottom_bar.dart';
 
 class CreateCnScreen extends StatefulWidget {
   const CreateCnScreen({Key? key}) : super(key: key);
@@ -128,12 +128,7 @@ class _CreateCnScreenState extends State<CreateCnScreen> {
         elevation: 4,
       ),
       floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
-      bottomNavigationBar: CustomNavBar(
-        selectedIndex: 2, // Reports tab
-        onTabSelected: (index) {
-          // Implement navigation as needed
-        },
-      ),
+      bottomNavigationBar: const AppBottomBar(currentTab: 2),
     );
   }
 

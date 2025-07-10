@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../models/courier_account.dart';
-import '../widgets/custom_nav_bar.dart';
+import '../services/courier_service.dart';
+import '../utils/Layout/app_bottom_bar.dart';
+import '../utils/custom_snackbar.dart';
 import 'courier_companies_screen.dart';
 
 class AddCourierCompanyScreen extends StatefulWidget {
@@ -174,15 +176,7 @@ class _AddCourierCompanyScreenState extends State<AddCourierCompanyScreen> {
         child: const Icon(Icons.edit, color: Colors.white),
       ),
       floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
-      bottomNavigationBar: CustomNavBar(
-        selectedIndex: 3, // or the appropriate index for this screen
-        onTabSelected: (index) {
-          if (index == 0) Get.offAllNamed('/dashboard');
-          if (index == 1) Get.offAllNamed('/order-list');
-          if (index == 2) Get.offAllNamed('/reports');
-          if (index == 3) Get.offAllNamed('/menu');
-        },
-      ),
+      bottomNavigationBar: const AppBottomBar(currentTab: 3),
     );
   }
 

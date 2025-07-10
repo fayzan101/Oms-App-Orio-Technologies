@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../services/auth_service.dart';
-import '../widgets/custom_nav_bar.dart';
+import '../utils/Layout/app_bottom_bar.dart';
 import '../utils/custom_snackbar.dart';
 
 class ChangePasswordScreen extends StatefulWidget {
@@ -153,15 +153,7 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
         child: const Icon(Icons.edit, color: Colors.white),
       ),
       floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
-      bottomNavigationBar: CustomNavBar(
-        selectedIndex: 3,
-        onTabSelected: (index) {
-          if (index == 0) Get.offAllNamed('/dashboard');
-          if (index == 1) Get.offAllNamed('/order-list');
-          if (index == 2) Get.offAllNamed('/reports');
-          if (index == 3) Get.offAllNamed('/menu');
-        },
-      ),
+      bottomNavigationBar: const AppBottomBar(currentTab: 3),
     );
   }
 

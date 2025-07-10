@@ -5,7 +5,7 @@ import 'dashboard_screen.dart';
 import 'order_list_screen.dart';
 import 'report.dart' as report;
 import 'change_password_screen.dart';
-import '../widgets/custom_nav_bar.dart';
+import '../utils/Layout/app_bottom_bar.dart';
 import '../services/auth_service.dart';
 import '../models/user_model.dart';
 import '../utils/custom_snackbar.dart';
@@ -328,15 +328,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         child: const Icon(Icons.edit, color: Colors.white),
         elevation: 4,
       ),
-      bottomNavigationBar: CustomNavBar(
-        selectedIndex: 3,
-        onTabSelected: (index) {
-          if (index == 0) Get.offAllNamed('/dashboard');
-          if (index == 1) Get.offAllNamed('/order-list');
-          if (index == 2) Get.offAllNamed('/reports');
-          if (index == 3) Get.offAllNamed('/menu');
-        },
-      ),
+      bottomNavigationBar: const AppBottomBar(currentTab: 3),
     );
   }
 

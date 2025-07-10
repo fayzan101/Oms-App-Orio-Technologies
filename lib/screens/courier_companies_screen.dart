@@ -3,7 +3,8 @@ import 'package:get/get.dart';
 import '../models/courier_account.dart';
 import '../services/courier_service.dart';
 import 'add_courier_company_screen.dart'; // Added import for AddCourierCompanyScreen
-import '../widgets/custom_nav_bar.dart';
+import '../utils/Layout/app_bottom_bar.dart';
+import '../utils/custom_snackbar.dart';
 import 'search_screen.dart';
 
 class CourierCompaniesScreen extends StatelessWidget {
@@ -142,15 +143,7 @@ class CourierCompaniesScreen extends StatelessWidget {
         child: const Icon(Icons.edit, color: Colors.white),
       ),
       floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
-      bottomNavigationBar: CustomNavBar(
-        selectedIndex: 3, // or the appropriate index for this screen
-        onTabSelected: (index) {
-          if (index == 0) Get.offAllNamed('/dashboard');
-          if (index == 1) Get.offAllNamed('/order-list');
-          if (index == 2) Get.offAllNamed('/reports');
-          if (index == 3) Get.offAllNamed('/menu');
-        },
-      ),
+      bottomNavigationBar: const AppBottomBar(currentTab: 3),
     );
   }
 

@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../models/notification_model.dart';
 import '../services/notification_service.dart';
-import '../widgets/custom_nav_bar.dart';
+import '../utils/Layout/app_bottom_bar.dart';
 import '../utils/custom_snackbar.dart';
 import 'search_screen.dart';
 
@@ -138,15 +138,7 @@ class _NotificationScreenState extends State<NotificationScreen> {
       ),
       floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
       resizeToAvoidBottomInset: false,
-      bottomNavigationBar: CustomNavBar(
-        selectedIndex: 3, // or the appropriate index for this screen
-        onTabSelected: (index) {
-          if (index == 0) Get.offAllNamed('/dashboard');
-          if (index == 1) Get.offAllNamed('/order-list');
-          if (index == 2) Get.offAllNamed('/reports');
-          if (index == 3) Get.offAllNamed('/menu');
-        },
-      ),
+      bottomNavigationBar: const AppBottomBar(currentTab: 3),
     );
   }
 

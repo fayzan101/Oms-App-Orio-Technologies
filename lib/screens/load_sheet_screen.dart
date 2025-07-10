@@ -4,7 +4,7 @@ import 'dashboard_screen.dart' as dash;
 import 'menu.dart' as menu;
 import 'order_list_screen.dart' as order_list;
 import 'search_screen.dart';
-import '../widgets/custom_nav_bar.dart';
+import '../utils/Layout/app_bottom_bar.dart';
 
 class LoadSheetScreen extends StatelessWidget {
   const LoadSheetScreen({Key? key}) : super(key: key);
@@ -183,27 +183,7 @@ class LoadSheetScreen extends StatelessWidget {
           ),
         ),
       ),
-      bottomNavigationBar: CustomNavBar(
-        selectedIndex: 2,
-        onTabSelected: (index) {
-          // Handle navigation based on index
-          if (index == 0) {
-            Navigator.of(context).pushReplacement(
-              MaterialPageRoute(builder: (_) => dash.DashboardScreen()),
-            );
-          } else if (index == 1) {
-            Navigator.of(context).pushReplacement(
-              MaterialPageRoute(builder: (_) => order_list.OrderListScreen()),
-            );
-          } else if (index == 2) {
-            // Already on Reports tab
-          } else if (index == 3) {
-            Navigator.of(context).pushReplacement(
-              MaterialPageRoute(builder: (_) => menu.MenuScreen()),
-            );
-          }
-        },
-      ),
+      bottomNavigationBar: const AppBottomBar(currentTab: 2),
       floatingActionButton: FloatingActionButton(
         onPressed: () {},
         backgroundColor: const Color(0xFF0A253B),

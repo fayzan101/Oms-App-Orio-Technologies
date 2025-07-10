@@ -11,7 +11,7 @@ import 'load_sheet_screen.dart';
 import 'profile_screen.dart';
 import 'package:dio/dio.dart';
 import 'rules_screen.dart';
-import '../widgets/custom_nav_bar.dart';
+import '../utils/Layout/app_bottom_bar.dart';
 
 class MenuScreen extends StatefulWidget {
   const MenuScreen({Key? key}) : super(key: key);
@@ -329,15 +329,7 @@ class _MenuScreenState extends State<MenuScreen> {
             ],
           ),
         ),
-        bottomNavigationBar: CustomNavBar(
-          selectedIndex: 3,
-          onTabSelected: (index) {
-            if (index == 0) Get.offAllNamed('/dashboard');
-            if (index == 1) Get.offAllNamed('/order-list');
-            if (index == 2) Get.offAllNamed('/reports');
-            if (index == 3) Get.offAllNamed('/menu');
-          },
-        ),
+        bottomNavigationBar: const AppBottomBar(currentTab: 3),
         floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
         floatingActionButton: FloatingActionButton(
           onPressed: () {

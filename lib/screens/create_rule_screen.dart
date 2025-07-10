@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import '../widgets/custom_nav_bar.dart';
-import 'rules_screen.dart'; // Added import for RulesScreen
-import 'orio_rule_detail_screen.dart'; // Import the new OrioRuleDetailScreen
+import 'orio_rule_detail_screen.dart';
+import '../utils/Layout/app_bottom_bar.dart';
 
 class CreateRuleScreen extends StatefulWidget {
   const CreateRuleScreen({Key? key}) : super(key: key);
@@ -189,15 +188,7 @@ class _CreateRuleScreenState extends State<CreateRuleScreen> {
         child: const Icon(Icons.edit, color: Colors.white),
       ),
       floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
-      bottomNavigationBar: CustomNavBar(
-        selectedIndex: 2,
-        onTabSelected: (index) {
-          if (index == 0) Get.offAllNamed('/dashboard');
-          if (index == 1) Get.offAllNamed('/order-list');
-          if (index == 2) Get.offAllNamed('/reports');
-          if (index == 3) Get.offAllNamed('/menu');
-        },
-      ),
+      bottomNavigationBar: const AppBottomBar(currentTab: 2),
     );
   }
 

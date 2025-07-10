@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'order_list_screen.dart';
-import '../widgets/custom_nav_bar.dart';
+import '../utils/Layout/app_bottom_bar.dart';
 
 class QuickEditScreen extends StatefulWidget {
   const QuickEditScreen({Key? key}) : super(key: key);
@@ -105,13 +105,7 @@ class _QuickEditScreenState extends State<QuickEditScreen> {
         elevation: 4,
       ),
       floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
-      bottomNavigationBar: CustomNavBar(
-        selectedIndex: 1, // Order List tab
-        onTabSelected: (index) {
-          if (index == 0) Navigator.of(context).pushAndRemoveUntil(MaterialPageRoute(builder: (_) => OrderListScreen()), (route) => false);
-          if (index == 1) Navigator.of(context).pushAndRemoveUntil(MaterialPageRoute(builder: (_) => OrderListScreen()), (route) => false);
-        },
-      ),
+      bottomNavigationBar: const AppBottomBar(currentTab: 1),
     );
   }
 
