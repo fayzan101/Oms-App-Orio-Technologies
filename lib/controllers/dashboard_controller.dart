@@ -1,67 +1,104 @@
 import 'package:get/get.dart';
-import '../network/api_service.dart';
+import '../services/dashboard_service.dart';
+import '../models/dashboard_reporting_model.dart';
 
 class DashboardController extends GetxController {
-  final ApiService _apiService = ApiService();
+  final DashboardService _dashboardService = DashboardService();
 
   // Observables for dashboard data
-  var outstandingAmount = 235461.obs;
-  var orders = 8487.obs;
-  var revenue = 46553.obs;
-  var productsSold = 6342.obs;
-  var pendingPayments = [
-    {
-      'amount': 12340,
-      'shipments': 47,
-      'courier': 'TCS',
-      'logo': 'assets/icon/tcs.png',
-    },
-    {
-      'amount': 20247,
-      'shipments': 68,
-      'courier': 'blueEX',
-      'logo': 'assets/icon/blueex.png',
-    },
-  ].obs;
+  var dashboardData = Rxn<DashboardReportingModel>();
+  var outstandingAmount = 0.obs;
+  var orders = 0.obs;
+  var revenue = 0.obs;
+  var productsSold = 0.obs;
+  var customers = 0.obs;
+  var totalOutstanding = 0.obs;
+  var totalCurrentOutstanding = 0.obs;
   var isLoading = false.obs;
   var selectedDays = 'Last 3 Days'.obs;
+  var error = ''.obs;
+
+  // Graph data
+  var orderGraph = <double>[].obs;
+  var revenueGraph = <double>[].obs;
+  var productsoldGraph = <double>[].obs;
+  var customerGraph = <double>[].obs;
+  var outstandingGraph = <double>[].obs;
+  var currentOutstandingGraph = <double>[].obs;
 
   @override
   void onInit() {
     super.onInit();
-    // Replace with actual values or get from user/session
-    fetchDashboardData(
-      acno: 'OR-00364',
-      startDate: '2024-11-12',
-      endDate: '2024-11-15',
-    );
+    // Load current week data by default
+    fetchCurrentWeekData();
   }
 
   Future<void> fetchDashboardData({
-    required String acno,
     required String startDate,
     required String endDate,
+    String? acno,
   }) async {
     isLoading.value = true;
+    error.value = '';
+    
     try {
-      final response = await _apiService.post(
-        'dashboard-reporting',
-        data: {
-          'acno': acno,
-          'start_date': startDate,
-          'end_date': endDate,
-        },
+      final data = await _dashboardService.getDashboardReporting(
+        startDate: startDate,
+        endDate: endDate,
+        acno: acno,
       );
-      final data = response.data;
-      outstandingAmount.value = data['total_outstanding'] ?? 0;
-      orders.value = data['orders'] ?? 0;
-      revenue.value = data['revenue'] ?? 0;
-      productsSold.value = data['products_sold'] ?? 0;
-      pendingPayments.value = data['pending_payments'] ?? [];
+      
+      dashboardData.value = data;
+      _updateObservables(data);
     } catch (e) {
-      Get.snackbar('Error', 'Failed to load dashboard data');
+      error.value = e.toString();
+      Get.snackbar('Error', 'Failed to load dashboard data: ${e.toString()}');
     } finally {
       isLoading.value = false;
     }
+  }
+
+  Future<void> fetchCurrentWeekData() async {
+    await fetchDashboardData(
+      startDate: DateTime.now().subtract(const Duration(days: 6)).toIso8601String().split('T')[0],
+      endDate: DateTime.now().toIso8601String().split('T')[0],
+    );
+    selectedDays.value = 'Last 7 Days';
+  }
+
+  Future<void> fetchCurrentMonthData() async {
+    final now = DateTime.now();
+    await fetchDashboardData(
+      startDate: DateTime(now.year, now.month, 1).toIso8601String().split('T')[0],
+      endDate: now.toIso8601String().split('T')[0],
+    );
+    selectedDays.value = 'Current Month';
+  }
+
+  Future<void> fetchCustomDateRangeData(DateTime startDate, DateTime endDate) async {
+    await fetchDashboardData(
+      startDate: startDate.toIso8601String().split('T')[0],
+      endDate: endDate.toIso8601String().split('T')[0],
+    );
+    final days = endDate.difference(startDate).inDays + 1;
+    selectedDays.value = 'Last $days Days';
+  }
+
+  void _updateObservables(DashboardReportingModel data) {
+    outstandingAmount.value = data.totalOutstanding;
+    orders.value = data.orders;
+    revenue.value = data.sales;
+    productsSold.value = data.productsold;
+    customers.value = data.customers;
+    totalOutstanding.value = data.totalOutstanding;
+    totalCurrentOutstanding.value = data.totalCurrentOutstanding;
+    
+    // Update graph data
+    orderGraph.value = data.orderGraphAsNumbers;
+    revenueGraph.value = data.revenueGraphAsNumbers;
+    productsoldGraph.value = data.productsoldGraphAsNumbers;
+    customerGraph.value = data.customerGraphAsNumbers;
+    outstandingGraph.value = data.outstandingGraphAsNumbers;
+    currentOutstandingGraph.value = data.currentOutstandingGraphAsNumbers;
   }
 } 

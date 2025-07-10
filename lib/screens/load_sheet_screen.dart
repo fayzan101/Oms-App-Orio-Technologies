@@ -1,41 +1,116 @@
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 import 'report.dart' as report;
 import 'dashboard_screen.dart' as dash;
 import 'menu.dart' as menu;
 import 'order_list_screen.dart' as order_list;
 import 'search_screen.dart';
 import '../utils/Layout/app_bottom_bar.dart';
+import '../services/load_sheet_service.dart';
+import '../services/auth_service.dart';
+import '../models/load_sheet_model.dart';
+import '../models/load_sheet_detail_model.dart';
+import '../utils/custom_snackbar.dart';
+import 'calendar_screen.dart';
 
-class LoadSheetScreen extends StatelessWidget {
+class LoadSheetScreen extends StatefulWidget {
   const LoadSheetScreen({Key? key}) : super(key: key);
 
   @override
-  Widget build(BuildContext context) {
-    // Mock data for demonstration
-    final List<Map<String, dynamic>> loadSheets = [
-      {
-        'sno': '01',
-        'sheetNo': '5606',
-        'date': '3-2-2025',
-        'shipments': '20',
-        'account': 'Account 9',
-        'courier': 'bluex',
-      },
-      {
-        'sno': '02',
-        'sheetNo': '5606',
-        'date': '3-2-2025',
-        'shipments': '20',
-        'account': 'Account 9',
-        'courier': 'bluex',
-      },
-      // Add more mock entries as needed
-    ];
+  State<LoadSheetScreen> createState() => _LoadSheetScreenState();
+}
 
+class _LoadSheetScreenState extends State<LoadSheetScreen> {
+  final LoadSheetService _loadSheetService = LoadSheetService();
+  final AuthService _authService = Get.find<AuthService>();
+  
+  List<LoadSheetModel> _loadSheets = [];
+  bool _isLoading = true;
+  String? _error;
+  String? _currentAcno;
+  
+  // Date range for filtering
+  DateTime _startDate = DateTime.now().subtract(const Duration(days: 30));
+  DateTime _endDate = DateTime.now();
+
+  @override
+  void initState() {
+    super.initState();
+    _loadCurrentUserAcno();
+  }
+
+  Future<void> _loadCurrentUserAcno() async {
+    final user = _authService.currentUser.value;
+    if (user != null) {
+      setState(() {
+        _currentAcno = user.acno;
+      });
+      await _loadLoadSheets();
+    } else {
+      setState(() {
+        _error = 'User not found';
+        _isLoading = false;
+      });
+    }
+  }
+
+  Future<void> _loadLoadSheets() async {
+    if (_currentAcno == null) return;
+
+    setState(() {
+      _isLoading = true;
+      _error = null;
+    });
+
+    try {
+      final loadSheets = await _loadSheetService.getLoadSheets(
+        acno: _currentAcno,
+        startDate: _startDate.toIso8601String().split('T')[0],
+        endDate: _endDate.toIso8601String().split('T')[0],
+      );
+
+      setState(() {
+        _loadSheets = loadSheets;
+        _isLoading = false;
+      });
+    } catch (e) {
+      setState(() {
+        _error = e.toString();
+        _isLoading = false;
+      });
+      customSnackBar('Error', 'Failed to load sheets: ${e.toString()}');
+    }
+  }
+
+  Future<void> _selectDateRange() async {
+    final DateTimeRange? picked = await showDateRangePicker(
+      context: context,
+      firstDate: DateTime(2020),
+      lastDate: DateTime.now(),
+      initialDateRange: DateTimeRange(
+        start: _startDate,
+        end: _endDate,
+      ),
+    );
+
+    if (picked != null) {
+      setState(() {
+        _startDate = picked.start;
+        _endDate = picked.end;
+      });
+      await _loadLoadSheets();
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
         backgroundColor: Colors.white,
+        shadowColor: Colors.white,
+        foregroundColor: Colors.white,
+        surfaceTintColor: Colors.white,
         elevation: 0,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back_ios_new, color: Colors.black, size: 22),
@@ -62,136 +137,256 @@ class LoadSheetScreen extends StatelessWidget {
           ),
           IconButton(
             icon: const Icon(Icons.calendar_today_outlined, color: Colors.black),
-            onPressed: () {},
+            onPressed: _selectDateRange,
           ),
         ],
       ),
       body: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 16),
-        child: SingleChildScrollView(
-          child: Padding(
-            padding: const EdgeInsets.only(bottom: 90), // Extra space for bottom nav and FAB
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const SizedBox(height: 12),
-                const Text(
-                  'Total Load Sheet: 06',
-                  style: TextStyle(
-                    fontFamily: 'SF Pro Display',
-                    fontWeight: FontWeight.w500,
-                    fontSize: 14,
-                    color: Colors.black,
-                  ),
-                ),
-                const SizedBox(height: 12),
-                ListView.separated(
-                  shrinkWrap: true,
-                  physics: NeverScrollableScrollPhysics(),
-                  itemCount: loadSheets.length,
-                  separatorBuilder: (context, i) => const SizedBox(height: 16),
-                  itemBuilder: (context, i) {
-                    final sheet = loadSheets[i];
-                    return Container(
-                      padding: const EdgeInsets.symmetric(vertical: 18, horizontal: 18),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFF5F5F7),
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Table(
-                            columnWidths: const {
-                              0: FixedColumnWidth(100), // Adjust width as needed
-                              1: FlexColumnWidth(),
-                            },
-                            defaultVerticalAlignment: TableCellVerticalAlignment.middle,
-                            children: [
-                              TableRow(children: [
-                                Text('S.No', style: _labelStyle),
-                                Text(sheet['sno'], style: _valueStyle),
-                              ]),
-                              TableRow(children: [
-                                Text('Sheet No', style: _labelStyle),
-                                Text(sheet['sheetNo'], style: _valueStyle),
-                              ]),
-                              TableRow(children: [
-                                Text('Date', style: _labelStyle),
-                                Text(sheet['date'], style: _valueStyle),
-                              ]),
-                              TableRow(children: [
-                                Text('Shipments', style: _labelStyle),
-                                Text(sheet['shipments'], style: _valueStyle),
-                              ]),
-                              TableRow(children: [
-                                Text('Account', style: _labelStyle),
-                                Text(sheet['account'], style: _valueStyle),
-                              ]),
-                              TableRow(children: [
-                                Text('Courier', style: _labelStyle),
-                                Align(
-                                  alignment: Alignment.centerLeft,
-                                  child: Image.asset(
-                                    'assets/icon/bluex.jpeg',
-                                    width: 48,
-                                    height: 20,
-                                    fit: BoxFit.contain,
-                                  ),
-                                ),
-                              ]),
-                              TableRow(children: [
-                                Text('Action', style: _labelStyle),
-                                GestureDetector(
-                                  onTap: () {
-                                    showModalBottomSheet(
-                                      context: context,
-                                      shape: const RoundedRectangleBorder(
-                                        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-                                      ),
-                                      builder: (context) {
-                                        return _LoadsheetDetailsBottomSheet(
-                                          orderId: '677878',
-                                          cn: '5034831671',
-                                          status: 'Pickup Ready',
-                                          onDelete: () {
-                                            Navigator.of(context).pop();
-                                            // Add delete logic here
-                                          },
-                                        );
-                                      },
-                                    );
-                                  },
-                                  child: Row(
-                                    children: const [
-                                      Icon(Icons.edit, color: Color(0xFF007AFF)),
-                                      SizedBox(width: 4),
-                                      Text('Edit', style: TextStyle(color: Color(0xFF007AFF), fontWeight: FontWeight.w500)),
-                                    ],
-                                  ),
-                                ),
-                              ]),
-                            ],
-                          ),
-                        ],
-                      ),
-                    );
-                  },
-                ),
-              ],
-            ),
-          ),
-        ),
+        child: _buildBody(),
       ),
       bottomNavigationBar: const AppBottomBar(currentTab: 2),
       floatingActionButton: FloatingActionButton(
-        onPressed: () {},
+        onPressed: () {
+          // Add new load sheet functionality
+          customSnackBar('Info', 'Add load sheet functionality not implemented yet');
+        },
         backgroundColor: const Color(0xFF0A253B),
         child: const Icon(Icons.edit, color: Colors.white),
         elevation: 4,
       ),
       floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
     );
+  }
+
+  Widget _buildBody() {
+    if (_isLoading) {
+      return const Center(child: CircularProgressIndicator());
+    }
+
+    if (_error != null) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Text('Error: $_error', style: const TextStyle(color: Colors.red)),
+            const SizedBox(height: 16),
+            ElevatedButton(
+              onPressed: _loadLoadSheets,
+              child: const Text('Retry'),
+            ),
+          ],
+        ),
+      );
+    }
+
+    if (_loadSheets.isEmpty) {
+      return const Center(
+        child: Text(
+          'No load sheets found for the selected date range.',
+          style: TextStyle(fontSize: 16),
+        ),
+      );
+    }
+
+    return SingleChildScrollView(
+      child: Padding(
+        padding: const EdgeInsets.only(bottom: 90), // Extra space for bottom nav and FAB
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const SizedBox(height: 12),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  'Total Load Sheet: ${_loadSheets.length.toString().padLeft(2, '0')}',
+                  style: const TextStyle(
+                    fontFamily: 'SF Pro Display',
+                    fontWeight: FontWeight.w500,
+                    fontSize: 14,
+                    color: Colors.black,
+                  ),
+                ),
+                Text(
+                  '${_startDate.toIso8601String().split('T')[0]} to ${_endDate.toIso8601String().split('T')[0]}',
+                  style: const TextStyle(
+                    fontFamily: 'SF Pro Display',
+                    fontWeight: FontWeight.w400,
+                    fontSize: 12,
+                    color: Colors.grey,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            ListView.separated(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              itemCount: _loadSheets.length,
+              separatorBuilder: (context, i) => const SizedBox(height: 16),
+              itemBuilder: (context, i) {
+                final sheet = _loadSheets[i];
+                return Container(
+                  padding: const EdgeInsets.symmetric(vertical: 18, horizontal: 18),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFF5F5F7),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Table(
+                        columnWidths: const {
+                          0: FixedColumnWidth(100), // Adjust width as needed
+                          1: FlexColumnWidth(),
+                        },
+                        defaultVerticalAlignment: TableCellVerticalAlignment.middle,
+                        children: [
+                          TableRow(children: [
+                            Text('S.No', style: _labelStyle),
+                            Text('${i + 1}', style: _valueStyle),
+                          ]),
+                          TableRow(children: [
+                            Text('Sheet No', style: _labelStyle),
+                            Text(sheet.sheetNo, style: _valueStyle),
+                          ]),
+                          TableRow(children: [
+                            Text('Date', style: _labelStyle),
+                            Text(_formatDate(sheet.createdAt), style: _valueStyle),
+                          ]),
+                          TableRow(children: [
+                            Text('Shipments', style: _labelStyle),
+                            Text(sheet.shipmentCount, style: _valueStyle),
+                          ]),
+                          TableRow(children: [
+                            Text('Account', style: _labelStyle),
+                            Text(sheet.accountTitle, style: _valueStyle),
+                          ]),
+                          TableRow(children: [
+                            Text('Courier', style: _labelStyle),
+                            Text(sheet.courierName, style: _valueStyle),
+                          ]),
+                          if (sheet.consignmentNo != null && sheet.consignmentNo!.isNotEmpty)
+                            TableRow(children: [
+                              Text('CN', style: _labelStyle),
+                              Text(sheet.consignmentNo!, style: _valueStyle),
+                            ]),
+                          TableRow(children: [
+                            Text('Action', style: _labelStyle),
+                            GestureDetector(
+                              onTap: () {
+                                _showLoadSheetDetails(sheet);
+                              },
+                              child: Row(
+                                children: const [
+                                  Icon(Icons.edit, color: Color(0xFF007AFF)),
+                                  SizedBox(width: 4),
+                                  Text('Edit', style: TextStyle(color: Color(0xFF007AFF), fontWeight: FontWeight.w500)),
+                                ],
+                              ),
+                            ),
+                          ]),
+                        ],
+                      ),
+                    ],
+                  ),
+                );
+              },
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  String _formatDate(String dateString) {
+    try {
+      final date = DateTime.parse(dateString);
+      return '${date.day}-${date.month}-${date.year}';
+    } catch (e) {
+      return dateString;
+    }
+  }
+
+  void _showLoadSheetDetails(LoadSheetModel sheet) {
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (context) {
+        return _LoadsheetDetailsBottomSheet(
+          sheet: sheet,
+          onDelete: () async {
+            Navigator.of(context).pop();
+            await _deleteLoadSheet(sheet);
+          },
+        );
+      },
+    );
+  }
+
+  Future<void> _deleteLoadSheet(LoadSheetModel sheet) async {
+    try {
+      print('Delete load sheet called for sheet: ${sheet.id}');
+      print('Current acno: $_currentAcno');
+      
+      // Get the consignment number from the detailed API
+      List<LoadSheetDetailModel> details = [];
+      try {
+        details = await _loadSheetService.getLoadSheetDetails(
+          sheetNo: sheet.sheetNo,
+          acno: _currentAcno,
+        );
+      } catch (e) {
+        print('Error fetching details for deletion: $e');
+        customSnackBar('Error', 'Failed to fetch load sheet details for deletion');
+        return;
+      }
+
+      if (details.isEmpty) {
+        customSnackBar('Error', 'No items found in load sheet for deletion');
+        return;
+      }
+
+      // Use the first item's consignment number for deletion
+      final consignmentNo = details.first.consignmentNo;
+      final orderId = int.tryParse(details.first.orderId);
+      
+      if (consignmentNo.isEmpty) {
+        customSnackBar('Error', 'Consignment number not available for deletion');
+        print('Error: Consignment number is empty');
+        return;
+      }
+
+      if (orderId == null) {
+        customSnackBar('Error', 'Invalid order ID for deletion');
+        print('Error: Invalid order ID: ${details.first.orderId}');
+        return;
+      }
+
+      print('Calling delete API with orderId: $orderId, consignmentNo: $consignmentNo');
+
+      final success = await _loadSheetService.deleteLoadSheet(
+        orderId: orderId,
+        consignmentNo: consignmentNo,
+        acno: _currentAcno,
+      );
+
+      print('Delete API response: $success');
+
+      if (success) {
+        customSnackBar('Success', 'Load sheet deleted successfully!');
+        // Refresh the load sheets list
+        await _loadLoadSheets();
+      } else {
+        customSnackBar('Error', 'Failed to delete load sheet');
+      }
+    } catch (e) {
+      print('Exception in delete load sheet: $e');
+      customSnackBar('Error', 'Failed to delete load sheet: ${e.toString()}');
+    }
   }
 
   static Widget _row(String label, String value) {
@@ -222,19 +417,21 @@ const _valueStyle = TextStyle(
   color: Colors.black,
 );
 
-class _LoadsheetDetailsBottomSheet extends StatelessWidget {
-  final String orderId;
-  final String cn;
-  final String status;
+class _LoadsheetDetailsBottomSheet extends StatefulWidget {
+  final LoadSheetModel sheet;
   final VoidCallback onDelete;
 
   const _LoadsheetDetailsBottomSheet({
     Key? key,
-    required this.orderId,
-    required this.cn,
-    required this.status,
+    required this.sheet,
     required this.onDelete,
   }) : super(key: key);
+
+  @override
+  State<_LoadsheetDetailsBottomSheet> createState() => _LoadsheetDetailsBottomSheetState();
+}
+
+class _LoadsheetDetailsBottomSheetState extends State<_LoadsheetDetailsBottomSheet> {
 
   @override
   Widget build(BuildContext context) {
@@ -262,9 +459,17 @@ class _LoadsheetDetailsBottomSheet extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 12),
-          _detailRow('Order ID', orderId),
-          _detailRow('CN#', cn),
-          _detailRow('Status', status),
+          _detailRow('Sheet ID', widget.sheet.id),
+          _detailRow('Sheet No', widget.sheet.sheetNo),
+          _detailRow('Courier', widget.sheet.courierName),
+          _detailRow('Account', widget.sheet.accountTitle),
+          _detailRow('Shipments', widget.sheet.shipmentCount),
+          if (widget.sheet.consignmentNo != null && widget.sheet.consignmentNo!.isNotEmpty)
+            _detailRow('Consignment No', widget.sheet.consignmentNo!),
+          _detailRow('Created At', _formatDate(widget.sheet.createdAt)),
+          if (widget.sheet.consignmentNo != null && widget.sheet.consignmentNo!.isNotEmpty)
+            _detailRow('Consignment No', widget.sheet.consignmentNo!),
+          
           const SizedBox(height: 12),
           Row(
             children: [
@@ -280,13 +485,8 @@ class _LoadsheetDetailsBottomSheet extends StatelessWidget {
                   );
                   if (confirmed == true) {
                     Navigator.of(context).pop(); // Close the details bottom sheet
-                    await showModalBottomSheet(
-                      context: context,
-                      isScrollControlled: true,
-                      backgroundColor: Colors.transparent,
-                      builder: (context) => _DeleteSuccessBottomSheet(),
-                    );
-                    // Add delete logic here if needed
+                    // Call the actual delete function
+                    widget.onDelete();
                   }
                 },
                 child: Row(
@@ -303,6 +503,8 @@ class _LoadsheetDetailsBottomSheet extends StatelessWidget {
       ),
     );
   }
+
+
 
   Widget _detailRow(String label, String value) {
     return Padding(
@@ -329,6 +531,15 @@ class _LoadsheetDetailsBottomSheet extends StatelessWidget {
         ],
       ),
     );
+  }
+
+  String _formatDate(String dateString) {
+    try {
+      final date = DateTime.parse(dateString);
+      return '${date.day}-${date.month}-${date.year}';
+    } catch (e) {
+      return dateString;
+    }
   }
 }
 

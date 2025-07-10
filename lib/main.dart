@@ -17,6 +17,7 @@ import 'screens/help_videos_screen.dart';
 import 'screens/order_list_screen.dart';
 import 'screens/report.dart';
 import 'screens/profile_screen.dart';
+import 'controllers/help_video_controller.dart';
 
 void main() {
   runApp(const MyApp());
@@ -68,6 +69,7 @@ class MyApp extends StatelessWidget {
         Get.put(AuthService());
         Get.put(SignInController());
         Get.put(DashboardController());
+        Get.put(HelpVideoController());
       }),
       getPages: [
         GetPage(name: '/dashboard', page: () => DashboardScreen()),

@@ -2,12 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../models/notification_model.dart';
 import '../services/notification_service.dart';
-import '../utils/Layout/app_bottom_bar.dart';
+import '../services/auth_service.dart';
 import '../utils/custom_snackbar.dart';
+import '../utils/Layout/app_bottom_bar.dart';
+import 'add_notification_screen.dart';
 import 'search_screen.dart';
 
 class NotificationScreen extends StatefulWidget {
-  NotificationScreen({Key? key}) : super(key: key);
+  const NotificationScreen({Key? key}) : super(key: key);
 
   @override
   State<NotificationScreen> createState() => _NotificationScreenState();
@@ -15,16 +17,45 @@ class NotificationScreen extends StatefulWidget {
 
 class _NotificationScreenState extends State<NotificationScreen> {
   final NotificationService _notificationService = NotificationService();
+  final AuthService _authService = Get.find<AuthService>();
+  String? _currentAcno;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadCurrentUserAcno();
+  }
+
+  Future<void> _loadCurrentUserAcno() async {
+    final user = _authService.currentUser.value;
+    if (user != null) {
+      setState(() {
+        _currentAcno = user.acno;
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
+    if (_currentAcno == null) {
+      return const Scaffold(
+        body: Center(child: CircularProgressIndicator()),
+      );
+    }
+
     return Scaffold(
       appBar: AppBar(
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back, color: Colors.black),
+          onPressed: () {
+            Get.back();
+          },
+        ),
         title: const Text('Notifications', style: TextStyle(color: Colors.black)),
         backgroundColor: Colors.white,
         shadowColor: Colors.white,
+        foregroundColor: Colors.white,
         surfaceTintColor: Colors.white,
-        iconTheme: const IconThemeData(color: Colors.black),
         actions: [
           IconButton(
             icon: const Icon(Icons.search, color: Colors.black),
@@ -37,7 +68,7 @@ class _NotificationScreenState extends State<NotificationScreen> {
         ],
       ),
       body: FutureBuilder<List<NotificationModel>>(
-        future: _notificationService.getNotifications('OR-00009'),
+        future: _notificationService.getNotifications(acno: _currentAcno),
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
             return const Center(child: CircularProgressIndicator());
@@ -146,7 +177,7 @@ class _NotificationScreenState extends State<NotificationScreen> {
     try {
       final success = await _notificationService.deleteNotification(
         int.tryParse(notification.id) ?? 0,
-        'OR-00009',
+        _currentAcno ?? '',
       );
 
       if (success) {

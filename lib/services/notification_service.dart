@@ -1,14 +1,65 @@
 import 'package:dio/dio.dart';
 import '../models/notification_model.dart';
+import '../network/api_service.dart';
+import '../services/auth_service.dart';
+import '../config/api_config.dart';
 
 class NotificationService {
-  final Dio _dio = Dio(BaseOptions(baseUrl: 'https://oms.getorio.com/api/'));
+  final ApiService _apiService = ApiService();
+  final AuthService _authService = AuthService();
 
-  Future<List<NotificationModel>> getNotifications(String acno) async {
+  NotificationService() {
+    _apiService.init();
+  }
+
+  Future<List<NotificationModel>> getNotifications({
+    String? acno,
+    String? searchQuery,
+    String? status,
+    int page = 1,
+    int limit = 20,
+    String? sortBy,
+    String? sortOrder,
+  }) async {
     try {
-      final response = await _dio.post(
-        'notification/index',
-        data: {"acno": acno},
+      // Get authentication token
+      final apiKey = await _authService.getApiKey();
+      
+      // Prepare request data
+      final Map<String, dynamic> requestData = {
+        'acno': acno ?? '',
+      };
+
+      // Add optional filters
+      if (searchQuery != null && searchQuery.isNotEmpty) {
+        requestData['search'] = searchQuery;
+      }
+      if (status != null && status.isNotEmpty) {
+        requestData['status'] = status;
+      }
+      if (page > 1) {
+        requestData['page'] = page;
+      }
+      if (limit != 20) {
+        requestData['limit'] = limit;
+      }
+      if (sortBy != null && sortBy.isNotEmpty) {
+        requestData['sort_by'] = sortBy;
+      }
+      if (sortOrder != null && sortOrder.isNotEmpty) {
+        requestData['sort_order'] = sortOrder;
+      }
+
+      // Add authentication header
+      final headers = <String, String>{};
+      if (apiKey.isNotEmpty) {
+        headers['Authorization'] = 'Bearer $apiKey';
+      }
+
+      final response = await _apiService.post(
+        ApiConfig.notificationsEndpoint,
+        data: requestData,
+        headers: headers,
       );
       
       if (response.statusCode == 200) {
@@ -24,7 +75,7 @@ class NotificationService {
             // Fetch detailed information using get_notification endpoint
             final detailedNotification = await getNotification(
               int.tryParse(basicNotification.id) ?? 0, 
-              acno
+              acno ?? ''
             );
             
             notifications.add(detailedNotification);
@@ -47,12 +98,22 @@ class NotificationService {
 
   Future<NotificationModel> getNotification(int id, String acno) async {
     try {
-      final response = await _dio.post(
-        'notification/get_notification',
+      // Get authentication token
+      final apiKey = await _authService.getApiKey();
+      
+      // Add authentication header
+      final headers = <String, String>{};
+      if (apiKey.isNotEmpty) {
+        headers['Authorization'] = 'Bearer $apiKey';
+      }
+
+      final response = await _apiService.post(
+        ApiConfig.notificationDetailEndpoint,
         data: {
           "id": id,
           "acno": acno,
         },
+        headers: headers,
       );
       
       if (response.statusCode == 200) {
@@ -78,8 +139,17 @@ class NotificationService {
     required String status,
   }) async {
     try {
-      final response = await _dio.post(
-        'notification/create',
+      // Get authentication token
+      final apiKey = await _authService.getApiKey();
+      
+      // Add authentication header
+      final headers = <String, String>{};
+      if (apiKey.isNotEmpty) {
+        headers['Authorization'] = 'Bearer $apiKey';
+      }
+
+      final response = await _apiService.post(
+        ApiConfig.notificationCreateEndpoint,
         data: {
           "acno": acno,
           "message": message,
@@ -90,6 +160,7 @@ class NotificationService {
           "is_sms": isSms,
           "status": status,
         },
+        headers: headers,
       );
       
       if (response.statusCode == 200) {
@@ -121,8 +192,17 @@ class NotificationService {
     required String status,
   }) async {
     try {
-      final response = await _dio.post(
-        'notification/edit',
+      // Get authentication token
+      final apiKey = await _authService.getApiKey();
+      
+      // Add authentication header
+      final headers = <String, String>{};
+      if (apiKey.isNotEmpty) {
+        headers['Authorization'] = 'Bearer $apiKey';
+      }
+
+      final response = await _apiService.post(
+        ApiConfig.notificationEditEndpoint,
         data: {
           "id": id,
           "acno": acno,
@@ -134,6 +214,7 @@ class NotificationService {
           "is_sms": isSms,
           "status": status,
         },
+        headers: headers,
       );
       
       if (response.statusCode == 200) {
@@ -155,12 +236,22 @@ class NotificationService {
 
   Future<bool> deleteNotification(int id, String acno) async {
     try {
-      final response = await _dio.post(
-        'notification/delete',
+      // Get authentication token
+      final apiKey = await _authService.getApiKey();
+      
+      // Add authentication header
+      final headers = <String, String>{};
+      if (apiKey.isNotEmpty) {
+        headers['Authorization'] = 'Bearer $apiKey';
+      }
+
+      final response = await _apiService.post(
+        ApiConfig.notificationDeleteEndpoint,
         data: {
           "id": id,
           "acno": acno,
         },
+        headers: headers,
       );
       
       if (response.statusCode == 200) {
@@ -178,5 +269,22 @@ class NotificationService {
     } catch (e) {
       throw Exception('An unexpected error occurred: $e');
     }
+  }
+
+  // Convenience methods for common operations
+  Future<List<NotificationModel>> getNotificationsByStatus(String status, {String? acno}) async {
+    return getNotifications(status: status, acno: acno);
+  }
+
+  Future<List<NotificationModel>> searchNotifications(String query, {String? acno}) async {
+    return getNotifications(searchQuery: query, acno: acno);
+  }
+
+  Future<List<NotificationModel>> getActiveNotifications({String? acno}) async {
+    return getNotifications(status: 'active', acno: acno);
+  }
+
+  Future<List<NotificationModel>> getInactiveNotifications({String? acno}) async {
+    return getNotifications(status: 'inactive', acno: acno);
   }
 } 

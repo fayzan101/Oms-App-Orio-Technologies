@@ -117,16 +117,14 @@ class _DashboardScreenState extends State<DashboardScreen> {
                           color: Color(0xFFE8F4FD),
                           borderRadius: BorderRadius.circular(20),
                         ),
-                        child: Text(
-                          _selectedDate != null
-                              ? 'Last ${DateTime.now().difference(_selectedDate!).inDays + 1} Day${DateTime.now().difference(_selectedDate!).inDays == 0 ? '' : 's'}'
-                              : 'Last 3 Days',
+                        child: Obx(() => Text(
+                          controller.selectedDays.value,
                           style: TextStyle(
                             color: Color(0xFF007AFF),
                             fontSize: 12,
                             fontWeight: FontWeight.w500,
                           ),
-                        ),
+                        )),
                       ),
                     ],
                   ),
@@ -155,14 +153,14 @@ class _DashboardScreenState extends State<DashboardScreen> {
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            Text(
-                              'PKR 235,461',
+                            Obx(() => Text(
+                              'PKR ${controller.totalCurrentOutstanding.value.toStringAsFixed(0)}',
                               style: TextStyle(
                                     fontSize: 24,
                                 fontWeight: FontWeight.bold,
                                 color: Colors.black,
                                   ),
-                        ),
+                            )),
                             // Simple chart representation
                       Image.asset(
                               'assets/icon/graph.png',

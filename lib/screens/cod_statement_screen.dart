@@ -4,6 +4,8 @@ import 'dashboard_screen.dart' as dash;
 import 'menu.dart' as menu;
 import 'report.dart' as report;
 import 'search_screen.dart';
+import 'package:get/get.dart';
+import 'calendar_screen.dart';
 
 class CODStatement {
   final String refNo;
@@ -98,7 +100,9 @@ class _CODStatementScreenState extends State<CODStatementScreen> {
           ),
           IconButton(
             icon: const Icon(Icons.calendar_today_outlined, color: Colors.black),
-            onPressed: () {},
+            onPressed: () {
+              Get.to(() => const CalendarScreen());
+            },
           ),
         ],
       ),

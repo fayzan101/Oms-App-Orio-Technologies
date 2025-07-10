@@ -2,38 +2,45 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../models/notification_model.dart';
 import '../services/notification_service.dart';
-import '../utils/Layout/app_bottom_bar.dart';
+import '../services/auth_service.dart';
 import '../utils/custom_snackbar.dart';
+import '../utils/Layout/app_bottom_bar.dart';
 import 'notification_screen.dart';
 
 class AddNotificationScreen extends StatefulWidget {
   final bool isEdit;
   final NotificationModel? notification;
-  const AddNotificationScreen({Key? key, this.isEdit = false, this.notification}) : super(key: key);
+
+  const AddNotificationScreen({
+    Key? key,
+    this.isEdit = false,
+    this.notification,
+  }) : super(key: key);
 
   @override
   State<AddNotificationScreen> createState() => _AddNotificationScreenState();
 }
 
 class _AddNotificationScreenState extends State<AddNotificationScreen> {
-  final _formKey = GlobalKey<FormState>();
   final NotificationService _notificationService = NotificationService();
-  String? selectedStatus;
-  final TextEditingController messageController = TextEditingController();
+  final AuthService _authService = Get.find<AuthService>();
+  final _formKey = GlobalKey<FormState>();
   final TextEditingController subjectController = TextEditingController();
-  bool whatsapp = true;
-  bool email = true;
-  bool sms = true;
+  final TextEditingController messageController = TextEditingController();
+  
+  String? selectedStatus;
+  bool email = false;
+  bool whatsapp = false;
+  bool sms = false;
   bool isActive = true;
   bool isLoading = false;
+  String? _currentAcno;
 
-  final List<String> statuses = ['Confirmed', 'New', 'Processing', 'Delivered', 'Cancelled'];
-  
-  // Map status names to status IDs
+  final List<String> statuses = ['Pending', 'Processing', 'Shipped', 'Delivered', 'Cancelled'];
   final Map<String, int> statusIdMap = {
-    'Confirmed': 1,
-    'New': 2,
-    'Processing': 3,
+    'Pending': 1,
+    'Processing': 2,
+    'Shipped': 3,
     'Delivered': 4,
     'Cancelled': 5,
   };
@@ -41,18 +48,30 @@ class _AddNotificationScreenState extends State<AddNotificationScreen> {
   @override
   void initState() {
     super.initState();
+    _loadCurrentUserAcno();
     if (widget.isEdit && widget.notification != null) {
-      selectedStatus = widget.notification!.statusName;
-      messageController.text = widget.notification!.message;
-      subjectController.text = widget.notification!.subject;
-      whatsapp = widget.notification!.isWhatsapp == 'Y';
-      email = widget.notification!.isEmail == 'Y';
-      sms = widget.notification!.isSms == 'Y';
-      isActive = widget.notification!.status == 'Y';
-    } else {
-      messageController.text = 'Your Message, Thanks {{CUSTOMER_NAME}} for placing the order. Your order amount is {{ORDER_AMOUNT}}.';
-      subjectController.text = 'Order Notification';
+      _loadNotificationData();
     }
+  }
+
+  Future<void> _loadCurrentUserAcno() async {
+    final user = _authService.currentUser.value;
+    if (user != null) {
+      setState(() {
+        _currentAcno = user.acno;
+      });
+    }
+  }
+
+  void _loadNotificationData() {
+    final notification = widget.notification!;
+    subjectController.text = notification.subject;
+    messageController.text = notification.message;
+    selectedStatus = notification.statusName;
+    email = notification.isEmail == 'Y';
+    whatsapp = notification.isWhatsapp == 'Y';
+    sms = notification.isSms == 'Y';
+    isActive = notification.status == 'Y';
   }
 
   Future<void> _saveNotification() async {
@@ -60,6 +79,11 @@ class _AddNotificationScreenState extends State<AddNotificationScreen> {
     
     if (selectedStatus == null) {
       customSnackBar('Error', 'Please select a status');
+      return;
+    }
+
+    if (_currentAcno == null) {
+      customSnackBar('Error', 'User account not found');
       return;
     }
 
@@ -74,7 +98,7 @@ class _AddNotificationScreenState extends State<AddNotificationScreen> {
         // Edit existing notification
         success = await _notificationService.editNotification(
           id: int.tryParse(widget.notification!.id) ?? 0,
-          acno: 'OR-00009',
+          acno: _currentAcno!,
           message: messageController.text.trim(),
           statusId: statusIdMap[selectedStatus!] ?? 2,
           subject: subjectController.text.trim(),
@@ -86,7 +110,7 @@ class _AddNotificationScreenState extends State<AddNotificationScreen> {
       } else {
         // Create new notification
         success = await _notificationService.createNotification(
-          acno: 'OR-00009',
+          acno: _currentAcno!,
           message: messageController.text.trim(),
           statusId: statusIdMap[selectedStatus!] ?? 2,
           subject: subjectController.text.trim(),
@@ -101,7 +125,7 @@ class _AddNotificationScreenState extends State<AddNotificationScreen> {
         customSnackBar('Success', widget.isEdit ? 'Notification updated successfully!' : 'Notification created successfully!');
         
         // Navigate back to notification screen
-        Get.off(() => NotificationScreen());
+        Get.off(() => const NotificationScreen());
       } else {
         customSnackBar('Error', widget.isEdit ? 'Failed to update notification' : 'Failed to create notification');
       }
