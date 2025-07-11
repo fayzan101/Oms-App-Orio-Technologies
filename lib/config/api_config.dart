@@ -25,8 +25,8 @@ class ApiConfig {
   static const String statementEndpoint = 'statement/index';
   
   // Timeout configurations
-  static const int connectTimeout = 30; // seconds
-  static const int receiveTimeout = 30; // seconds
+  static const int connectTimeout = 60; // seconds - increased from 30
+  static const int receiveTimeout = 60; // seconds - increased from 30
   
   // Pagination defaults
   static const int defaultPageSize = 20;

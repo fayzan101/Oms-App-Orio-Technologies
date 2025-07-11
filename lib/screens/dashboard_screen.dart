@@ -25,28 +25,81 @@ class DashboardScreen extends StatefulWidget {
 
 class _DashboardScreenState extends State<DashboardScreen> {
   final DashboardController controller = Get.find<DashboardController>();
+  // Revert to current dates for normal operation
   DateTime _startDate = DateTime.now().subtract(const Duration(days: 30));
   DateTime _endDate = DateTime.now();
+
+  // Helper function to format date in proper ISO 8601 format (YYYY-MM-DD)
+  String _formatDateToISO(DateTime date) {
+    String year = date.year.toString();
+    String month = date.month.toString().padLeft(2, '0');
+    String day = date.day.toString().padLeft(2, '0');
+    final formattedDate = '$year-$month-$day';
+    print('_formatDateToISO: Input date: $date, Output: $formattedDate');
+    return formattedDate;
+  }
+
+  // Helper function to get courier logo based on courier name
+  String _getCourierLogo(String courierName) {
+    print('Getting logo for courier: "$courierName"');
+    
+    // Convert to lowercase for case-insensitive comparison
+    final name = courierName.toLowerCase().trim();
+    
+    // Map based on available assets and actual courier names from API
+    switch (name) {
+      case 'leopards':
+        return 'assets/icon/tcs.png'; // Using TCS logo for Leopards
+      case 'm&p':
+      case 'm & p':
+      case 'm and p':
+        return 'assets/icon/bluex.jpeg'; // Using BlueX logo for M&P
+      case 'riders':
+        return 'assets/icon/tcs.png'; // Using TCS logo for Riders
+      case 'bluex':
+      case 'blue x':
+        return 'assets/icon/bluex.jpeg';
+      case 'tcs':
+        return 'assets/icon/tcs.png';
+      default:
+        print('No specific logo found for courier: "$courierName", using default');
+        return 'assets/icon/tcs.png'; // Default logo
+    }
+  }
 
   @override
   void initState() {
     super.initState();
-    // Optionally, fetch dashboard data here if needed
-    // controller.fetchDashboardData(startDate: _startDate, endDate: _endDate);
+    print('DashboardScreen initState - Start date: $_startDate, End date: $_endDate');
+    
+    // Test date formatting with the date from your Postman test
+    final testDate = DateTime(2025, 7, 11);
+    final formattedTestDate = _formatDateToISO(testDate);
+    print('Test date formatting: $testDate -> $formattedTestDate');
+    
+    // Fetch dashboard data on screen load
+    _fetchDashboardData();
+  }
+
+  Future<void> _fetchDashboardData() async {
+    final startStr = _formatDateToISO(_startDate);
+    final endStr = _formatDateToISO(_endDate);
+    print('Dashboard fetch dates - Start: $startStr, End: $endStr');
+    print('Dashboard fetch dates - Start DateTime: $_startDate, End DateTime: $_endDate');
+    await controller.fetchDashboardData(startDate: startStr, endDate: endStr);
   }
 
   @override
   Widget build(BuildContext context) {
-   
-     SystemChrome.setEnabledSystemUIMode(SystemUiMode.manual, overlays: [SystemUiOverlay.top, SystemUiOverlay.bottom]);
+    SystemChrome.setEnabledSystemUIMode(SystemUiMode.manual, overlays: [SystemUiOverlay.top, SystemUiOverlay.bottom]);
 
     return AnnotatedRegion<SystemUiOverlayStyle>(
       value: const SystemUiOverlayStyle(
         statusBarColor: Colors.white,
-      statusBarIconBrightness: Brightness.dark,
-      statusBarBrightness: Brightness.light,
-      systemNavigationBarColor: Colors.white,
-      systemNavigationBarIconBrightness: Brightness.dark,
+        statusBarIconBrightness: Brightness.dark,
+        statusBarBrightness: Brightness.light,
+        systemNavigationBarColor: Colors.white,
+        systemNavigationBarIconBrightness: Brightness.dark,
         systemNavigationBarDividerColor: Colors.transparent,
       ),
       child: Scaffold(
@@ -107,14 +160,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     _startDate = picked.start;
                     _endDate = picked.end;
                   });
-                  // Call the controller's fetch method if available
-                  if (controller.fetchDashboardData != null) {
-                    final startStr = _startDate.toIso8601String().split('T')[0];
-                    final endStr = _endDate.toIso8601String().split('T')[0];
-                    controller.fetchDashboardData(startDate: startStr, endDate: endStr);
-                  } else {
-                    setState(() {});
-                  }
+                  // Refresh dashboard data with new date range
+                  await _fetchDashboardData();
                 }
               },
             ),
@@ -125,24 +172,63 @@ class _DashboardScreenState extends State<DashboardScreen> {
         ),
       ),
       body: SafeArea(
-        child: SingleChildScrollView(
-            child: Padding(
-              padding: EdgeInsets.all(16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-                  // Dashboard Header
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        child: Obx(() {
+          if (controller.isLoading.value) {
+            return const Center(child: CircularProgressIndicator());
+          }
+          
+          if (controller.error.value.isNotEmpty) {
+            return Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                      Text(
-                      'Dashboard',
-                        style: GoogleFonts.inter(
-                        fontSize: 24,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.black,
+                  Icon(Icons.error_outline, size: 64, color: Colors.grey),
+                  SizedBox(height: 16),
+                  Text(
+                    'Failed to load dashboard data',
+                    style: GoogleFonts.inter(
+                      fontSize: 18,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.grey,
                     ),
                   ),
+                  SizedBox(height: 8),
+                  Text(
+                    controller.error.value,
+                    style: GoogleFonts.inter(
+                      fontSize: 14,
+                      color: Colors.grey,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                  SizedBox(height: 16),
+                  ElevatedButton(
+                    onPressed: _fetchDashboardData,
+                    child: Text('Retry'),
+                  ),
+                ],
+              ),
+            );
+          }
+          
+          return SingleChildScrollView(
+            child: Padding(
+              padding: EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Dashboard Header
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        'Dashboard',
+                        style: GoogleFonts.inter(
+                          fontSize: 24,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.black,
+                        ),
+                      ),
                       Container(
                         padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                         decoration: BoxDecoration(
@@ -170,17 +256,17 @@ class _DashboardScreenState extends State<DashboardScreen> {
                       color: Color(0xFFF8F9FA),
                       borderRadius: BorderRadius.circular(12),
                     ),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              'Total Amount Outstanding',
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Total Amount Outstanding',
                           style: GoogleFonts.inter(
                             fontSize: 14,
                             color: Color(0xFF666666),
-                                fontWeight: FontWeight.w500,
+                            fontWeight: FontWeight.w500,
                           ),
-                              ),
+                        ),
                         SizedBox(height: 8),
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -188,39 +274,39 @@ class _DashboardScreenState extends State<DashboardScreen> {
                             Obx(() => Text(
                               'PKR ${controller.totalCurrentOutstanding.value.toStringAsFixed(0)}',
                               style: GoogleFonts.inter(
-                                    fontSize: 24,
+                                fontSize: 24,
                                 fontWeight: FontWeight.bold,
                                 color: Colors.black,
-                                  ),
+                              ),
                             )),
                             // Simple chart representation
-                      Image.asset(
+                            Image.asset(
                               'assets/icon/graph.png',
                               width: 100,
                               height: 50,
-                        fit: BoxFit.contain,
+                              fit: BoxFit.contain,
                             ),
                           ],
-                      ),
-                    ],
+                        ),
+                      ],
+                    ),
                   ),
-                ),
                   SizedBox(height: 20),
 
                   // Metrics Card
                   Container(
                     width: double.infinity,
                     padding: EdgeInsets.all(20),
-                  decoration: BoxDecoration(
+                    decoration: BoxDecoration(
                       color: Color(0xFFF8F9FA),
                       borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Row(
-                    children: [
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
+                    ),
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
                               Text(
                                 'Orders',
                                 style: TextStyle(
@@ -230,21 +316,21 @@ class _DashboardScreenState extends State<DashboardScreen> {
                                 ),
                               ),
                               SizedBox(height: 4),
-                              Text(
-                                '8,487',
-                                style: TextStyle(
-                                    fontSize: 16,
+                              Obx(() => Text(
+                                controller.orders.value.toString(),
+                                style: GoogleFonts.inter(
+                                  fontSize: 16,
                                   fontWeight: FontWeight.bold,
                                   color: Colors.black,
                                 ),
-                                  ),
-                          ],
+                              )),
+                            ],
+                          ),
                         ),
-                      ),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
                               Text(
                                 'Revenue',
                                 style: TextStyle(
@@ -254,21 +340,21 @@ class _DashboardScreenState extends State<DashboardScreen> {
                                 ),
                               ),
                               SizedBox(height: 4),
-                              Text(
-                                'PKR 46,553',
-                                style: TextStyle(
-                                    fontSize: 16,
+                              Obx(() => Text(
+                                'PKR ${controller.revenue.value.toString()}',
+                                style: GoogleFonts.inter(
+                                  fontSize: 16,
                                   fontWeight: FontWeight.bold,
                                   color: Colors.black,
                                 ),
-                                  ),
-                          ],
+                              )),
+                            ],
+                          ),
                         ),
-                      ),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
                               Text(
                                 'Product Sold',
                                 style: TextStyle(
@@ -278,36 +364,67 @@ class _DashboardScreenState extends State<DashboardScreen> {
                                 ),
                               ),
                               SizedBox(height: 4),
-                              Text(
-                                '6,342',
-                                style: TextStyle(
-                                    fontSize: 16,
+                              Obx(() => Text(
+                                controller.productsSold.value.toString(),
+                                style: GoogleFonts.inter(
+                                  fontSize: 16,
                                   fontWeight: FontWeight.bold,
                                   color: Colors.black,
                                 ),
-                                  ),
-                          ],
+                              )),
+                            ],
+                          ),
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
-                ),
                   SizedBox(height: 20),
 
                   // Pending Payment Cards
-                  PaymentCard(
-                    title: 'Pending Payment',
-                    amount: 'Rs. 12,340',
-                    shipment: '47',
-                    logoAsset: 'assets/icon/tcs.png',
-                  ),
-                  SizedBox(height: 16),
-                  PaymentCard(
-                    title: 'Pending Payment',
-                    amount: 'Rs. 20,247',
-                    shipment: '68',
-                    logoAsset: 'assets/icon/bluex.jpeg',
-                  ),
+                  Obx(() {
+                    final courierData = controller.courierPaymentData;
+                    print('Dashboard UI: Courier data count: ${courierData.length}');
+                    print('Dashboard UI: Courier data: $courierData');
+                    
+                    if (courierData.isEmpty) {
+                      print('Dashboard UI: No courier data, showing fallback cards');
+                      return Column(
+                        children: [
+                          PaymentCard(
+                            title: 'Pending Payment',
+                            amount: 'Rs. 0',
+                            shipment: '0',
+                            logoAsset: 'assets/icon/tcs.png',
+                          ),
+                          SizedBox(height: 16),
+                          PaymentCard(
+                            title: 'Pending Payment',
+                            amount: 'Rs. 0',
+                            shipment: '0',
+                            logoAsset: 'assets/icon/bluex.jpeg',
+                          ),
+                        ],
+                      );
+                    }
+                    
+                    print('Dashboard UI: Rendering ${courierData.length} courier cards');
+                    return Column(
+                      children: courierData.map((courier) {
+                        // Use our mapping since API paths don't exist in Flutter assets
+                        String logoAsset = _getCourierLogo(courier.courierName);
+                        print('Dashboard UI: Rendering courier: "${courier.courierName}" -> Logo: $logoAsset, Pending: ${courier.pendingPayment}, Shipments: ${courier.shipments}');
+                        return Padding(
+                          padding: EdgeInsets.only(bottom: 16),
+                          child: PaymentCard(
+                            title: 'Pending Payment',
+                            amount: 'Rs. ${courier.pendingPayment}',
+                            shipment: '${courier.shipments}',
+                            logoAsset: logoAsset,
+                          ),
+                        );
+                      }).toList(),
+                    );
+                  }),
                   SizedBox(height: 20),
 
                   // Order Status Section
@@ -323,7 +440,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   Container(
                     width: double.infinity,
                     padding: EdgeInsets.all(20),
-                        decoration: BoxDecoration(
+                    decoration: BoxDecoration(
                       color: Color(0xFFF5F5F7),
                       borderRadius: BorderRadius.circular(16),
                     ),
@@ -336,7 +453,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                             fontSize: 14,
                             color: Color(0xFF8E8E93),
                             fontWeight: FontWeight.w500,
-                        ),
+                          ),
                         ),
                         SizedBox(height: 2),
                         Text(
@@ -462,62 +579,129 @@ class _DashboardScreenState extends State<DashboardScreen> {
                       color: Color(0xFFF5F5F7),
                       borderRadius: BorderRadius.circular(16),
                     ),
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                        ..._orderStatusSummaryList.map((item) => Padding(
-                          padding: const EdgeInsets.only(bottom: 16),
-                          child: _OrderStatusSummaryRow(
-                            label: item['label'],
-                            progress: item['progress'],
-                            amount: item['amount'],
-                            count: item['count'],
-                          ),
-                                      )),
-                        SizedBox(height: 8),
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Text(
-                              'Total Orders:',
-                              style: TextStyle(
-                                fontSize: 15,
-                                color: Color(0xFF8E8E93),
-                                fontWeight: FontWeight.w400,
-                              ),
-                            ),
-                            Text(
-                              '2,673',
-                              style: TextStyle(
-                                fontSize: 18,
-                                color: Colors.black,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Obx(() {
+                          final statusData = controller.orderStatusSummary;
+                          print('Dashboard UI: Order status summary count: ${statusData.length}');
+                          
+                          if (statusData.isEmpty) {
+                            return Column(
+                              children: [
+                                Text('No order status data available'),
+                                SizedBox(height: 8),
+                                Row(
+                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    Text(
+                                      'Total Orders:',
+                                      style: TextStyle(
+                                        fontSize: 15,
+                                        color: Color(0xFF8E8E93),
+                                        fontWeight: FontWeight.w400,
+                                      ),
+                                    ),
+                                    Text(
+                                      '0',
+                                      style: TextStyle(
+                                        fontSize: 18,
+                                        color: Colors.black,
                                         fontWeight: FontWeight.w700,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                SizedBox(height: 4),
+                                Row(
+                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    Text(
+                                      'Total Amount:',
+                                      style: TextStyle(
+                                        fontSize: 15,
+                                        color: Color(0xFF8E8E93),
+                                        fontWeight: FontWeight.w400,
+                                      ),
+                                    ),
+                                    Text(
+                                      '0',
+                                      style: TextStyle(
+                                        fontSize: 18,
+                                        color: Colors.black,
+                                        fontWeight: FontWeight.w700,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ],
+                            );
+                          }
+                          
+                          return Column(
+                            children: [
+                              ...statusData.map((item) {
+                                final progress = controller.totalOrders.value > 0 
+                                    ? item.quantity / controller.totalOrders.value 
+                                    : 0.0;
+                                print('Dashboard UI: Rendering status item: ${item.name}, Quantity: ${item.quantity}, Amount: ${item.amount}, Progress: $progress');
+                                return Padding(
+                                  padding: const EdgeInsets.only(bottom: 16),
+                                  child: _OrderStatusSummaryRow(
+                                    label: item.name,
+                                    progress: progress,
+                                    amount: 'Rs. ${item.amount}',
+                                    count: '${item.quantity}',
+                                  ),
+                                );
+                              }),
+                              SizedBox(height: 8),
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                children: [
+                                  Text(
+                                    'Total Orders:',
+                                    style: TextStyle(
+                                      fontSize: 15,
+                                      color: Color(0xFF8E8E93),
+                                      fontWeight: FontWeight.w400,
+                                    ),
+                                  ),
+                                  Obx(() => Text(
+                                    '${controller.totalOrders.value}',
+                                    style: TextStyle(
+                                      fontSize: 18,
+                                      color: Colors.black,
+                                      fontWeight: FontWeight.w700,
+                                    ),
+                                  )),
+                                ],
                               ),
-                            ),
-                          ],
-                        ),
-                        SizedBox(height: 4),
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Text(
-                              'Total Amount:',
-                              style: TextStyle(
-                                fontSize: 15,
-                                color: Color(0xFF8E8E93),
-                                fontWeight: FontWeight.w400,
+                              SizedBox(height: 4),
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                children: [
+                                  Text(
+                                    'Total Amount:',
+                                    style: TextStyle(
+                                      fontSize: 15,
+                                      color: Color(0xFF8E8E93),
+                                      fontWeight: FontWeight.w400,
+                                    ),
+                                  ),
+                                  Obx(() => Text(
+                                    '${controller.totalAmount.value}',
+                                    style: TextStyle(
+                                      fontSize: 18,
+                                      color: Colors.black,
+                                      fontWeight: FontWeight.w700,
+                                    ),
+                                  )),
+                                ],
                               ),
-                            ),
-                            Text(
-                              '32,789',
-                              style: TextStyle(
-                                fontSize: 18,
-                                color: Colors.black,
-                                fontWeight: FontWeight.w700,
-                              ),
-                            ),
-                          ],
-                        ),
+                            ],
+                          );
+                        }),
                       ],
                     ),
                   ),
@@ -525,96 +709,173 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   Text(
                     'Failed Attempt',
                     style: TextStyle(
-                    fontSize: 18,
+                      fontSize: 18,
                       fontWeight: FontWeight.bold,
                       color: Colors.black,
                     ),
                   ),
                   SizedBox(height: 12),
-              Container(
+                  Container(
                     width: double.infinity,
                     padding: EdgeInsets.all(20),
-                decoration: BoxDecoration(
+                    decoration: BoxDecoration(
                       color: Color(0xFFF5F5F7),
                       borderRadius: BorderRadius.circular(16),
                     ),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        ..._failedAttemptList.map((item) => Padding(
-                          padding: const EdgeInsets.only(bottom: 16),
-                          child: _FailedAttemptRow(
-                            label: item['label'],
-                            progress: item['progress'],
-                            amount: item['amount'],
-                            count: item['count'],
+                        Obx(() {
+                          final statusData = controller.orderStatusSummary;
+                          // Filter for failed attempt items
+                          final failedAttemptItems = statusData.where((item) => 
+                            item.name.toLowerCase().contains('failed') || 
+                            item.name.toLowerCase().contains('return') ||
+                            item.name.toLowerCase().contains('cancelled')
+                          ).toList();
+                          
+                          print('Dashboard UI: Failed attempt items count: ${failedAttemptItems.length}');
+                          
+                          if (failedAttemptItems.isEmpty) {
+                            return Column(
+                              children: [
+                                Text('No failed attempt data available'),
+                                SizedBox(height: 8),
+                                Row(
+                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    Text(
+                                      'Total Failed Attempt:',
+                                      style: TextStyle(
+                                        fontSize: 15,
+                                        color: Color(0xFF8E8E93),
+                                        fontWeight: FontWeight.w400,
+                                      ),
+                                    ),
+                                    Text(
+                                      '0',
+                                      style: TextStyle(
+                                        fontSize: 18,
+                                        color: Colors.black,
+                                        fontWeight: FontWeight.w700,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                SizedBox(height: 4),
+                                Row(
+                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    Text(
+                                      'Total Amount:',
+                                      style: TextStyle(
+                                        fontSize: 15,
+                                        color: Color(0xFF8E8E93),
+                                        fontWeight: FontWeight.w400,
+                                      ),
+                                    ),
+                                    Text(
+                                      '0',
+                                      style: TextStyle(
+                                        fontSize: 18,
+                                        color: Colors.black,
+                                        fontWeight: FontWeight.w700,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ],
+                            );
+                          }
+                          
+                          final totalFailedQuantity = failedAttemptItems.fold<int>(0, (sum, item) => sum + item.quantity);
+                          final totalFailedAmount = failedAttemptItems.fold<int>(0, (sum, item) => sum + item.amount);
+                          
+                          return Column(
+                            children: [
+                              ...failedAttemptItems.map((item) {
+                                final progress = totalFailedQuantity > 0 
+                                    ? item.quantity / totalFailedQuantity 
+                                    : 0.0;
+                                print('Dashboard UI: Rendering failed attempt item: ${item.name}, Quantity: ${item.quantity}, Amount: ${item.amount}, Progress: $progress');
+                                return Padding(
+                                  padding: const EdgeInsets.only(bottom: 16),
+                                  child: _FailedAttemptRow(
+                                    label: item.name,
+                                    progress: progress,
+                                    amount: 'Rs. ${item.amount}',
+                                    count: '${item.quantity}',
+                                  ),
+                                );
+                              }),
+                              SizedBox(height: 8),
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                children: [
+                                  Text(
+                                    'Total Failed Attempt:',
+                                    style: TextStyle(
+                                      fontSize: 15,
+                                      color: Color(0xFF8E8E93),
+                                      fontWeight: FontWeight.w400,
+                                    ),
+                                  ),
+                                  Text(
+                                    '$totalFailedQuantity',
+                                    style: TextStyle(
+                                      fontSize: 18,
+                                      color: Colors.black,
+                                      fontWeight: FontWeight.w700,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              SizedBox(height: 4),
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                children: [
+                                  Text(
+                                    'Total Amount:',
+                                    style: TextStyle(
+                                      fontSize: 15,
+                                      color: Color(0xFF8E8E93),
+                                      fontWeight: FontWeight.w400,
+                                    ),
+                                  ),
+                                  Text(
+                                    '$totalFailedAmount',
+                                    style: TextStyle(
+                                      fontSize: 18,
+                                      color: Colors.black,
+                                      fontWeight: FontWeight.w700,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ],
+                          );
+                        }),
+                      ],
                     ),
-                        )),
-                        SizedBox(height: 8),
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Text(
-                              'Total Failed Attempt:',
-                              style: TextStyle(
-                                fontSize: 15,
-                                color: Color(0xFF8E8E93),
-                                fontWeight: FontWeight.w400,
-                              ),
-                            ),
-                            Text(
-                              '2,673',
-                              style: TextStyle(
-                                fontSize: 18,
-                                color: Colors.black,
-                                fontWeight: FontWeight.w700,
-                              ),
-                            ),
-                          ],
-                        ),
-                        SizedBox(height: 4),
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Text(
-                              'Total Amount:',
-                              style: TextStyle(
-                                fontSize: 15,
-                                color: Color(0xFF8E8E93),
-                                fontWeight: FontWeight.w400,
-                              ),
-                            ),
-                            Text(
-                              '32,789',
-                              style: TextStyle(
-                                fontSize: 18,
-                                color: Colors.black,
-                                fontWeight: FontWeight.w700,
-                              ),
-                            ),
-                          ],
-                        ),
-                  ],
-                ),
+                  ),
+                ],
               ),
-            ],
-          ),
-        ),
+            ),
+          );
+        }),
       ),
-        ),
-        bottomNavigationBar: const AppBottomBar(currentTab: 0),
+      bottomNavigationBar: const AppBottomBar(currentTab: 0),
       floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
-        floatingActionButton: FloatingActionButton(
-          onPressed: () {
-            Get.to(() => const CreateOrderScreen());
-          },
-          backgroundColor: const Color(0xFF0A253B),
-          elevation: 4,
-          shape: const CircleBorder(),
-          child: const Icon(Icons.edit, color: Colors.white, size: 28),
-        ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () {
+          Get.to(() => const CreateOrderScreen());
+        },
+        backgroundColor: const Color(0xFF0A253B),
+        elevation: 4,
+        shape: const CircleBorder(),
+        child: const Icon(Icons.edit, color: Colors.white, size: 28),
       ),
-    );
+    ));
   }
 }
 
@@ -986,21 +1247,6 @@ class _StatusRow extends StatelessWidget {
   }
 } 
 
-final List<Map<String, dynamic>> _orderStatusSummaryList = [
-  {'label': 'New', 'progress': 0.7, 'amount': 'Rs. 12,900', 'count': '128'},
-  {'label': 'On Hold', 'progress': 0.3, 'amount': 'Rs. 12,900', 'count': '128'},
-  {'label': 'Confirmed', 'progress': 0.6, 'amount': 'Rs. 12,900', 'count': '128'},
-  {'label': 'Booked', 'progress': 0.8, 'amount': 'Rs. 12,900', 'count': '128'},
-  {'label': 'In Transit', 'progress': 0.5, 'amount': 'Rs. 12,900', 'count': '128'},
-  {'label': 'Delivered', 'progress': 0.4, 'amount': 'Rs. 12,900', 'count': '128'},
-  {'label': 'Call Attempt', 'progress': 0.6, 'amount': 'Rs. 12,900', 'count': '128'},
-  {'label': 'Ready for Dispatch', 'progress': 0.2, 'amount': 'Rs. 12,900', 'count': '128'},
-  {'label': 'Cancelled', 'progress': 0.1, 'amount': 'Rs. 12,900', 'count': '128'},
-  {'label': 'Arrived', 'progress': 0.7, 'amount': 'Rs. 12,900', 'count': '128'},
-  {'label': 'On Route', 'progress': 0.5, 'amount': 'Rs. 12,900', 'count': '128'},
-  {'label': 'Return to Shipper', 'progress': 1.0, 'amount': 'Rs. 12,900', 'count': '128'},
-];
-
 class _OrderStatusSummaryRow extends StatelessWidget {
   final String label;
   final double progress;
@@ -1074,19 +1320,6 @@ class _OrderStatusSummaryRow extends StatelessWidget {
     );
   }
 } 
-
-final List<Map<String, dynamic>> _failedAttemptList = [
-  {'label': 'Incomplete Address', 'progress': 0.4, 'amount': 'Rs. 650', 'count': '13'},
-  {'label': 'Address Untraceable', 'progress': 0.3, 'amount': 'Rs. 650', 'count': '13'},
-  {'label': 'Refused to accept', 'progress': 0.2, 'amount': 'Rs. 650', 'count': '13'},
-  {'label': 'Customer not available', 'progress': 0.5, 'amount': 'Rs. 650', 'count': '13'},
-  {'label': 'Address Closed', 'progress': 0.6, 'amount': 'Rs. 650', 'count': '13'},
-  {'label': 'No Such Customer / Office', 'progress': 0.0, 'amount': 'Rs. 650', 'count': '13'},
-  {'label': 'Customer Not Answering', 'progress': 0.0, 'amount': 'Rs. 650', 'count': '13'},
-  {'label': 'Area Closed', 'progress': 0.0, 'amount': 'Rs. 650', 'count': '13'},
-  {'label': 'CNIC Not Available', 'progress': 0.2, 'amount': 'Rs. 650', 'count': '13'},
-  {'label': 'Ready for Return', 'progress': 0.7, 'amount': 'Rs. 650', 'count': '13'},
-];
 
 class _FailedAttemptRow extends StatelessWidget {
   final String label;
