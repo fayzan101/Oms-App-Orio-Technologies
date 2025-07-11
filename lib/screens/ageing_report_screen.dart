@@ -7,6 +7,8 @@ import 'report.dart' as report;
 import 'search_screen.dart';
 import 'package:get/get.dart';
 import 'calendar_screen.dart';
+import '../widgets/custom_date_selector.dart';
+import 'ageing_report_filter_screen.dart';
 
 class AgeingReportScreen extends StatefulWidget {
   const AgeingReportScreen({Key? key}) : super(key: key);
@@ -16,7 +18,7 @@ class AgeingReportScreen extends StatefulWidget {
 }
 
 class _AgeingReportScreenState extends State<AgeingReportScreen> {
-  // Summary data (mock for now, can be updated if API provides summary)
+  // Summary data (from API)
   int booked = 0;
   int arrival = 0;
   int inTransit = 0;
@@ -25,34 +27,123 @@ class _AgeingReportScreenState extends State<AgeingReportScreen> {
   List<Map<String, dynamic>> orders = [];
   bool isLoading = true;
   final Set<int> expanded = {};
+  // Search state
+  String? _searchQuery;
+  List<Map<String, dynamic>> _filteredOrders = [];
+  final TextEditingController _searchController = TextEditingController();
+
+  // Date range state
+  DateTime startDate = DateTime.now().subtract(const Duration(days: 30));
+  DateTime endDate = DateTime.now();
+  final String acno = 'OR-00009'; // TODO: Replace with user/session value if available
+
+  // Filter state
+  String? filterAgeing;
+  String? filterPlatform;
+  String? filterCourier;
+  String? filterCity;
 
   @override
   void initState() {
     super.initState();
-    fetchAgeingReport();
+    fetchAllData();
+    _searchController.addListener(_onSearchChanged);
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  void _onSearchChanged() {
+    setState(() {
+      _searchQuery = _searchController.text;
+      _applySearch();
+    });
+  }
+
+  Future<void> fetchAllData() async {
+    await Future.wait([
+      fetchSummary(),
+      fetchAgeingReport(),
+    ]);
+  }
+
+  Future<void> fetchSummary() async {
+    try {
+      final summary = await OrderService.fetchReportSummary(
+        acno: acno,
+        startDate: _formatDate(startDate),
+        endDate: _formatDate(endDate),
+        module: 'ageing_report',
+      );
+      setState(() {
+        booked = int.tryParse(summary['booked_orders_count'] ?? '0') ?? 0;
+        arrival = int.tryParse(summary['arrival_orders_count'] ?? '0') ?? 0;
+        inTransit = int.tryParse(summary['intransit_orders_count'] ?? '0') ?? 0;
+        failed = int.tryParse(summary['failed_orders_count'] ?? '0') ?? 0;
+      });
+    } catch (e) {
+      // Optionally show error
+    }
   }
 
   Future<void> fetchAgeingReport() async {
     setState(() => isLoading = true);
     try {
       final data = await OrderService.fetchAgeingReport(
-        acno: 'OR-00009',
+        acno: acno,
         startLimit: 1,
         endLimit: 50000,
-        startDate: '2024-02-20',
-        endDate: '2025-03-21',
+        startDate: _formatDate(startDate),
+        endDate: _formatDate(endDate),
         ageingType: 'order',
+        filterCourierId: filterCourier,
+        filterStatusId: filterAgeing,
+        filterDestinationCity: filterCity,
+        // Add platform if your API supports it
       );
       setState(() {
         orders = data;
-        // Optionally, calculate summary values from data if needed
-        booked = data.length; // Example: count as booked
-        // arrival, inTransit, failed can be calculated if API provides such info
+        _applySearch();
       });
     } catch (e) {
       // Optionally show error
     } finally {
       setState(() => isLoading = false);
+    }
+  }
+
+  void _applySearch() {
+    if (_searchQuery != null && _searchQuery!.isNotEmpty) {
+      _filteredOrders = orders.where((order) {
+        return order.values.any((v) => v != null && v.toString().toLowerCase().contains(_searchQuery!.toLowerCase()));
+      }).toList();
+    } else {
+      _filteredOrders = orders;
+    }
+  }
+
+  String _formatDate(DateTime date) {
+    return " ${date.year.toString().padLeft(4, '0')}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}";
+  }
+
+  void _openDateSelector() async {
+    final picked = await showModalBottomSheet<DateTimeRange>(
+      context: context,
+      isScrollControlled: true,
+      builder: (context) => CustomDateSelector(
+        initialStartDate: startDate,
+        initialEndDate: endDate,
+      ),
+    );
+    if (picked != null) {
+      setState(() {
+        startDate = picked.start;
+        endDate = picked.end;
+      });
+      fetchAllData();
     }
   }
 
@@ -63,6 +154,9 @@ class _AgeingReportScreenState extends State<AgeingReportScreen> {
       appBar: AppBar(
         backgroundColor: Colors.white,
         elevation: 0,
+        shadowColor: Colors.white,
+        foregroundColor: Colors.white,
+        surfaceTintColor: Colors.white,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back_ios_new, color: Colors.black, size: 22),
           onPressed: () => Navigator.of(context).pop(),
@@ -78,27 +172,49 @@ class _AgeingReportScreenState extends State<AgeingReportScreen> {
         ),
         centerTitle: false,
         actions: [
-          IconButton(
-            icon: const Icon(Icons.search, color: Colors.black),
-            onPressed: () {
-              Navigator.of(context).push(
-                MaterialPageRoute(builder: (_) => const SearchScreen()),
-              );
-            },
-          ),
+          if (_searchQuery != null && _searchQuery!.isNotEmpty)
+            IconButton(
+              icon: const Icon(Icons.clear, color: Colors.grey),
+              onPressed: () {
+                setState(() {
+                  _searchController.clear();
+                  _searchQuery = null;
+                  _applySearch();
+                });
+              },
+            ),
           IconButton(
             icon: const Icon(Icons.filter_list, color: Colors.black),
-            onPressed: () {
-              Navigator.of(context).push(
-                MaterialPageRoute(builder: (_) => const FilterScreen()),
+            onPressed: () async {
+              await Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (_) => AgeingReportFilterScreen(
+                    onApply: (filters) {
+                      setState(() {
+                        filterAgeing = filters['ageing'];
+                        filterPlatform = filters['platform'];
+                        filterCourier = filters['courier'];
+                        filterCity = filters['city'];
+                      });
+                      fetchAllData();
+                    },
+                    onReset: () {
+                      setState(() {
+                        filterAgeing = null;
+                        filterPlatform = null;
+                        filterCourier = null;
+                        filterCity = null;
+                      });
+                      fetchAllData();
+                    },
+                  ),
+                ),
               );
             },
           ),
           IconButton(
             icon: const Icon(Icons.calendar_today_outlined, color: Colors.black),
-            onPressed: () {
-              Get.to(() => const CalendarScreen());
-            },
+            onPressed: _openDateSelector,
           ),
         ],
       ),
@@ -107,6 +223,22 @@ class _AgeingReportScreenState extends State<AgeingReportScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            // --- Search Bar ---
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 4),
+              child: TextField(
+                controller: _searchController,
+                decoration: InputDecoration(
+                  hintText: 'Search by any field',
+                  prefixIcon: Icon(Icons.search),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  contentPadding: EdgeInsets.symmetric(vertical: 0, horizontal: 12),
+                ),
+              ),
+            ),
+            // --- End Search Bar ---
             // Summary Card
             Container(
               width: double.infinity,
@@ -131,13 +263,13 @@ class _AgeingReportScreenState extends State<AgeingReportScreen> {
             Expanded(
               child: isLoading
                   ? const Center(child: CircularProgressIndicator())
-                  : orders.isEmpty
+                  : (_searchQuery != null && _searchQuery!.isNotEmpty ? _filteredOrders : orders).isEmpty
                       ? const Center(child: Text('No data found'))
                       : ListView.separated(
-                          itemCount: orders.length,
+                          itemCount: (_searchQuery != null && _searchQuery!.isNotEmpty ? _filteredOrders : orders).length,
                           separatorBuilder: (context, i) => const SizedBox(height: 10),
                           itemBuilder: (context, i) {
-                            final order = orders[i];
+                            final order = (_searchQuery != null && _searchQuery!.isNotEmpty ? _filteredOrders : orders)[i];
                             final isExpanded = expanded.contains(i);
                             return GestureDetector(
                               onTap: () {
@@ -167,17 +299,33 @@ class _AgeingReportScreenState extends State<AgeingReportScreen> {
                                         child: Column(
                                           crossAxisAlignment: CrossAxisAlignment.start,
                                           children: [
-                                            Text('Consignee:   ${order['consignee_name'] ?? ''}'),
-                                            Text('Address:   ${order['city_name'] ?? ''}'),
-                                            Text('Status:   ${order['status_name'] ?? ''}'),
-                                            Text('Amount:   ${order['order_amount'] ?? ''}'),
-                                            Text('Consignee Contact:   ${order['consignee_contact'] ?? ''}'),
-                                            Text('Order Ref:   ${order['order_ref'] ?? ''}'),
-                                            Text('Store Name:   ${order['store_name'] ?? ''}'),
-                                            Text('Courier Name:   ${order['courier_name'] ?? ''}'),
-                                            Text('Order Date:   ${order['order_date'] ?? ''}'),
-                                            Text('Remarks:   ${order['account_title'] ?? ''}'),
-                                            // Add more fields as needed
+                                            _infoRow('Order ID', order['id']),
+                                            _infoRow('Name', order['consignee_name']),
+                                            _infoRow('Contact', order['consignee_contact']),
+                                            _infoRow('Date', order['order_date']),
+                                            _infoRow('Booking Date', order['booking_date']),
+                                            _infoRow('City', order['city_name']),
+                                            _infoRow('Web Order ID', order['web_order_id']),
+                                            _infoRow('Store', order['store_name']),
+                                            _infoRow('Payment Type', order['payment_type']),
+                                            _infoRow('COD Amount', order['cod_amount']),
+                                            Row(
+                                              crossAxisAlignment: CrossAxisAlignment.center,
+                                              children: [
+                                                const Text('Courier: ', style: TextStyle(fontWeight: FontWeight.bold)),
+                                                if (order['courier_logo'] != null && order['courier_logo'].toString().isNotEmpty)
+                                                  Padding(
+                                                    padding: const EdgeInsets.symmetric(horizontal: 4),
+                                                    child: Image.network(order['courier_logo'], height: 20, errorBuilder: (context, error, stackTrace) => Text(order['courier_name'] ?? '')),
+                                                  )
+                                                else
+                                                  Text(order['courier_name'] ?? ''),
+                                              ],
+                                            ),
+                                            _infoRow('Account', order['account_title']),
+                                            _infoRow('CN', order['cn']),
+                                            _infoRow('No of Days', order['no_of_days']),
+                                            _infoRow('Status', order['status_name']),
                                           ],
                                         ),
                                       ),
@@ -214,12 +362,27 @@ class _AgeingReportScreenState extends State<AgeingReportScreen> {
         onOrderListTap: () {},
       ),
       floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
-      floatingActionButton: FloatingActionButton(
-        onPressed: () {},
-        backgroundColor: const Color(0xFF0A253B),
-        elevation: 4,
-        shape: const CircleBorder(),
-        child: const Icon(Icons.edit, color: Colors.white, size: 28),
+      floatingActionButton: MediaQuery.of(context).viewInsets.bottom == 0
+          ? FloatingActionButton(
+              onPressed: () {},
+              backgroundColor: const Color(0xFF0A253B),
+              elevation: 4,
+              shape: const CircleBorder(),
+              child: const Icon(Icons.edit, color: Colors.white, size: 28),
+            )
+          : null,
+    );
+  }
+
+  Widget _infoRow(String label, dynamic value) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 2),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text('$label: ', style: const TextStyle(fontWeight: FontWeight.bold)),
+          Expanded(child: Text(value?.toString() ?? '')),
+        ],
       ),
     );
   }

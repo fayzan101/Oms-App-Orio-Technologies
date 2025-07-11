@@ -311,13 +311,6 @@ class _MenuScreenState extends State<MenuScreen> {
                       },
                     ),
                     _MenuItem(
-                      icon: Icons.description_outlined,
-                      label: 'Load Sheet',
-                      onTap: () {
-                        Get.to(() => const LoadSheetScreen());
-                      },
-                    ),
-                    _MenuItem(
                       icon: Icons.power_settings_new,
                       label: 'Sign Out',
                       onTap: () => showLogoutBottomSheet(Get.context!),

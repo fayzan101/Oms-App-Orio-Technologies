@@ -8,6 +8,7 @@ import 'search_screen.dart';
 import 'package:get/get.dart';
 import 'calendar_screen.dart';
 import '../widgets/custom_date_selector.dart';
+import 'courier_insights_filter_screen.dart';
 
 class CourierInsightsScreen extends StatefulWidget {
   const CourierInsightsScreen({Key? key}) : super(key: key);
@@ -23,11 +24,29 @@ class _CourierInsightsScreenState extends State<CourierInsightsScreen> {
   final Set<int> expanded = {};
   DateTime _startDate = DateTime.now().subtract(const Duration(days: 30));
   DateTime _endDate = DateTime.now();
+  // Search state
+  String? _searchQuery;
+  List<Map<String, dynamic>> _filteredReports = [];
+  final TextEditingController _searchController = TextEditingController();
 
   @override
   void initState() {
     super.initState();
     fetchCourierInsights();
+    _searchController.addListener(_onSearchChanged);
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  void _onSearchChanged() {
+    setState(() {
+      _searchQuery = _searchController.text;
+      _applySearch();
+    });
   }
 
   Future<void> fetchCourierInsights() async {
@@ -47,11 +66,22 @@ class _CourierInsightsScreenState extends State<CourierInsightsScreen> {
       setState(() {
         reports = data;
         totalReports = data.length;
+        _applySearch();
       });
     } catch (e) {
       // Optionally show error
     } finally {
       setState(() => isLoading = false);
+    }
+  }
+
+  void _applySearch() {
+    if (_searchQuery != null && _searchQuery!.isNotEmpty) {
+      _filteredReports = reports.where((report) {
+        return report.values.any((v) => v != null && v.toString().toLowerCase().contains(_searchQuery!.toLowerCase()));
+      }).toList();
+    } else {
+      _filteredReports = reports;
     }
   }
 
@@ -181,21 +211,33 @@ class _CourierInsightsScreenState extends State<CourierInsightsScreen> {
         titleSpacing: 0,
         centerTitle: false,
         actions: [
-          IconButton(
-            icon: const Icon(Icons.search, color: Colors.black),
-            onPressed: () {
-              Navigator.of(context).push(
-                MaterialPageRoute(builder: (_) => const SearchScreen()),
-              );
-            },
-          ),
+          if (_searchQuery != null && _searchQuery!.isNotEmpty)
+            IconButton(
+              icon: const Icon(Icons.clear, color: Colors.grey),
+              onPressed: () {
+                setState(() {
+                  _searchController.clear();
+                  _searchQuery = null;
+                  _applySearch();
+                });
+              },
+            ),
           Padding(
             padding: const EdgeInsets.only(right: 8.0),
             child: IconButton(
               icon: const Icon(Icons.filter_list, color: Colors.black),
-              onPressed: () {
-                Navigator.of(context).push(
-                  MaterialPageRoute(builder: (_) => const FilterScreen()),
+              onPressed: () async {
+                await Navigator.of(context).push(
+                  MaterialPageRoute(
+                    builder: (_) => CourierInsightsFilterScreen(
+                      onApply: (filters) {
+                        // TODO: Use filters to update your report
+                      },
+                      onReset: () {
+                        // TODO: Reset filters logic
+                      },
+                    ),
+                  ),
                 );
               },
             ),
@@ -247,8 +289,24 @@ class _CourierInsightsScreenState extends State<CourierInsightsScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             const SizedBox(height: 16),
+            // --- Search Bar ---
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 4),
+              child: TextField(
+                controller: _searchController,
+                decoration: InputDecoration(
+                  hintText: 'Search by any field',
+                  prefixIcon: Icon(Icons.search),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  contentPadding: EdgeInsets.symmetric(vertical: 0, horizontal: 12),
+                ),
+              ),
+            ),
+            // --- End Search Bar ---
             Text(
-              'Total Courier Insights Reports: $totalReports',
+              'Total Courier Insights Reports: ${_searchQuery != null && _searchQuery!.isNotEmpty ? _filteredReports.length : totalReports}',
               style: const TextStyle(
                 fontFamily: 'SF Pro Display',
                 fontWeight: FontWeight.w500,
@@ -260,13 +318,13 @@ class _CourierInsightsScreenState extends State<CourierInsightsScreen> {
             Expanded(
               child: isLoading
                   ? const Center(child: CircularProgressIndicator())
-                  : reports.isEmpty
-                      ? const Center(child: Text('No data found'))
+                  : (_searchQuery != null && _searchQuery!.isNotEmpty ? _filteredReports : reports).isEmpty
+                      ? const Center(child: Text('No courier insights found.'))
                       : ListView.separated(
-                          itemCount: reports.length,
-                          separatorBuilder: (context, i) => const SizedBox(height: 10),
+                          itemCount: (_searchQuery != null && _searchQuery!.isNotEmpty ? _filteredReports : reports).length,
+                          separatorBuilder: (context, i) => const SizedBox(height: 12),
                           itemBuilder: (context, i) {
-                            final report = reports[i];
+                            final report = (_searchQuery != null && _searchQuery!.isNotEmpty ? _filteredReports : reports)[i];
                             final isExpanded = expanded.contains(i);
                             return GestureDetector(
                               onTap: () {
@@ -389,13 +447,15 @@ class _CourierInsightsScreenState extends State<CourierInsightsScreen> {
         onOrderListTap: () {},
       ),
       floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
-      floatingActionButton: FloatingActionButton(
-        onPressed: () {},
-        backgroundColor: const Color(0xFF0A253B),
-        elevation: 4,
-        shape: const CircleBorder(),
-        child: const Icon(Icons.edit, color: Colors.white, size: 28),
-      ),
+      floatingActionButton: MediaQuery.of(context).viewInsets.bottom == 0
+          ? FloatingActionButton(
+              onPressed: () {},
+              backgroundColor: const Color(0xFF0A253B),
+              elevation: 4,
+              shape: const CircleBorder(),
+              child: const Icon(Icons.edit, color: Colors.white, size: 28),
+            )
+          : null,
     );
   }
 }

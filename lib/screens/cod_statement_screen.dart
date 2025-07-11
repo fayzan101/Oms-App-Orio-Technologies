@@ -45,11 +45,29 @@ class _CODStatementScreenState extends State<CODStatementScreen> {
   String? error;
   DateTime _startDate = DateTime.now().subtract(const Duration(days: 30));
   DateTime _endDate = DateTime.now();
+  // Search state
+  String? _searchQuery;
+  List<CODStatement> _filteredStatements = [];
+  final TextEditingController _searchController = TextEditingController();
 
   @override
   void initState() {
     super.initState();
     fetchStatements();
+    _searchController.addListener(_onSearchChanged);
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  void _onSearchChanged() {
+    setState(() {
+      _searchQuery = _searchController.text;
+      _applySearch();
+    });
   }
 
   Future<void> fetchStatements() async {
@@ -70,6 +88,7 @@ class _CODStatementScreenState extends State<CODStatementScreen> {
         statements = (response.body['payload'] as List)
             .map((e) => CODStatement.fromJson(e))
             .toList();
+        _applySearch();
       } else {
         statements = [];
       }
@@ -78,6 +97,20 @@ class _CODStatementScreenState extends State<CODStatementScreen> {
       error = e.toString();
     }
     setState(() => isLoading = false);
+  }
+
+  void _applySearch() {
+    if (_searchQuery != null && _searchQuery!.isNotEmpty) {
+      _filteredStatements = statements.where((s) {
+        return s.refNo.toLowerCase().contains(_searchQuery!.toLowerCase()) ||
+               s.date.toLowerCase().contains(_searchQuery!.toLowerCase()) ||
+               s.accountNo.toLowerCase().contains(_searchQuery!.toLowerCase()) ||
+               s.codAmount.toLowerCase().contains(_searchQuery!.toLowerCase()) ||
+               s.courier.toLowerCase().contains(_searchQuery!.toLowerCase());
+      }).toList();
+    } else {
+      _filteredStatements = statements;
+    }
   }
 
   @override
@@ -106,14 +139,17 @@ class _CODStatementScreenState extends State<CODStatementScreen> {
         ),
         centerTitle: false,
         actions: [
-          IconButton(
-            icon: const Icon(Icons.search, color: Colors.black),
-            onPressed: () {
-              Navigator.of(context).push(
-                MaterialPageRoute(builder: (_) => const SearchScreen()),
-              );
-            },
-          ),
+          if (_searchQuery != null && _searchQuery!.isNotEmpty)
+            IconButton(
+              icon: const Icon(Icons.clear, color: Colors.grey),
+              onPressed: () {
+                setState(() {
+                  _searchController.clear();
+                  _searchQuery = null;
+                  _applySearch();
+                });
+              },
+            ),
           IconButton(
             icon: const Icon(Icons.calendar_today_outlined, color: Colors.black),
             onPressed: () async {
@@ -165,6 +201,22 @@ class _CODStatementScreenState extends State<CODStatementScreen> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       const SizedBox(height: 8),
+                      // --- Search Bar ---
+                      Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 4),
+                        child: TextField(
+                          controller: _searchController,
+                          decoration: InputDecoration(
+                            hintText: 'Search by ref no, date, account, amount, courier...',
+                            prefixIcon: Icon(Icons.search),
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            contentPadding: EdgeInsets.symmetric(vertical: 0, horizontal: 12),
+                          ),
+                        ),
+                      ),
+                      // --- End Search Bar ---
                       Container(
                         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                         decoration: BoxDecoration(
@@ -182,13 +234,13 @@ class _CODStatementScreenState extends State<CODStatementScreen> {
                       ),
                       const SizedBox(height: 16),
                       Expanded(
-                        child: statements.isEmpty
+                        child: (_searchQuery != null && _searchQuery!.isNotEmpty ? _filteredStatements : statements).isEmpty
                             ? const Center(child: Text('No COD statements found.'))
                             : ListView.separated(
-                                itemCount: statements.length,
+                                itemCount: (_searchQuery != null && _searchQuery!.isNotEmpty ? _filteredStatements : statements).length,
                                 separatorBuilder: (_, __) => const SizedBox(height: 12),
                                 itemBuilder: (context, i) {
-                                  final s = statements[i];
+                                  final s = (_searchQuery != null && _searchQuery!.isNotEmpty ? _filteredStatements : statements)[i];
                                   return Container(
                                     width: double.infinity,
                                     padding: const EdgeInsets.all(16),
@@ -222,13 +274,15 @@ class _CODStatementScreenState extends State<CODStatementScreen> {
                 ),
       bottomNavigationBar: const AppBottomBar(currentTab: 2),
       floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
-      floatingActionButton: FloatingActionButton(
-        onPressed: () {},
-        backgroundColor: const Color(0xFF0A253B),
-        elevation: 4,
-        shape: const CircleBorder(),
-        child: const Icon(Icons.edit, color: Colors.white, size: 28),
-      ),
+      floatingActionButton: MediaQuery.of(context).viewInsets.bottom == 0
+          ? FloatingActionButton(
+              onPressed: () {},
+              backgroundColor: const Color(0xFF0A253B),
+              elevation: 4,
+              shape: const CircleBorder(),
+              child: const Icon(Icons.edit, color: Colors.white, size: 28),
+            )
+          : null,
     );
   }
 }

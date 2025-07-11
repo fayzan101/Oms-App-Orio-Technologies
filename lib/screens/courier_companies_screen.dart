@@ -7,10 +7,64 @@ import '../utils/Layout/app_bottom_bar.dart';
 import '../utils/custom_snackbar.dart';
 import 'search_screen.dart';
 
-class CourierCompaniesScreen extends StatelessWidget {
+class CourierCompaniesScreen extends StatefulWidget {
   CourierCompaniesScreen({Key? key}) : super(key: key);
 
+  @override
+  State<CourierCompaniesScreen> createState() => _CourierCompaniesScreenState();
+}
+
+class _CourierCompaniesScreenState extends State<CourierCompaniesScreen> {
   final CourierService _courierService = CourierService();
+  final TextEditingController _searchController = TextEditingController();
+  List<CourierAccount> _allCompanies = [];
+  List<CourierAccount> _filteredCompanies = [];
+  bool _loading = true;
+  String? _error;
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchCompanies();
+    _searchController.addListener(_onSearchChanged);
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  void _fetchCompanies() async {
+    setState(() {
+      _loading = true;
+      _error = null;
+    });
+    try {
+      final companies = await _courierService.getCourierAccounts('OR-00009');
+      setState(() {
+        _allCompanies = companies;
+        _filteredCompanies = companies;
+        _loading = false;
+      });
+    } catch (e) {
+      setState(() {
+        _error = e.toString();
+        _loading = false;
+      });
+    }
+  }
+
+  void _onSearchChanged() {
+    final query = _searchController.text.toLowerCase();
+    setState(() {
+      _filteredCompanies = _allCompanies.where((company) {
+        return company.accountTitle.toLowerCase().contains(query) ||
+               company.courierAcno.toLowerCase().contains(query) ||
+               company.courierName.toLowerCase().contains(query);
+      }).toList();
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -35,130 +89,128 @@ class CourierCompaniesScreen extends StatelessWidget {
           ),
         ),
         centerTitle: false,
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.search, color: Colors.black),
-            onPressed: () {
-              Navigator.of(context).push(
-                MaterialPageRoute(builder: (_) => const SearchScreen()),
-              );
-            },
-          ),
-        ],
       ),
-      body: FutureBuilder<List<CourierAccount>>(
-        future: _courierService.getCourierAccounts('OR-00009'),
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator());
-          } else if (snapshot.hasError) {
-            return Center(child: Text('Error: ${snapshot.error}'));
-          } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
-            return const Center(child: Text('No courier companies found.'));
-          }
-          final companies = snapshot.data!;
-          return Column(
-            children: [
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      body: _loading
+          ? const Center(child: CircularProgressIndicator())
+          : _error != null
+              ? Center(child: Text('Error: $_error'))
+              : Column(
                   children: [
-                    Text('Total Courier Companies: ${companies.length.toString().padLeft(2, '0')}',
-                        style: const TextStyle(fontWeight: FontWeight.w500)),
-                    GestureDetector(
-                      onTap: () {
-                        Get.toNamed('/add-courier');
-                      },
-                      child: const Text(
-                        'Add Courier',
-                        style: TextStyle(
-                          color: Color(0xFF007AFF),
-                          fontWeight: FontWeight.w600,
-                          decoration: TextDecoration.underline,
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text('Total Courier Companies: ${_filteredCompanies.length.toString().padLeft(2, '0')}',
+                              style: const TextStyle(fontWeight: FontWeight.w500)),
+                          GestureDetector(
+                            onTap: () {
+                              Get.toNamed('/add-courier');
+                            },
+                            child: const Text(
+                              'Add Courier',
+                              style: TextStyle(
+                                color: Color(0xFF007AFF),
+                                fontWeight: FontWeight.w600,
+                                decoration: TextDecoration.underline,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                      child: TextField(
+                        controller: _searchController,
+                        decoration: InputDecoration(
+                          hintText: 'Search by title, account no, or courier name',
+                          prefixIcon: Icon(Icons.search),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          contentPadding: EdgeInsets.symmetric(vertical: 0, horizontal: 12),
                         ),
                       ),
                     ),
+                    Expanded(
+                      child: _filteredCompanies.isEmpty
+                          ? const Center(child: Text('No courier companies found.'))
+                          : ListView.builder(
+                              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                              itemCount: _filteredCompanies.length,
+                              itemBuilder: (context, index) {
+                                final company = _filteredCompanies[index];
+                                return Card(
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(16),
+                                  ),
+                                  margin: const EdgeInsets.symmetric(vertical: 8),
+                                  elevation: 1,
+                                  child: Padding(
+                                    padding: const EdgeInsets.all(16),
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        _infoRow('S.No', (index + 1).toString().padLeft(2, '0')),
+                                        _infoRow('Account Title', company.accountTitle),
+                                        _infoRow('Account No', company.courierAcno),
+                                        Row(
+                                          children: [
+                                            const Text('Courier', style: TextStyle(fontWeight: FontWeight.w500)),
+                                            const SizedBox(width: 16),
+                                            CircleAvatar(
+                                              radius: 18,
+                                              child: Text(company.courierName.isNotEmpty ? company.courierName[0] : '?'),
+                                            ),
+                                            const SizedBox(width: 8),
+                                            Text(company.courierName),
+                                          ],
+                                        ),
+                                        _infoRow('Default', company.isDefault == '1' ? 'Y' : 'N'),
+                                        _infoRow('Activate', company.status.capitalizeFirst ?? ''),
+                                        const SizedBox(height: 8),
+                                        Row(
+                                          children: [
+                                            const Text('Actions', style: TextStyle(fontWeight: FontWeight.w500)),
+                                            const SizedBox(width: 16),
+                                            IconButton(
+                                              icon: const Icon(Icons.edit, color: Color(0xFF007AFF)),
+                                              onPressed: () {
+                                                Get.to(() => AddCourierCompanyScreen(courierAccount: company, isEdit: true));
+                                              },
+                                            ),
+                                            const Text('Edit', style: TextStyle(color: Color(0xFF007AFF), fontWeight: FontWeight.w500)),
+                                            const SizedBox(width: 8),
+                                            IconButton(
+                                              icon: const Icon(Icons.delete, color: Color(0xFF007AFF)),
+                                              onPressed: () {
+                                                _showDeleteConfirmation(context, () {
+                                                  _deleteCourier(context, company);
+                                                });
+                                              },
+                                            ),
+                                            const Text('Delete', style: TextStyle(color: Color(0xFF007AFF), fontWeight: FontWeight.w500)),
+                                          ],
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                );
+                              },
+                            ),
+                    ),
                   ],
                 ),
-              ),
-              Expanded(
-                child: ListView.builder(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-                  itemCount: companies.length,
-                  itemBuilder: (context, index) {
-                    final company = companies[index];
-                    return Card(
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(16),
-                      ),
-                      margin: const EdgeInsets.symmetric(vertical: 8),
-                      elevation: 1,
-                      child: Padding(
-                        padding: const EdgeInsets.all(16),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            _infoRow('S.No', (index + 1).toString().padLeft(2, '0')),
-                            _infoRow('Account Title', company.accountTitle),
-                            _infoRow('Account No', company.courierAcno),
-                            Row(
-                              children: [
-                                const Text('Courier', style: TextStyle(fontWeight: FontWeight.w500)),
-                                const SizedBox(width: 16),
-                                // Placeholder for logo, you can use a map for logos if needed
-                                CircleAvatar(
-                                  radius: 18,
-                                  child: Text(company.courierName.isNotEmpty ? company.courierName[0] : '?'),
-                                ),
-                                const SizedBox(width: 8),
-                                Text(company.courierName),
-                              ],
-                            ),
-                            _infoRow('Default', company.isDefault == '1' ? 'Y' : 'N'),
-                            _infoRow('Activate', company.status.capitalizeFirst ?? ''),
-                            const SizedBox(height: 8),
-                            Row(
-                              children: [
-                                const Text('Actions', style: TextStyle(fontWeight: FontWeight.w500)),
-                                const SizedBox(width: 16),
-                                IconButton(
-                                  icon: const Icon(Icons.edit, color: Color(0xFF007AFF)),
-                                  onPressed: () {
-                                    Get.to(() => AddCourierCompanyScreen(courierAccount: company, isEdit: true));
-                                  },
-                                ),
-                                const Text('Edit', style: TextStyle(color: Color(0xFF007AFF), fontWeight: FontWeight.w500)),
-                                const SizedBox(width: 8),
-                                IconButton(
-                                  icon: const Icon(Icons.delete, color: Color(0xFF007AFF)),
-                                  onPressed: () {
-                                    _showDeleteConfirmation(context, () {
-                                      _deleteCourier(context, company);
-                                    });
-                                  },
-                                ),
-                                const Text('Delete', style: TextStyle(color: Color(0xFF007AFF), fontWeight: FontWeight.w500)),
-                              ],
-                            ),
-                          ],
-                        ),
-                      ),
-                    );
-                  },
-                ),
-              ),
-            ],
-          );
-        },
-      ),
-      floatingActionButton: FloatingActionButton(
-        backgroundColor: const Color(0xFF0A2A3A),
-        onPressed: () {
-          Get.toNamed('/add-courier');
-        },
-        child: const Icon(Icons.edit, color: Colors.white),
-      ),
+      floatingActionButton: MediaQuery.of(context).viewInsets.bottom == 0
+          ? FloatingActionButton(
+              backgroundColor: const Color(0xFF0A2A3A),
+              onPressed: () {
+                Get.toNamed('/add-courier');
+              },
+              child: const Icon(Icons.edit, color: Colors.white),
+            )
+          : null,
       floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
       bottomNavigationBar: const AppBottomBar(currentTab: 3),
     );

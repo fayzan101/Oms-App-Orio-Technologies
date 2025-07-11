@@ -19,11 +19,23 @@ class _NotificationScreenState extends State<NotificationScreen> {
   final NotificationService _notificationService = NotificationService();
   final AuthService _authService = Get.find<AuthService>();
   String? _currentAcno;
+  final TextEditingController _searchController = TextEditingController();
+  List<NotificationModel> _allNotifications = [];
+  List<NotificationModel> _filteredNotifications = [];
+  bool _loading = true;
+  String? _error;
 
   @override
   void initState() {
     super.initState();
     _loadCurrentUserAcno();
+    _searchController.addListener(_onSearchChanged);
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
   }
 
   Future<void> _loadCurrentUserAcno() async {
@@ -32,7 +44,40 @@ class _NotificationScreenState extends State<NotificationScreen> {
       setState(() {
         _currentAcno = user.acno;
       });
+      _fetchNotifications(user.acno);
     }
+  }
+
+  void _fetchNotifications(String acno) async {
+    setState(() {
+      _loading = true;
+      _error = null;
+    });
+    try {
+      final notifications = await _notificationService.getNotifications(acno: acno);
+      setState(() {
+        _allNotifications = notifications;
+        _filteredNotifications = notifications;
+        _loading = false;
+      });
+    } catch (e) {
+      setState(() {
+        _error = e.toString();
+        _loading = false;
+      });
+    }
+  }
+
+  void _onSearchChanged() {
+    final query = _searchController.text.toLowerCase();
+    setState(() {
+      _filteredNotifications = _allNotifications.where((notification) {
+        return notification.message.toLowerCase().contains(query) ||
+               notification.subject.toLowerCase().contains(query) ||
+               notification.statusName.toLowerCase().contains(query) ||
+               notification.courierName.toLowerCase().contains(query);
+      }).toList();
+    });
   }
 
   @override
@@ -56,117 +101,116 @@ class _NotificationScreenState extends State<NotificationScreen> {
         shadowColor: Colors.white,
         foregroundColor: Colors.white,
         surfaceTintColor: Colors.white,
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.search, color: Colors.black),
-            onPressed: () {
-              Navigator.of(context).push(
-                MaterialPageRoute(builder: (_) => const SearchScreen()),
-              );
-            },
-          ),
-        ],
       ),
-      body: FutureBuilder<List<NotificationModel>>(
-        future: _notificationService.getNotifications(acno: _currentAcno),
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator());
-          } else if (snapshot.hasError) {
-            return Center(child: Text('Error: ${snapshot.error}'));
-          } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
-            return const Center(child: Text('No notifications found.'));
-          }
-          final notifications = snapshot.data!;
-          return Column(
-            children: [
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      body: _loading
+          ? const Center(child: CircularProgressIndicator())
+          : _error != null
+              ? Center(child: Text('Error: $_error'))
+              : Column(
                   children: [
-                    Text('Total Notifications: ${notifications.length.toString().padLeft(2, '0')}',
-                        style: const TextStyle(fontWeight: FontWeight.w500)),
-                    GestureDetector(
-                      onTap: () {
-                        Get.toNamed('/add-notification');
-                      },
-                      child: const Text(
-                        'Add Notification',
-                        style: TextStyle(
-                          color: Color(0xFF007AFF),
-                          fontWeight: FontWeight.w600,
-                          decoration: TextDecoration.underline,
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text('Total Notifications: ${_filteredNotifications.length.toString().padLeft(2, '0')}',
+                              style: const TextStyle(fontWeight: FontWeight.w500)),
+                          GestureDetector(
+                            onTap: () {
+                              Get.toNamed('/add-notification');
+                            },
+                            child: const Text(
+                              'Add Notification',
+                              style: TextStyle(
+                                color: Color(0xFF007AFF),
+                                fontWeight: FontWeight.w600,
+                                decoration: TextDecoration.underline,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                      child: TextField(
+                        controller: _searchController,
+                        decoration: InputDecoration(
+                          hintText: 'Search by message, subject, status, or courier',
+                          prefixIcon: Icon(Icons.search),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          contentPadding: EdgeInsets.symmetric(vertical: 0, horizontal: 12),
                         ),
                       ),
                     ),
+                    Expanded(
+                      child: _filteredNotifications.isEmpty
+                          ? const Center(child: Text('No notifications found.'))
+                          : ListView.builder(
+                              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                              itemCount: _filteredNotifications.length,
+                              itemBuilder: (context, index) {
+                                final notification = _filteredNotifications[index];
+                                return Card(
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(16),
+                                  ),
+                                  margin: const EdgeInsets.symmetric(vertical: 8),
+                                  elevation: 1,
+                                  child: Padding(
+                                    padding: const EdgeInsets.all(16),
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        _infoRow('ID', notification.id),
+                                        _infoRow('Order Status', notification.statusName),
+                                        _infoRow('Message', notification.message),
+                                        _infoRow('Subject', notification.subject),
+                                        _infoRow('Activate', notification.status == 'Y' ? 'Active' : 'Inactive'),
+                                        const SizedBox(height: 8),
+                                        Row(
+                                          children: [
+                                            const Text('Actions', style: TextStyle(fontWeight: FontWeight.w500)),
+                                            const SizedBox(width: 16),
+                                            IconButton(
+                                              icon: const Icon(Icons.edit, color: Color(0xFF007AFF)),
+                                              onPressed: () {
+                                                Get.toNamed('/edit-notification', arguments: notification);
+                                              },
+                                            ),
+                                            const Text('Edit', style: TextStyle(color: Color(0xFF007AFF), fontWeight: FontWeight.w500)),
+                                            const SizedBox(width: 8),
+                                            IconButton(
+                                              icon: const Icon(Icons.delete, color: Color(0xFF007AFF)),
+                                              onPressed: () {
+                                                _showDeleteConfirmation(context, () {
+                                                  _deleteNotification(notification);
+                                                });
+                                              },
+                                            ),
+                                            const Text('Delete', style: TextStyle(color: Color(0xFF007AFF), fontWeight: FontWeight.w500)),
+                                          ],
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                );
+                              },
+                            ),
+                    ),
                   ],
                 ),
-              ),
-              Expanded(
-                child: ListView.builder(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-                  itemCount: notifications.length,
-                  itemBuilder: (context, index) {
-                    final notification = notifications[index];
-                    return Card(
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(16),
-                      ),
-                      margin: const EdgeInsets.symmetric(vertical: 8),
-                      elevation: 1,
-                      child: Padding(
-                        padding: const EdgeInsets.all(16),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            _infoRow('ID', notification.id),
-                            _infoRow('Order Status', notification.statusName),
-                            _infoRow('Message', notification.message),
-                            _infoRow('Subject', notification.subject),
-                            _infoRow('Activate', notification.status == 'Y' ? 'Active' : 'Inactive'),
-                            const SizedBox(height: 8),
-                            Row(
-                              children: [
-                                const Text('Actions', style: TextStyle(fontWeight: FontWeight.w500)),
-                                const SizedBox(width: 16),
-                                IconButton(
-                                  icon: const Icon(Icons.edit, color: Color(0xFF007AFF)),
-                                  onPressed: () {
-                                    Get.toNamed('/edit-notification', arguments: notification);
-                                  },
-                                ),
-                                const Text('Edit', style: TextStyle(color: Color(0xFF007AFF), fontWeight: FontWeight.w500)),
-                                const SizedBox(width: 8),
-                                IconButton(
-                                  icon: const Icon(Icons.delete, color: Color(0xFF007AFF)),
-                                  onPressed: () {
-                                    _showDeleteConfirmation(context, () {
-                                      _deleteNotification(notification);
-                                    });
-                                  },
-                                ),
-                                const Text('Delete', style: TextStyle(color: Color(0xFF007AFF), fontWeight: FontWeight.w500)),
-                              ],
-                            ),
-                          ],
-                        ),
-                      ),
-                    );
-                  },
-                ),
-              ),
-            ],
-          );
-        },
-      ),
-      floatingActionButton: FloatingActionButton(
-        backgroundColor: const Color(0xFF0A2A3A),
-        onPressed: () {
-          Get.toNamed('/add-notification');
-        },
-        child: const Icon(Icons.edit, color: Colors.white),
-      ),
+      floatingActionButton: MediaQuery.of(context).viewInsets.bottom == 0
+          ? FloatingActionButton(
+              backgroundColor: const Color(0xFF0A2A3A),
+              onPressed: () {
+                Get.toNamed('/add-notification');
+              },
+              child: const Icon(Icons.edit, color: Colors.white),
+            )
+          : null,
       floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
       resizeToAvoidBottomInset: false,
       bottomNavigationBar: const AppBottomBar(currentTab: 3),

@@ -29,6 +29,10 @@ class _LoadSheetScreenState extends State<LoadSheetScreen> {
   bool _isLoading = true;
   String? _error;
   String? _currentAcno;
+  // Search state
+  String? _searchQuery;
+  List<LoadSheetModel> _filteredLoadSheets = [];
+  final TextEditingController _searchController = TextEditingController();
   
   // Date range for filtering
   DateTime _startDate = DateTime.now().subtract(const Duration(days: 30));
@@ -38,6 +42,20 @@ class _LoadSheetScreenState extends State<LoadSheetScreen> {
   void initState() {
     super.initState();
     _loadCurrentUserAcno();
+    _searchController.addListener(_onSearchChanged);
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  void _onSearchChanged() {
+    setState(() {
+      _searchQuery = _searchController.text;
+      _applySearch();
+    });
   }
 
   Future<void> _loadCurrentUserAcno() async {
@@ -72,6 +90,7 @@ class _LoadSheetScreenState extends State<LoadSheetScreen> {
 
       setState(() {
         _loadSheets = loadSheets;
+        _applySearch();
         _isLoading = false;
       });
     } catch (e) {
@@ -80,6 +99,25 @@ class _LoadSheetScreenState extends State<LoadSheetScreen> {
         _isLoading = false;
       });
       customSnackBar('Error', 'Failed to load sheets: ${e.toString()}');
+    }
+  }
+
+  void _applySearch() {
+    if (_searchQuery != null && _searchQuery!.isNotEmpty) {
+      print('Search query: \' ${_searchQuery}\'');
+      for (final sheet in _loadSheets) {
+        print('sheetNo: \' ${sheet.sheetNo}\', courierName: \' ${sheet.courierName}\', courierId: \' ${sheet.courierId}\', consignmentNo: \' ${sheet.consignmentNo}\', accountTitle: \' ${sheet.accountTitle}\'');
+      }
+      _filteredLoadSheets = _loadSheets.where((sheet) {
+        final query = _searchQuery!.toLowerCase();
+        return sheet.sheetNo.toLowerCase().contains(query) ||
+               sheet.courierName.toLowerCase().contains(query) ||
+               (sheet.courierId?.toLowerCase() ?? '').contains(query) ||
+               (sheet.consignmentNo ?? '').toLowerCase().contains(query) ||
+               sheet.accountTitle.toLowerCase().contains(query);
+      }).toList();
+    } else {
+      _filteredLoadSheets = _loadSheets;
     }
   }
 
@@ -128,14 +166,17 @@ class _LoadSheetScreenState extends State<LoadSheetScreen> {
         ),
         centerTitle: false,
         actions: [
-          IconButton(
-            icon: const Icon(Icons.search, color: Colors.black),
-            onPressed: () {
-              Navigator.of(context).push(
-                MaterialPageRoute(builder: (_) => const SearchScreen()),
-              );
-            },
-          ),
+          if (_searchQuery != null && _searchQuery!.isNotEmpty)
+            IconButton(
+              icon: const Icon(Icons.clear, color: Colors.grey),
+              onPressed: () {
+                setState(() {
+                  _searchController.clear();
+                  _searchQuery = null;
+                  _applySearch();
+                });
+              },
+            ),
           IconButton(
             icon: const Icon(Icons.calendar_today_outlined, color: Colors.black),
             onPressed: () async {
@@ -179,18 +220,42 @@ class _LoadSheetScreenState extends State<LoadSheetScreen> {
       ),
       body: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 16),
-        child: _buildBody(),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const SizedBox(height: 12),
+            // --- Search Bar ---
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 4),
+              child: TextField(
+                controller: _searchController,
+                decoration: InputDecoration(
+                  hintText: 'Search by sheet no, courier, account, CN, ...',
+                  prefixIcon: Icon(Icons.search),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  contentPadding: EdgeInsets.symmetric(vertical: 0, horizontal: 12),
+                ),
+              ),
+            ),
+            // --- End Search Bar ---
+            Expanded(child: _buildBody()),
+          ],
+        ),
       ),
       bottomNavigationBar: const AppBottomBar(currentTab: 2),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () {
-          // Add new load sheet functionality
-          customSnackBar('Info', 'Add load sheet functionality not implemented yet');
-        },
-        backgroundColor: const Color(0xFF0A253B),
-        child: const Icon(Icons.edit, color: Colors.white),
-        elevation: 4,
-      ),
+      floatingActionButton: MediaQuery.of(context).viewInsets.bottom == 0
+          ? FloatingActionButton(
+              onPressed: () {
+                // Add new load sheet functionality
+                customSnackBar('Info', 'Add load sheet functionality not implemented yet');
+              },
+              backgroundColor: const Color(0xFF0A253B),
+              child: const Icon(Icons.edit, color: Colors.white),
+              elevation: 4,
+            )
+          : null,
       floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
     );
   }
@@ -216,7 +281,8 @@ class _LoadSheetScreenState extends State<LoadSheetScreen> {
       );
     }
 
-    if (_loadSheets.isEmpty) {
+    final list = (_searchQuery != null && _searchQuery!.isNotEmpty) ? _filteredLoadSheets : _loadSheets;
+    if (list.isEmpty) {
       return const Center(
         child: Text(
           'No load sheets found for the selected date range.',
@@ -236,7 +302,7 @@ class _LoadSheetScreenState extends State<LoadSheetScreen> {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Text(
-                  'Total Load Sheet: ${_loadSheets.length.toString().padLeft(2, '0')}',
+                  'Total Load Sheet: ${list.length.toString().padLeft(2, '0')}',
                   style: const TextStyle(
                     fontFamily: 'SF Pro Display',
                     fontWeight: FontWeight.w500,
@@ -259,10 +325,10 @@ class _LoadSheetScreenState extends State<LoadSheetScreen> {
             ListView.separated(
               shrinkWrap: true,
               physics: const NeverScrollableScrollPhysics(),
-              itemCount: _loadSheets.length,
+              itemCount: list.length,
               separatorBuilder: (context, i) => const SizedBox(height: 16),
               itemBuilder: (context, i) {
-                final sheet = _loadSheets[i];
+                final sheet = list[i];
                 return Container(
                   padding: const EdgeInsets.symmetric(vertical: 18, horizontal: 18),
                   decoration: BoxDecoration(
