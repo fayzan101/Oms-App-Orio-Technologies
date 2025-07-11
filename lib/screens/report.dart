@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'dashboard_screen.dart';
 import 'menu.dart';
 import 'create_order.dart' as create_order;
@@ -36,10 +37,9 @@ class ReportsScreen extends StatelessWidget {
             icon: const Icon(Icons.arrow_back_ios_new, color: Colors.black, size: 22),
             onPressed: () => Get.offAll(() => DashboardScreen()),
           ),
-          title: const Text(
+          title: Text(
             'Reports',
-            style: TextStyle(
-              fontFamily: 'SF Pro Display',
+            style: GoogleFonts.inter(
               fontWeight: FontWeight.w700,
               fontSize: 20,
               color: Colors.black,
@@ -130,8 +130,7 @@ class _ReportCard extends StatelessWidget {
             Text(
               label,
               textAlign: TextAlign.center,
-              style: const TextStyle(
-                fontFamily: 'SF Pro Display',
+              style: GoogleFonts.inter(
                 fontWeight: FontWeight.w500,
                 fontSize: 15,
                 color: Colors.black,

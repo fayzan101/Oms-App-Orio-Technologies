@@ -27,6 +27,9 @@ class _AgeingReportFilterScreenState extends State<AgeingReportFilterScreen> {
   bool isLoadingPlatforms = false;
   bool isLoadingCouriers = false;
   bool isLoadingCities = false;
+  
+  // Validation state
+  bool showValidationErrors = false;
 
   @override
   void initState() {
@@ -104,6 +107,7 @@ class _AgeingReportFilterScreenState extends State<AgeingReportFilterScreen> {
               label: 'Select Ageing',
               value: selectedAgeing,
               isLoading: false,
+              isError: showValidationErrors && selectedAgeing == null,
               onTap: () => _showSearchDialog(
                 title: 'Select Ageing',
                 options: ageingOptions,
@@ -116,6 +120,7 @@ class _AgeingReportFilterScreenState extends State<AgeingReportFilterScreen> {
               label: 'Select Platforms',
               value: selectedPlatform,
               isLoading: isLoadingPlatforms,
+              isError: showValidationErrors && selectedPlatform == null,
               onTap: () => _showSearchDialog(
                 title: 'Select Platforms',
                 options: platformOptions,
@@ -128,6 +133,7 @@ class _AgeingReportFilterScreenState extends State<AgeingReportFilterScreen> {
               label: 'Select Courier',
               value: selectedCourier,
               isLoading: isLoadingCouriers,
+              isError: showValidationErrors && selectedCourier == null,
               onTap: () => _showSearchDialog(
                 title: 'Select Courier',
                 options: courierOptions,
@@ -140,6 +146,7 @@ class _AgeingReportFilterScreenState extends State<AgeingReportFilterScreen> {
               label: 'Select Cities',
               value: selectedCity,
               isLoading: isLoadingCities,
+              isError: showValidationErrors && selectedCity == null,
               onTap: () => _showSearchDialog(
                 title: 'Select Cities',
                 options: cityOptions,
@@ -159,6 +166,20 @@ class _AgeingReportFilterScreenState extends State<AgeingReportFilterScreen> {
                   ),
                 ),
                 onPressed: () {
+                  // Check if all fields are selected
+                  if (selectedAgeing == null || selectedPlatform == null || selectedCourier == null || selectedCity == null) {
+                    setState(() {
+                      showValidationErrors = true;
+                    });
+                    return;
+                  }
+                  
+                  // Reset validation errors
+                  setState(() {
+                    showValidationErrors = false;
+                  });
+                  
+                  // Apply filters
                   widget.onApply({
                     'ageing': selectedAgeing,
                     'platform': selectedPlatform,
@@ -194,12 +215,13 @@ class _AgeingReportFilterScreenState extends State<AgeingReportFilterScreen> {
     required String? value,
     required bool isLoading,
     required VoidCallback onTap,
+    bool isError = false,
   }) {
     return Container(
       decoration: BoxDecoration(
-        border: Border.all(color: Colors.grey.shade300),
+        border: Border.all(color: isError ? Colors.red : Colors.grey.shade300),
         borderRadius: BorderRadius.circular(10),
-        color: const Color(0xFFF7F8FA),
+        color: isError ? const Color(0xFFFFEBEE) : const Color(0xFFF7F8FA),
       ),
       child: isLoading
           ? const Padding(

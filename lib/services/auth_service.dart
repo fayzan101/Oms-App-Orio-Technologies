@@ -215,8 +215,19 @@ class AuthService extends GetxService {
   Future<void> logout() async {
     try {
       final prefs = await SharedPreferences.getInstance();
-      await prefs.clear();
-      currentUser.value = null;
+      
+      // Check if "Remember Me" is enabled
+      final rememberMe = prefs.getBool('remember_me') ?? false;
+      
+      if (rememberMe) {
+        // If "Remember Me" is enabled, only clear login status but keep credentials
+        await prefs.setBool('is_logged_in', false);
+        currentUser.value = null;
+      } else {
+        // If "Remember Me" is not enabled, clear everything
+        await prefs.clear();
+        currentUser.value = null;
+      }
     } catch (e) {
       print('Error during logout: $e');
     }
@@ -232,5 +243,18 @@ class AuthService extends GetxService {
   Future<String> getApiKey() async {
     final prefs = await SharedPreferences.getInstance();
     return prefs.getString('api_key') ?? '';
+  }
+
+  // Clear Remember Me data
+  Future<void> clearRememberMe() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.remove('remember_email');
+      await prefs.remove('remember_password');
+      await prefs.setBool('remember_me', false);
+      await prefs.setBool('is_logged_in', false);
+    } catch (e) {
+      print('Error clearing Remember Me data: $e');
+    }
   }
 } 

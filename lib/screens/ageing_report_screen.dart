@@ -9,6 +9,7 @@ import 'package:get/get.dart';
 import 'calendar_screen.dart';
 import '../widgets/custom_date_selector.dart';
 import 'ageing_report_filter_screen.dart';
+import '../utils/custom_snackbar.dart';
 
 class AgeingReportScreen extends StatefulWidget {
   const AgeingReportScreen({Key? key}) : super(key: key);
@@ -92,6 +93,7 @@ class _AgeingReportScreenState extends State<AgeingReportScreen> {
   Future<void> fetchAgeingReport() async {
     setState(() => isLoading = true);
     try {
+      // First, fetch data without server-side filters to get all data for client-side filtering
       final data = await OrderService.fetchAgeingReport(
         acno: acno,
         startLimit: 1,
@@ -99,17 +101,63 @@ class _AgeingReportScreenState extends State<AgeingReportScreen> {
         startDate: _formatDate(startDate),
         endDate: _formatDate(endDate),
         ageingType: 'order',
-        filterCourierId: filterCourier,
-        filterStatusId: filterAgeing,
-        filterDestinationCity: filterCity,
-        // Add platform if your API supports it
+        // Remove server-side filters to avoid conflicts with client-side filtering
+        // filterCourierId: filterCourier,
+        // filterStatusId: filterAgeing,
+        // filterDestinationCity: filterCity,
       );
+      
+      // Apply client-side filtering
+      List<Map<String, dynamic>> filteredData = data;
+      
+      // Apply ageing filter
+      if (filterAgeing != null) {
+        filteredData = filteredData.where((order) {
+          final noOfDays = int.tryParse(order['no_of_days']?.toString() ?? '0') ?? 0;
+          switch (filterAgeing!.toLowerCase()) {
+            case '0-3 days':
+              return noOfDays >= 0 && noOfDays <= 3;
+            case '4-7 days':
+              return noOfDays >= 4 && noOfDays <= 7;
+            case '8-15 days':
+              return noOfDays >= 8 && noOfDays <= 15;
+            case '16+ days':
+              return noOfDays >= 16;
+            default:
+              return true;
+          }
+        }).toList();
+      }
+      
+      // Apply platform filter
+      if (filterPlatform != null) {
+        filteredData = filteredData.where((order) => 
+          (order['store_name']?.toString().toLowerCase().contains(filterPlatform!.toLowerCase()) ?? false) ||
+          (order['web_order_id']?.toString().toLowerCase().contains(filterPlatform!.toLowerCase()) ?? false)
+        ).toList();
+      }
+      
+      // Apply courier filter
+      if (filterCourier != null) {
+        filteredData = filteredData.where((order) => 
+          order['courier_name']?.toString().toLowerCase() == filterCourier!.toLowerCase()
+        ).toList();
+      }
+      
+      // Apply city filter
+      if (filterCity != null) {
+        filteredData = filteredData.where((order) => 
+          order['city_name']?.toString().toLowerCase() == filterCity!.toLowerCase()
+        ).toList();
+      }
+      
       setState(() {
-        orders = data;
+        orders = filteredData;
         _applySearch();
       });
     } catch (e) {
       // Optionally show error
+      print('Error fetching ageing report: $e');
     } finally {
       setState(() => isLoading = false);
     }
@@ -203,17 +251,23 @@ class _AgeingReportScreenState extends State<AgeingReportScreen> {
                         filterCourier = filters['courier'];
                         filterCity = filters['city'];
                       });
+                      // Debug logging
+                      print('Applied filters: ageing=$filterAgeing, platform=$filterPlatform, courier=$filterCourier, city=$filterCity');
                       fetchAllData();
+                      // Show custom snackbar
+                      customSnackBar('Success', 'Filters applied successfully');
                     },
-                    onReset: () {
-                      setState(() {
-                        filterAgeing = null;
-                        filterPlatform = null;
-                        filterCourier = null;
-                        filterCity = null;
-                      });
-                      fetchAllData();
-                    },
+                                            onReset: () {
+                          setState(() {
+                            filterAgeing = null;
+                            filterPlatform = null;
+                            filterCourier = null;
+                            filterCity = null;
+                          });
+                          fetchAllData();
+                          // Show custom snackbar
+                          customSnackBar('Success', 'Filters reset successfully');
+                        },
                   ),
                 ),
               );

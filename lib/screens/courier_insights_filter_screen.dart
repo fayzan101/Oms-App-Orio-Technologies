@@ -26,6 +26,9 @@ class _CourierInsightsFilterScreenState extends State<CourierInsightsFilterScree
 
   bool isLoadingCouriers = false;
   bool isLoadingCities = false;
+  
+  // Validation state
+  bool showValidationErrors = false;
 
   @override
   void initState() {
@@ -99,6 +102,7 @@ class _CourierInsightsFilterScreenState extends State<CourierInsightsFilterScree
               label: 'Select Status',
               value: selectedStatus,
               isLoading: false,
+              isError: showValidationErrors && selectedStatus == null,
               onTap: () => _showSearchDialog(
                 title: 'Select Status',
                 options: statusOptions,
@@ -111,6 +115,7 @@ class _CourierInsightsFilterScreenState extends State<CourierInsightsFilterScree
               label: 'Select Courier',
               value: selectedCourier,
               isLoading: isLoadingCouriers,
+              isError: showValidationErrors && selectedCourier == null,
               onTap: () => _showSearchDialog(
                 title: 'Select Courier',
                 options: courierOptions,
@@ -123,6 +128,7 @@ class _CourierInsightsFilterScreenState extends State<CourierInsightsFilterScree
               label: 'Select Destination City',
               value: selectedCity,
               isLoading: isLoadingCities,
+              isError: showValidationErrors && selectedCity == null,
               onTap: () => _showSearchDialog(
                 title: 'Select Destination City',
                 options: cityOptions,
@@ -135,6 +141,7 @@ class _CourierInsightsFilterScreenState extends State<CourierInsightsFilterScree
               label: 'Select Payment Method',
               value: selectedPaymentMethod,
               isLoading: false,
+              isError: showValidationErrors && selectedPaymentMethod == null,
               onTap: () => _showSearchDialog(
                 title: 'Select Payment Method',
                 options: paymentMethodOptions,
@@ -147,6 +154,7 @@ class _CourierInsightsFilterScreenState extends State<CourierInsightsFilterScree
               label: 'Select Payment Status',
               value: selectedPaymentStatus,
               isLoading: false,
+              isError: showValidationErrors && selectedPaymentStatus == null,
               onTap: () => _showSearchDialog(
                 title: 'Select Payment Status',
                 options: paymentStatusOptions,
@@ -166,6 +174,20 @@ class _CourierInsightsFilterScreenState extends State<CourierInsightsFilterScree
                   ),
                 ),
                 onPressed: () {
+                  // Check if all fields are selected
+                  if (selectedStatus == null || selectedCourier == null || selectedCity == null || selectedPaymentMethod == null || selectedPaymentStatus == null) {
+                    setState(() {
+                      showValidationErrors = true;
+                    });
+                    return;
+                  }
+                  
+                  // Reset validation errors
+                  setState(() {
+                    showValidationErrors = false;
+                  });
+                  
+                  // Apply filters
                   widget.onApply({
                     'status': selectedStatus,
                     'courier': selectedCourier,
@@ -203,12 +225,13 @@ class _CourierInsightsFilterScreenState extends State<CourierInsightsFilterScree
     required String? value,
     required bool isLoading,
     required VoidCallback onTap,
+    bool isError = false,
   }) {
     return Container(
       decoration: BoxDecoration(
-        border: Border.all(color: Colors.grey.shade300),
+        border: Border.all(color: isError ? Colors.red : Colors.grey.shade300),
         borderRadius: BorderRadius.circular(10),
-        color: const Color(0xFFF7F8FA),
+        color: isError ? const Color(0xFFFFEBEE) : const Color(0xFFF7F8FA),
       ),
       child: isLoading
           ? const Padding(

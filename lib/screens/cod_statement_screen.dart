@@ -150,6 +150,7 @@ class _CODStatementScreenState extends State<CODStatementScreen> {
                 });
               },
             ),
+
           IconButton(
             icon: const Icon(Icons.calendar_today_outlined, color: Colors.black),
             onPressed: () async {
@@ -195,7 +196,7 @@ class _CODStatementScreenState extends State<CODStatementScreen> {
                         child: TextField(
                           controller: _searchController,
                           decoration: InputDecoration(
-                            hintText: 'Search by ref no, date, account, amount, courier...',
+                            hintText: 'Search by any field',
                             prefixIcon: Icon(Icons.search),
                             border: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(12),

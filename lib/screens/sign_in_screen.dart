@@ -40,7 +40,7 @@ class SignInScreen extends StatelessWidget {
                   SizedBox(height: blockH * 14), // Increased top margin for more downward shift
                   Text(
                     'Sign In',
-                    style: GoogleFonts.inter(
+                    style: GoogleFonts.poppins(
                       fontWeight: FontWeight.w700,
                       fontSize: blockW * 8.2, // ~32 on 390px
                       color: Colors.black,
@@ -50,7 +50,7 @@ class SignInScreen extends StatelessWidget {
                   SizedBox(height: blockH * 1.2),
                   Text(
                     "and let's get those orders moving!",
-                    style: GoogleFonts.inter(
+                    style: GoogleFonts.manrope(
                       fontWeight: FontWeight.w400,
                       fontSize: blockW * 3.8,
                       color: Colors.black // darker subtitle
@@ -160,8 +160,8 @@ class SignInScreen extends StatelessWidget {
                         child: Text(
                           'Forgot Password?',
                           style: GoogleFonts.inter(
-                            fontWeight: FontWeight.w400,
-                            fontSize: blockW * 3.6, // ~14 on 390px
+                            fontWeight: FontWeight.w500,
+                            fontSize: blockW * 3.8, // ~14 on 390px
                             color: Colors.black,
                           ),
                         ),

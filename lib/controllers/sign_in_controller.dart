@@ -95,6 +95,16 @@ class SignInController extends GetxController {
       emailError.value = true;
       passwordError.value = true;
       print('Login failed');
+      
+      // If login fails and "Remember Me" was enabled, clear the saved credentials
+      if (rememberMe.value) {
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.remove('remember_email');
+        await prefs.remove('remember_password');
+        await prefs.setBool('remember_me', false);
+        rememberMe.value = false;
+      }
+      
       Get.snackbar(
         'Invalid',
         'Invalid email or password',

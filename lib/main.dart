@@ -29,14 +29,31 @@ class MyApp extends StatelessWidget {
   Future<Widget> _getInitialScreen() async {
     final prefs = await SharedPreferences.getInstance();
     final rememberMe = prefs.getBool('remember_me') ?? false;
+    final isLoggedIn = prefs.getBool('is_logged_in') ?? false;
     
-    if (rememberMe) {
-      // Check if we have saved credentials
+    if (rememberMe && isLoggedIn) {
+      // User has "Remember Me" enabled and is logged in
+      // Load user data and go directly to dashboard
+      final authService = Get.find<AuthService>();
+      final user = await authService.loadUserData();
+      
+      if (user != null) {
+        return DashboardScreen();
+      } else {
+        // User data couldn't be loaded, clear saved data and go to onboarding
+        await prefs.remove('remember_email');
+        await prefs.remove('remember_password');
+        await prefs.setBool('remember_me', false);
+        await prefs.setBool('is_logged_in', false);
+        return OnboardingScreen();
+      }
+    } else if (rememberMe && !isLoggedIn) {
+      // User has "Remember Me" enabled but not logged in
+      // Check if we have saved credentials and try to login
       final savedEmail = prefs.getString('remember_email') ?? '';
       final savedPassword = prefs.getString('remember_password') ?? '';
       
       if (savedEmail.isNotEmpty && savedPassword.isNotEmpty) {
-        // Try to login with saved credentials
         final authService = Get.find<AuthService>();
         final loginSuccess = await authService.login(savedEmail, savedPassword);
         
@@ -47,6 +64,7 @@ class MyApp extends StatelessWidget {
           await prefs.remove('remember_email');
           await prefs.remove('remember_password');
           await prefs.setBool('remember_me', false);
+          await prefs.setBool('is_logged_in', false);
           return OnboardingScreen();
         }
       } else {
@@ -54,7 +72,7 @@ class MyApp extends StatelessWidget {
         return OnboardingScreen();
       }
     } else {
-      // Remember me not checked, go to onboarding
+      // Remember me not checked or user not logged in, go to onboarding
       return OnboardingScreen();
     }
   }

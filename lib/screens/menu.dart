@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'dashboard_screen.dart';
 import '../services/auth_service.dart';
 import 'sign_in_screen.dart';
@@ -99,8 +100,7 @@ class _MenuScreenState extends State<MenuScreen> {
                 SizedBox(height: 24),
                 Text(
                   title,
-                  style: TextStyle(
-                    fontFamily: 'SF Pro Display',
+                  style: GoogleFonts.inter(
                     fontWeight: FontWeight.w700,
                     fontSize: 22,
                     color: Colors.black,
@@ -109,8 +109,7 @@ class _MenuScreenState extends State<MenuScreen> {
                 SizedBox(height: 8),
                 Text(
                   message,
-                  style: TextStyle(
-                    fontFamily: 'SF Pro Display',
+                  style: GoogleFonts.inter(
                     fontWeight: FontWeight.w400,
                     fontSize: 15,
                     color: Color(0xFF8E8E93),
@@ -131,8 +130,7 @@ class _MenuScreenState extends State<MenuScreen> {
                     ),
                     child: Text(
                       'OK',
-                      style: TextStyle(
-                        fontFamily: 'SF Pro Display',
+                      style: GoogleFonts.inter(
                         fontWeight: FontWeight.w500,
                         fontSize: 15,
                         color: Colors.white,
@@ -205,8 +203,7 @@ class _MenuScreenState extends State<MenuScreen> {
                                     profileData?['first_name'] != null && profileData?['last_name'] != null
                                       ? '${profileData?['first_name']} ${profileData?['last_name']}'
                                       : '',
-                                    style: const TextStyle(
-                                      fontFamily: 'SF Pro Display',
+                                    style: GoogleFonts.inter(
                                       fontWeight: FontWeight.w700,
                                       fontSize: 18,
                                       color: Colors.black,
@@ -215,8 +212,7 @@ class _MenuScreenState extends State<MenuScreen> {
                                   const SizedBox(height: 4),
                                   Text(
                                     profileData?['email'] ?? '',
-                                    style: const TextStyle(
-                                      fontFamily: 'SF Pro Display',
+                                    style: GoogleFonts.inter(
                                       fontWeight: FontWeight.w400,
                                       fontSize: 14,
                                       color: Color(0xFF8E8E93),
@@ -242,10 +238,9 @@ class _MenuScreenState extends State<MenuScreen> {
                                         backgroundColor: Colors.transparent,
                                         elevation: 0,
                                       ),
-                                      child: const Text(
+                                      child: Text(
                                         'Profile',
-                                        style: TextStyle(
-                                          fontFamily: 'SF Pro Display',
+                                        style: GoogleFonts.inter(
                                           fontWeight: FontWeight.w500,
                                           fontSize: 13,
                                           color: Color(0xFF007AFF),
@@ -262,12 +257,11 @@ class _MenuScreenState extends State<MenuScreen> {
               ),
               const SizedBox(height: 24),
               // Menu Title
-              const Padding(
-                padding: EdgeInsets.symmetric(horizontal: 16),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
                 child: Text(
                   'Menu',
-                  style: TextStyle(
-                    fontFamily: 'SF Pro Display',
+                  style: GoogleFonts.inter(
                     fontWeight: FontWeight.w700,
                     fontSize: 22,
                     color: Colors.black,
@@ -373,8 +367,7 @@ void showLogoutBottomSheet(BuildContext context) async {
               SizedBox(height: 24),
               Text(
                 'Are you Sure',
-                style: TextStyle(
-                  fontFamily: 'SF Pro Display',
+                style: GoogleFonts.inter(
                   fontWeight: FontWeight.w700,
                   fontSize: 22,
                   color: Colors.black,
@@ -383,8 +376,7 @@ void showLogoutBottomSheet(BuildContext context) async {
               SizedBox(height: 8),
               Text(
                 'You want to logout',
-                style: TextStyle(
-                  fontFamily: 'SF Pro Display',
+                style: GoogleFonts.inter(
                   fontWeight: FontWeight.w400,
                   fontSize: 15,
                   color: Color(0xFF8E8E93),
@@ -406,8 +398,7 @@ void showLogoutBottomSheet(BuildContext context) async {
                       ),
                       child: Text(
                         'No',
-                        style: TextStyle(
-                          fontFamily: 'SF Pro Display',
+                        style: GoogleFonts.inter(
                           fontWeight: FontWeight.w500,
                           fontSize: 15,
                           color: Colors.black,
@@ -429,8 +420,7 @@ void showLogoutBottomSheet(BuildContext context) async {
                       ),
                       child: Text(
                         'Yes',
-                        style: TextStyle(
-                          fontFamily: 'SF Pro Display',
+                        style: GoogleFonts.inter(
                           fontWeight: FontWeight.w500,
                           fontSize: 15,
                           color: Colors.white,
@@ -489,8 +479,7 @@ class _MenuItem extends StatelessWidget {
               Expanded(
                 child: Text(
                   label,
-                  style: const TextStyle(
-                    fontFamily: 'SF Pro Display',
+                  style: GoogleFonts.inter(
                     fontWeight: FontWeight.w500,
                     fontSize: 16,
                     color: Colors.black,
@@ -595,8 +584,7 @@ class _NavBarItem extends StatelessWidget {
             const SizedBox(height: 2),
             Text(
               label,
-              style: TextStyle(
-                fontFamily: 'SF Pro Display',
+              style: GoogleFonts.inter(
                 fontWeight: selected ? FontWeight.w700 : FontWeight.w400,
                 fontSize: 12,
                 color: color,

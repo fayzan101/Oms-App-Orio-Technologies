@@ -9,6 +9,7 @@ import 'package:get/get.dart';
 import 'calendar_screen.dart';
 import '../widgets/custom_date_selector.dart';
 import 'courier_insights_filter_screen.dart';
+import '../utils/custom_snackbar.dart';
 
 class CourierInsightsScreen extends StatefulWidget {
   const CourierInsightsScreen({Key? key}) : super(key: key);
@@ -28,6 +29,13 @@ class _CourierInsightsScreenState extends State<CourierInsightsScreen> {
   String? _searchQuery;
   List<Map<String, dynamic>> _filteredReports = [];
   final TextEditingController _searchController = TextEditingController();
+  
+  // Filter state
+  String? filterStatus;
+  String? filterCourier;
+  String? filterCity;
+  String? filterPaymentMethod;
+  String? filterPaymentStatus;
 
   @override
   void initState() {
@@ -62,10 +70,53 @@ class _CourierInsightsScreenState extends State<CourierInsightsScreen> {
         endLimit: 50000,
         startDate: startDateStr,
         endDate: endDateStr,
+        // Add filter parameters if your API supports them
+        // filterStatus: filterStatus,
+        // filterCourier: filterCourier,
+        // filterCity: filterCity,
+        // filterPaymentMethod: filterPaymentMethod,
+        // filterPaymentStatus: filterPaymentStatus,
       );
+      
+      // Apply client-side filtering if API doesn't support server-side filtering
+      List<Map<String, dynamic>> filteredData = data;
+      
+      if (filterStatus != null) {
+        filteredData = filteredData.where((report) => 
+          report['status_name']?.toString().toLowerCase() == filterStatus!.toLowerCase()
+        ).toList();
+      }
+      
+      if (filterCourier != null) {
+        filteredData = filteredData.where((report) => 
+          report['courier_name']?.toString().toLowerCase() == filterCourier!.toLowerCase()
+        ).toList();
+      }
+      
+      if (filterCity != null) {
+        filteredData = filteredData.where((report) => 
+          report['origin_city']?.toString().toLowerCase() == filterCity!.toLowerCase() ||
+          report['destination_city']?.toString().toLowerCase() == filterCity!.toLowerCase()
+        ).toList();
+      }
+      
+      if (filterPaymentMethod != null) {
+        filteredData = filteredData.where((report) => 
+          report['payment_type']?.toString().toLowerCase() == filterPaymentMethod!.toLowerCase()
+        ).toList();
+      }
+      
+      if (filterPaymentStatus != null) {
+        filteredData = filteredData.where((report) => 
+          (filterPaymentStatus!.toLowerCase() == 'paid' && report['payment_status'] == '1') ||
+          (filterPaymentStatus!.toLowerCase() == 'unpaid' && report['payment_status'] == '0') ||
+          (filterPaymentStatus!.toLowerCase() == 'partial' && report['payment_status'] == '2')
+        ).toList();
+      }
+      
       setState(() {
-        reports = data;
-        totalReports = data.length;
+        reports = filteredData;
+        totalReports = filteredData.length;
         _applySearch();
       });
     } catch (e) {
@@ -231,10 +282,30 @@ class _CourierInsightsScreenState extends State<CourierInsightsScreen> {
                   MaterialPageRoute(
                     builder: (_) => CourierInsightsFilterScreen(
                       onApply: (filters) {
-                        // TODO: Use filters to update your report
+                        // Apply filters logic
+                        setState(() {
+                          filterStatus = filters['status'];
+                          filterCourier = filters['courier'];
+                          filterCity = filters['city'];
+                          filterPaymentMethod = filters['paymentMethod'];
+                          filterPaymentStatus = filters['paymentStatus'];
+                        });
+                        fetchCourierInsights();
+                        // Show custom snackbar
+                        customSnackBar('Success', 'Filters applied successfully');
                       },
                       onReset: () {
-                        // TODO: Reset filters logic
+                        // Reset filters logic
+                        setState(() {
+                          filterStatus = null;
+                          filterCourier = null;
+                          filterCity = null;
+                          filterPaymentMethod = null;
+                          filterPaymentStatus = null;
+                        });
+                        fetchCourierInsights();
+                        // Show custom snackbar
+                        customSnackBar('Success', 'Filters reset successfully');
                       },
                     ),
                   ),
