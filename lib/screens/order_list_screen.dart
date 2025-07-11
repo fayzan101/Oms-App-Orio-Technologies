@@ -11,6 +11,7 @@ import 'search_screen.dart';
 import 'quick_edit_screen.dart';
 import '../utils/Layout/app_bottom_bar.dart';
 import 'calendar_screen.dart';
+import '../widgets/custom_date_selector.dart';
 
 class OrderListScreen extends StatefulWidget {
   const OrderListScreen({Key? key}) : super(key: key);
@@ -34,24 +35,56 @@ class _OrderListScreenState extends State<OrderListScreen> {
   int deliveredOrders = 0;
   int returnedOrders = 0;
 
+  // Search and date filter state
+  String? _searchQuery;
+  List<dynamic> _filteredOrders = [];
+  final TextEditingController _searchController = TextEditingController();
+  DateTime _startDate = DateTime.now().subtract(const Duration(days: 30));
+  DateTime _endDate = DateTime.now();
+
   @override
   void initState() {
     super.initState();
     fetchReportSummary();
-    fetchOrders();
+    fetchOrders(reset: true);
     _scrollController.addListener(() {
       if (_scrollController.position.pixels >= _scrollController.position.maxScrollExtent - 200 && !isLoading && hasMore) {
         fetchOrders();
       }
     });
+    _searchController.addListener(_onSearchChanged);
+  }
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  void _onSearchChanged() {
+    setState(() {
+      _searchQuery = _searchController.text;
+      _applySearch();
+    });
+  }
+
+  void _applySearch() {
+    if (_searchQuery != null && _searchQuery!.isNotEmpty) {
+      _filteredOrders = orders.where((order) {
+        return order.values.any((v) => v != null && v.toString().toLowerCase().contains(_searchQuery!.toLowerCase()));
+      }).toList();
+    } else {
+      _filteredOrders = orders;
+    }
   }
 
   Future<void> fetchReportSummary() async {
     try {
       final summary = await OrderService.fetchReportSummary(
         acno: 'OR-00009',
-        startDate: '2025-01-01',
-        endDate: '2025-03-21',
+        startDate: _startDate.toIso8601String().split('T')[0],
+        endDate: _endDate.toIso8601String().split('T')[0],
       );
       setState(() {
         totalOrders = int.tryParse(summary['orders']?['total']?.toString() ?? '0') ?? 0;
@@ -64,12 +97,22 @@ class _OrderListScreenState extends State<OrderListScreen> {
     }
   }
 
-  Future<void> fetchOrders() async {
+  Future<void> fetchOrders({bool reset = false}) async {
+    if (reset) {
+      setState(() {
+        orders = [];
+        startLimit = 1;
+        endLimit = 20;
+        hasMore = true;
+      });
+    }
     setState(() => isLoading = true);
     try {
       final data = await OrderService.fetchOrders(
         startLimit: startLimit,
         endLimit: endLimit,
+        startDate: _startDate.toIso8601String().split('T')[0],
+        endDate: _endDate.toIso8601String().split('T')[0],
       );
       final List<dynamic> newOrders = data['data'] ?? [];
       setState(() {
@@ -77,6 +120,7 @@ class _OrderListScreenState extends State<OrderListScreen> {
         startLimit = endLimit + 1;
         endLimit += 20;
         hasMore = newOrders.isNotEmpty;
+        _applySearch();
       });
     } catch (e) {
       // Optionally show error
@@ -279,12 +323,6 @@ class _OrderListScreenState extends State<OrderListScreen> {
   }
 
   @override
-  void dispose() {
-    _scrollController.dispose();
-    super.dispose();
-  }
-
-  @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
@@ -309,14 +347,17 @@ class _OrderListScreenState extends State<OrderListScreen> {
         ),
         centerTitle: false,
         actions: [
-          IconButton(
-            icon: const Icon(Icons.search, color: Colors.black),
-            onPressed: () {
-              Navigator.of(context).push(
-                MaterialPageRoute(builder: (_) => const SearchScreen()),
-              );
-            },
-          ),
+          if (_searchQuery != null && _searchQuery!.isNotEmpty)
+            IconButton(
+              icon: const Icon(Icons.clear, color: Colors.grey),
+              onPressed: () {
+                setState(() {
+                  _searchController.clear();
+                  _searchQuery = null;
+                  _applySearch();
+                });
+              },
+            ),
           IconButton(
             icon: const Icon(Icons.filter_list, color: Colors.black),
             onPressed: () {
@@ -327,8 +368,30 @@ class _OrderListScreenState extends State<OrderListScreen> {
           ),
           IconButton(
             icon: const Icon(Icons.calendar_today_outlined, color: Colors.black),
-            onPressed: () {
-              Get.to(() => const CalendarScreen());
+            onPressed: () async {
+              final picked = await showDialog<DateTimeRange>(
+                context: context,
+                barrierDismissible: true,
+                builder: (context) => Dialog(
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                  child: Container(
+                    width: 320,
+                    padding: const EdgeInsets.all(24),
+                    child: CustomDateSelector(
+                      initialStartDate: _startDate,
+                      initialEndDate: _endDate,
+                    ),
+                  ),
+                ),
+              );
+              if (picked != null) {
+                setState(() {
+                  _startDate = picked.start;
+                  _endDate = picked.end;
+                });
+                await fetchReportSummary();
+                await fetchOrders(reset: true);
+              }
             },
           ),
         ],
@@ -338,6 +401,22 @@ class _OrderListScreenState extends State<OrderListScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            // --- Search Bar ---
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 4),
+              child: TextField(
+                controller: _searchController,
+                decoration: InputDecoration(
+                  hintText: 'Search by any field',
+                  prefixIcon: Icon(Icons.search),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  contentPadding: EdgeInsets.symmetric(vertical: 0, horizontal: 12),
+                ),
+              ),
+            ),
+            // --- End Search Bar ---
             // Summary Card
             Container(
               width: double.infinity,
@@ -399,16 +478,17 @@ class _OrderListScreenState extends State<OrderListScreen> {
             Expanded(
               child: ListView.separated(
                 controller: _scrollController,
-                itemCount: orders.length + (isLoading ? 1 : 0),
+                itemCount: (_searchQuery != null && _searchQuery!.isNotEmpty ? _filteredOrders.length : orders.length) + (isLoading ? 1 : 0),
                 separatorBuilder: (context, i) => const SizedBox(height: 10),
                 itemBuilder: (context, i) {
-                  if (i >= orders.length) {
+                  final list = (_searchQuery != null && _searchQuery!.isNotEmpty ? _filteredOrders : orders);
+                  if (i >= list.length) {
                     return Center(child: Padding(
                       padding: EdgeInsets.symmetric(vertical: 16),
                       child: CircularProgressIndicator(),
                     ));
                   }
-                  final order = orders[i];
+                  final order = list[i];
                   final isExpanded = expanded.contains(i);
                   return GestureDetector(
                     onTap: () {

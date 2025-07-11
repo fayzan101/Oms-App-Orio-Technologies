@@ -95,80 +95,59 @@ class _CustomDateSelectorState extends State<CustomDateSelector> {
                   style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                 ),
                 const SizedBox(height: 20),
-                // Only show Start Date field and calendar if End Calendar is not open
-                if (!_showEndCalendar) ...[
-                  _dateField(
-                    label: 'Start Date',
-                    controller: _startController,
-                    onChanged: (val) {
-                      _onStartDateChanged(val);
-                      _formKey.currentState?.validate();
-                    },
-                    onTap: () {
-                      // Only open calendar if date is valid
-                      if (_isValidDate(_startController.text)) {
-                        setState(() {
-                          _showStartCalendar = true;
-                          _showEndCalendar = false;
-                        });
-                      }
-                    },
-                  ),
-                  if (_showStartCalendar && _isValidDate(_startController.text))
-                    _calendar(
-                      key: ValueKey(_startDate),
-                      focusedDay: _clampToRange(_startDate),
-                      selectedDay: _clampToRange(_startDate),
-                      onDaySelected: (selected, _) {
-                        setState(() {
-                          _startDate = selected;
-                          _startController.text = _dateFormat.format(selected);
-                          _showStartCalendar = false;
-                          if (_endDate.isBefore(_startDate)) {
-                            _endDate = _startDate;
-                            _endController.text = _dateFormat.format(_endDate);
-                          }
-                        });
-                      },
-                    ),
-                ],
-                // Only show End Date field and calendar if Start Calendar is not open
-                if (!_showStartCalendar) ...[
-                  const SizedBox(height: 16),
-                  _dateField(
-                    label: 'End Date',
-                    controller: _endController,
-                    onChanged: (val) {
-                      _onEndDateChanged(val);
-                      _formKey.currentState?.validate();
-                    },
-                    onTap: () {
-                      if (_isValidDate(_endController.text)) {
-                        setState(() {
-                          _showEndCalendar = true;
-                          _showStartCalendar = false;
-                        });
-                      }
-                    },
-                  ),
-                  if (_showEndCalendar && _isValidDate(_endController.text))
-                    _calendar(
-                      key: ValueKey(_endDate),
-                      focusedDay: _clampToRange(_endDate),
-                      selectedDay: _clampToRange(_endDate),
-                      onDaySelected: (selected, _) {
-                        setState(() {
-                          _endDate = selected;
-                          _endController.text = _dateFormat.format(selected);
-                          _showEndCalendar = false;
-                          if (_endDate.isBefore(_startDate)) {
-                            _startDate = _endDate;
-                            _startController.text = _dateFormat.format(_startDate);
-                          }
-                        });
-                      },
-                    ),
-                ],
+                _dateField(
+                  label: 'Start Date',
+                  controller: _startController,
+                  onChanged: (val) {
+                    _onStartDateChanged(val);
+                    _formKey.currentState?.validate();
+                  },
+                  onTap: () async {
+                    final picked = await showDatePicker(
+                      context: context,
+                      initialDate: _startDate,
+                      firstDate: DateTime(2020),
+                      lastDate: DateTime.now(),
+                    );
+                    if (picked != null) {
+                      setState(() {
+                        _startDate = picked;
+                        _startController.text = _dateFormat.format(picked);
+                        if (_endDate.isBefore(_startDate)) {
+                          _endDate = _startDate;
+                          _endController.text = _dateFormat.format(_endDate);
+                        }
+                      });
+                    }
+                  },
+                ),
+                const SizedBox(height: 16),
+                _dateField(
+                  label: 'End Date',
+                  controller: _endController,
+                  onChanged: (val) {
+                    _onEndDateChanged(val);
+                    _formKey.currentState?.validate();
+                  },
+                  onTap: () async {
+                    final picked = await showDatePicker(
+                      context: context,
+                      initialDate: _endDate,
+                      firstDate: DateTime(2020),
+                      lastDate: DateTime.now(),
+                    );
+                    if (picked != null) {
+                      setState(() {
+                        _endDate = picked;
+                        _endController.text = _dateFormat.format(picked);
+                        if (_endDate.isBefore(_startDate)) {
+                          _startDate = _endDate;
+                          _startController.text = _dateFormat.format(_startDate);
+                        }
+                      });
+                    }
+                  },
+                ),
                 const SizedBox(height: 24),
                 SizedBox(
                   width: double.infinity,

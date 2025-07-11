@@ -130,12 +130,19 @@ class _AgeingReportScreenState extends State<AgeingReportScreen> {
   }
 
   void _openDateSelector() async {
-    final picked = await showModalBottomSheet<DateTimeRange>(
+    final picked = await showDialog<DateTimeRange>(
       context: context,
-      isScrollControlled: true,
-      builder: (context) => CustomDateSelector(
-        initialStartDate: startDate,
-        initialEndDate: endDate,
+      barrierDismissible: true,
+      builder: (context) => Dialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        child: Container(
+          width: 320,
+          padding: const EdgeInsets.all(24),
+          child: CustomDateSelector(
+            initialStartDate: startDate,
+            initialEndDate: endDate,
+          ),
+        ),
       ),
     );
     if (picked != null) {

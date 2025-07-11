@@ -18,6 +18,193 @@ class ProfileScreen extends StatefulWidget {
   State<ProfileScreen> createState() => _ProfileScreenState();
 }
 
+// --- Searchable Bank Dialog ---
+class _BankSearchDialog extends StatefulWidget {
+  final List<String> banks;
+  final String? initialBank;
+  const _BankSearchDialog({Key? key, required this.banks, this.initialBank}) : super(key: key);
+
+  @override
+  State<_BankSearchDialog> createState() => _BankSearchDialogState();
+}
+
+class _BankSearchDialogState extends State<_BankSearchDialog> {
+  late List<String> filteredBanks;
+  late TextEditingController searchController;
+  String? selected;
+
+  @override
+  void initState() {
+    super.initState();
+    filteredBanks = widget.banks;
+    searchController = TextEditingController();
+    selected = widget.initialBank;
+    searchController.addListener(_onSearchChanged);
+  }
+
+  @override
+  void dispose() {
+    searchController.dispose();
+    super.dispose();
+  }
+
+  void _onSearchChanged() {
+    setState(() {
+      final query = searchController.text.toLowerCase();
+      filteredBanks = widget.banks.where((b) => b.toLowerCase().contains(query)).toList();
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Dialog(
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      child: Container(
+        width: 320,
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Text('Select Bank', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
+            const SizedBox(height: 12),
+            TextField(
+              controller: searchController,
+              decoration: InputDecoration(
+                hintText: 'Search bank...',
+                prefixIcon: Icon(Icons.search),
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+                contentPadding: EdgeInsets.symmetric(vertical: 0, horizontal: 12),
+              ),
+            ),
+            const SizedBox(height: 12),
+            SizedBox(
+              height: 250,
+              child: filteredBanks.isEmpty
+                  ? const Center(child: Text('No banks found.'))
+                  : ListView.builder(
+                      itemCount: filteredBanks.length,
+                      itemBuilder: (context, i) {
+                        final bank = filteredBanks[i];
+                        return ListTile(
+                          title: Text(bank),
+                          selected: bank == selected,
+                          onTap: () {
+                            Navigator.of(context).pop(bank);
+                          },
+                        );
+                      },
+                    ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+Widget _profileField(String label, TextEditingController controller, bool isEditing) {
+  return Column(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+      Text(
+        label,
+        style: const TextStyle(
+          fontFamily: 'SF Pro Display',
+          fontWeight: FontWeight.w500,
+          fontSize: 14,
+          color: Colors.black,
+        ),
+      ),
+      const SizedBox(height: 4),
+      Container(
+        margin: const EdgeInsets.only(bottom: 12),
+        decoration: BoxDecoration(
+          color: const Color(0xFFF5F5F7),
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: TextField(
+          enabled: isEditing,
+          controller: controller,
+          decoration: const InputDecoration(
+            border: InputBorder.none,
+            contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+          ),
+          style: const TextStyle(
+            fontFamily: 'SF Pro Display',
+            fontWeight: FontWeight.w400,
+            fontSize: 15,
+            color: Colors.black,
+          ),
+        ),
+      ),
+    ],
+  );
+}
+
+void _showProfileUpdateSuccessDialog(BuildContext context) {
+  showModalBottomSheet(
+    context: context,
+    isScrollControlled: true,
+    backgroundColor: Colors.transparent,
+    builder: (context) {
+      return Container(
+        width: double.infinity,
+        padding: EdgeInsets.only(
+          left: 0,
+          right: 0,
+          bottom: MediaQuery.of(context).viewInsets.bottom,
+        ),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(32)),
+        ),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                decoration: BoxDecoration(
+                  color: const Color(0xFFE6F0FF),
+                  shape: BoxShape.circle,
+                ),
+                padding: const EdgeInsets.all(32),
+                child: const Icon(Icons.check, color: Color(0xFF007AFF), size: 64),
+              ),
+              const SizedBox(height: 24),
+              const Text(
+                'Success!',
+                style: TextStyle(fontWeight: FontWeight.w700, fontSize: 22, color: Colors.black),
+              ),
+              const SizedBox(height: 8),
+              const Text(
+                'Profile updated successfully',
+                style: TextStyle(fontWeight: FontWeight.w400, fontSize: 15, color: Color(0xFF8E8E93)),
+              ),
+              const SizedBox(height: 28),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  onPressed: () => Navigator.of(context).pop(),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF007AFF),
+                    elevation: 0,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                  ),
+                  child: const Text('Ok', style: TextStyle(fontWeight: FontWeight.w500, fontSize: 15, color: Colors.white)),
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    },
+  );
+}
+
 class _ProfileScreenState extends State<ProfileScreen> {
   Map<String, dynamic>? profileData;
   bool isLoading = true;
@@ -402,145 +589,43 @@ class _ProfileScreenState extends State<ProfileScreen> {
         color: const Color(0xFFF5F5F7),
         borderRadius: BorderRadius.circular(10),
       ),
-      child: DropdownButtonFormField<String>(
-        value: selectedBank,
-        decoration: const InputDecoration(
-          hintText: 'Select Bank',
-          border: InputBorder.none,
-          contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 18),
-          isDense: true,
-        ),
-        items: banks.map((bank) => DropdownMenuItem(
-          value: bank,
-          child: Text(
-            bank,
-            style: const TextStyle(
-              fontFamily: 'SF Pro Display',
-              fontWeight: FontWeight.w400,
-              fontSize: 15,
-              color: Colors.black,
+      child: InkWell(
+        onTap: banks.isNotEmpty ? () async {
+          final selected = await showDialog<String>(
+            context: context,
+            builder: (context) => _BankSearchDialog(
+              banks: banks,
+              initialBank: selectedBank,
             ),
-            overflow: TextOverflow.ellipsis,
-          ),
-        )).toList(),
-        onChanged: banks.isNotEmpty ? (value) {
-          setState(() {
-            selectedBank = value;
-          });
+          );
+          if (selected != null) {
+            setState(() {
+              selectedBank = selected;
+            });
+          }
         } : null,
-        icon: const Icon(Icons.keyboard_arrow_down_rounded, color: Color(0xFF222222)),
-        style: const TextStyle(
-          fontFamily: 'SF Pro Display',
-          fontWeight: FontWeight.w400,
-          fontSize: 15,
-          color: Colors.black,
-        ),
-        dropdownColor: const Color(0xFFF5F5F7),
-        isExpanded: true,
-      ),
-    );
-  }
-}
-
-void _showProfileUpdateSuccessDialog(BuildContext context) {
-  showModalBottomSheet(
-    context: context,
-    isScrollControlled: true,
-    backgroundColor: Colors.transparent,
-    builder: (context) {
-      return Container(
-        width: double.infinity,
-        padding: EdgeInsets.only(
-          left: 0,
-          right: 0,
-          bottom: MediaQuery.of(context).viewInsets.bottom,
-        ),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.vertical(top: Radius.circular(32)),
-        ),
+        borderRadius: BorderRadius.circular(10),
         child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 18),
+          child: Row(
             children: [
-              Container(
-                decoration: BoxDecoration(
-                  color: const Color(0xFFE6F0FF),
-                  shape: BoxShape.circle,
-                ),
-                padding: const EdgeInsets.all(32),
-                child: const Icon(Icons.check, color: Color(0xFF007AFF), size: 64),
-              ),
-              const SizedBox(height: 24),
-              const Text(
-                'Success!',
-                style: TextStyle(fontWeight: FontWeight.w700, fontSize: 22, color: Colors.black),
-              ),
-              const SizedBox(height: 8),
-              const Text(
-                'Profile updated successfully',
-                style: TextStyle(fontWeight: FontWeight.w400, fontSize: 15, color: Color(0xFF8E8E93)),
-              ),
-              const SizedBox(height: 28),
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton(
-                  onPressed: () => Navigator.of(context).pop(),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF007AFF),
-                    elevation: 0,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    padding: const EdgeInsets.symmetric(vertical: 14),
+              Expanded(
+                child: Text(
+                  selectedBank ?? 'Select Bank',
+                  style: const TextStyle(
+                    fontFamily: 'SF Pro Display',
+                    fontWeight: FontWeight.w400,
+                    fontSize: 15,
+                    color: Colors.black,
                   ),
-                  child: const Text('Ok', style: TextStyle(fontWeight: FontWeight.w500, fontSize: 15, color: Colors.white)),
+                  overflow: TextOverflow.ellipsis,
                 ),
               ),
+              const Icon(Icons.keyboard_arrow_down_rounded, color: Color(0xFF222222)),
             ],
           ),
         ),
-      );
-    },
-  );
-}
-
-Widget _profileField(String label, TextEditingController controller, bool isEditing) {
-  return Column(
-    crossAxisAlignment: CrossAxisAlignment.start,
-    children: [
-      Text(
-        label,
-        style: const TextStyle(
-          fontFamily: 'SF Pro Display',
-          fontWeight: FontWeight.w500,
-          fontSize: 14,
-          color: Colors.black,
-        ),
       ),
-      const SizedBox(height: 4),
-      Container(
-        margin: const EdgeInsets.only(bottom: 12),
-        decoration: BoxDecoration(
-          color: const Color(0xFFF5F5F7),
-          borderRadius: BorderRadius.circular(8),
-        ),
-        child: TextField(
-          enabled: isEditing,
-          controller: controller,
-          decoration: const InputDecoration(
-            border: InputBorder.none,
-            contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-          ),
-          style: const TextStyle(
-            fontFamily: 'SF Pro Display',
-            fontWeight: FontWeight.w400,
-            fontSize: 15,
-            color: Colors.black,
-          ),
-        ),
-      ),
-    ],
-  );
+    );
+  }
 } 

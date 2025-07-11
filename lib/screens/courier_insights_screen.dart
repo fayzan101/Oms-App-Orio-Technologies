@@ -249,25 +249,13 @@ class _CourierInsightsScreenState extends State<CourierInsightsScreen> {
                 context: context,
                 barrierDismissible: true,
                 builder: (context) => Dialog(
-                  insetPadding: EdgeInsets.zero,
-                  backgroundColor: Colors.transparent,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                   child: Container(
-                    width: double.infinity,
-                    height: MediaQuery.of(context).size.height,
-                    color: Colors.white,
-                    child: SafeArea(
-                      child: SingleChildScrollView(
-                        padding: EdgeInsets.only(
-                          left: 20,
-                          right: 20,
-                          top: 20,
-                          bottom: MediaQuery.of(context).viewInsets.bottom + 20,
-                        ),
-                        child: CustomDateSelector(
-                          initialStartDate: _startDate,
-                          initialEndDate: _endDate,
-                        ),
-                      ),
+                    width: 320,
+                    padding: const EdgeInsets.all(24),
+                    child: CustomDateSelector(
+                      initialStartDate: _startDate,
+                      initialEndDate: _endDate,
                     ),
                   ),
                 ),
