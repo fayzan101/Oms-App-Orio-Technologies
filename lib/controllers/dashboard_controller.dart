@@ -23,7 +23,6 @@ class DashboardController extends GetxController {
   var totalOutstanding = 0.obs;
   var totalCurrentOutstanding = 0.obs;
   var isLoading = false.obs;
-  var selectedDays = 'Last 3 Days'.obs;
   var error = ''.obs;
   var courierPaymentData = <CourierPaymentData>[].obs;
   var accountNumber = ''.obs;
@@ -107,7 +106,6 @@ class DashboardController extends GetxController {
       startDate: _formatDateToISO(DateTime.now().subtract(const Duration(days: 6))),
       endDate: _formatDateToISO(DateTime.now()),
     );
-    selectedDays.value = 'Last 7 Days';
   }
 
   Future<void> fetchCurrentMonthData() async {
@@ -116,7 +114,6 @@ class DashboardController extends GetxController {
       startDate: _formatDateToISO(DateTime(now.year, now.month, 1)),
       endDate: _formatDateToISO(now),
     );
-    selectedDays.value = 'Current Month';
   }
 
   Future<void> fetchCustomDateRangeData(DateTime startDate, DateTime endDate) async {
@@ -124,16 +121,6 @@ class DashboardController extends GetxController {
       startDate: _formatDateToISO(startDate),
       endDate: _formatDateToISO(endDate),
     );
-    final days = endDate.difference(startDate).inDays + 1;
-    if (days == 1) {
-      selectedDays.value = 'Today';
-    } else if (days == 7) {
-      selectedDays.value = 'Last 7 Days';
-    } else if (days == 30) {
-      selectedDays.value = 'Last 30 Days';
-    } else {
-      selectedDays.value = 'Last $days Days';
-    }
   }
 
   void _updateObservables(DashboardReportingModel data) {

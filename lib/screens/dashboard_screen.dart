@@ -67,6 +67,29 @@ class _DashboardScreenState extends State<DashboardScreen> {
     }
   }
 
+  // Helper function to get dynamic date range text
+  String _getDateRangeText() {
+    final days = _endDate.difference(_startDate).inDays + 1;
+    print('Dashboard UI: Date range calculation - Start: $_startDate, End: $_endDate, Days: $days');
+    
+    if (days == 1) {
+      print('Dashboard UI: Date range text: Today');
+      return 'Today';
+    } else if (days == 7) {
+      print('Dashboard UI: Date range text: Last 7 Days');
+      return 'Last 7 Days';
+    } else if (days == 30) {
+      print('Dashboard UI: Date range text: Last 30 Days');
+      return 'Last 30 Days';
+    } else if (days == 31 && _startDate.day == 1) {
+      print('Dashboard UI: Date range text: Current Month');
+      return 'Current Month';
+    } else {
+      print('Dashboard UI: Date range text: Last $days Days');
+      return 'Last $days Days';
+    }
+  }
+
   @override
   void initState() {
     super.initState();
@@ -236,7 +259,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                           borderRadius: BorderRadius.circular(20),
                         ),
                         child: Obx(() => Text(
-                          controller.selectedDays.value,
+                          _getDateRangeText(),
                           style: TextStyle(
                             color: Color(0xFF007AFF),
                             fontSize: 12,
@@ -456,60 +479,29 @@ class _DashboardScreenState extends State<DashboardScreen> {
                           ),
                         ),
                         SizedBox(height: 2),
-                        Text(
-                          '12:1',
+                        Obx(() => Text(
+                          '${controller.totalOrders.value}:1',
                           style: TextStyle(
                             fontSize: 18,
                             fontWeight: FontWeight.w700,
                             color: Colors.black,
                           ),
-                        ),
+                        )),
                         SizedBox(height: 12),
                         Center(
                           child: SizedBox(
                             width: 180,
                             height: 180,
-                            child: Stack(
-                              alignment: Alignment.center,
-                              children: [
-                                PieChart(
-                                  PieChartData(
-                                    sectionsSpace: 0,
-                                    centerSpaceRadius: 54,
-                                    startDegreeOffset: -90,
-                                    sections: [
-                                      PieChartSectionData(
-                                        color: Color(0xFF007AFF),
-                                        value: 952,
-                                        radius: 24,
-                                        showTitle: false,
-                                      ),
-                                      PieChartSectionData(
-                                        color: Color(0xFFC6C6F8),
-                                        value: 840,
-                                        radius: 24,
-                                        showTitle: false,
-                                      ),
-                                      PieChartSectionData(
-                                        color: Color(0xFFD1B6D6),
-                                        value: 659,
-                                        radius: 24,
-                                        showTitle: false,
-                                      ),
-                                      PieChartSectionData(
-                                        color: Color(0xFFD6E36B),
-                                        value: 645,
-                                        radius: 24,
-                                        showTitle: false,
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                                Column(
+                            child: Obx(() {
+                              final statusData = controller.orderStatusSummary;
+                              print('Dashboard UI: Pie chart - Order status count: ${statusData.length}');
+                              
+                              if (statusData.isEmpty) {
+                                return Column(
                                   mainAxisAlignment: MainAxisAlignment.center,
                                   children: [
                                     Text(
-                                      'New Order',
+                                      'No Data',
                                       style: TextStyle(
                                         fontSize: 14,
                                         color: Color(0xFF8E8E93),
@@ -517,7 +509,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                                       ),
                                     ),
                                     Text(
-                                      '952',
+                                      '0',
                                       style: TextStyle(
                                         fontSize: 28,
                                         fontWeight: FontWeight.bold,
@@ -525,40 +517,129 @@ class _DashboardScreenState extends State<DashboardScreen> {
                                       ),
                                     ),
                                   ],
-                                ),
-                              ],
-                            ),
+                                );
+                              }
+                              
+                              // Define colors for different statuses
+                              final List<Color> colors = [
+                                Color(0xFF007AFF), // Blue
+                                Color(0xFFC6C6F8), // Light Purple
+                                Color(0xFFD1B6D6), // Pink
+                                Color(0xFFD6E36B), // Light Green
+                                Color(0xFFFF9500), // Orange
+                                Color(0xFFFF3B30), // Red
+                                Color(0xFF34C759), // Green
+                                Color(0xFFAF52DE), // Purple
+                                Color(0xFF5856D6), // Indigo
+                                Color(0xFFFF2D92), // Pink
+                              ];
+                              
+                              // Create pie chart sections from real data
+                              final sections = <PieChartSectionData>[];
+                              for (int i = 0; i < statusData.length && i < colors.length; i++) {
+                                final item = statusData[i];
+                                final color = colors[i % colors.length];
+                                sections.add(
+                                  PieChartSectionData(
+                                    color: color,
+                                    value: item.quantity.toDouble(),
+                                    radius: 24,
+                                    showTitle: false,
+                                  ),
+                                );
+                                print('Dashboard UI: Pie chart section - ${item.name}: ${item.quantity} (color: $color)');
+                              }
+                              
+                              // Find the status with highest quantity for center display
+                              final maxQuantityStatus = statusData.isNotEmpty 
+                                  ? statusData.reduce((a, b) => a.quantity > b.quantity ? a : b)
+                                  : null;
+                              
+                              return Stack(
+                                alignment: Alignment.center,
+                                children: [
+                                  PieChart(
+                                    PieChartData(
+                                      sectionsSpace: 0,
+                                      centerSpaceRadius: 54,
+                                      startDegreeOffset: -90,
+                                      sections: sections,
+                                    ),
+                                  ),
+                                  Column(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      Text(
+                                        maxQuantityStatus?.name ?? 'No Data',
+                                        style: TextStyle(
+                                          fontSize: 14,
+                                          color: Color(0xFF8E8E93),
+                                          fontWeight: FontWeight.w400,
+                                        ),
+                                      ),
+                                      Text(
+                                        '${maxQuantityStatus?.quantity ?? 0}',
+                                        style: TextStyle(
+                                          fontSize: 28,
+                                          fontWeight: FontWeight.bold,
+                                          color: Colors.black,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ],
+                              );
+                            }),
                           ),
                         ),
                         SizedBox(height: 16),
                         // Vertical list for statuses
-                        Column(
-                          children: [
-                            _StatusRow(
-                              color: Color(0xFF007AFF),
-                              label: 'New Order',
-                              value: '952',
-                            ),
-                            SizedBox(height: 8),
-                            _StatusRow(
-                              color: Color(0xFFC6C6F8),
-                              label: 'Arrived',
-                              value: '840',
-                            ),
-                            SizedBox(height: 8),
-                            _StatusRow(
-                              color: Color(0xFFD1B6D6),
-                              label: 'In Transit',
-                              value: '659',
-                            ),
-                            SizedBox(height: 8),
-                            _StatusRow(
-                              color: Color(0xFFD6E36B),
-                              label: 'Delivered',
-                              value: '645',
-                            ),
-                          ],
-                        ),
+                        Obx(() {
+                          final statusData = controller.orderStatusSummary;
+                          
+                          if (statusData.isEmpty) {
+                            return Column(
+                              children: [
+                                _StatusRow(
+                                  color: Color(0xFF007AFF),
+                                  label: 'No Data',
+                                  value: '0',
+                                ),
+                              ],
+                            );
+                          }
+                          
+                          // Define colors for different statuses
+                          final List<Color> colors = [
+                            Color(0xFF007AFF), // Blue
+                            Color(0xFFC6C6F8), // Light Purple
+                            Color(0xFFD1B6D6), // Pink
+                            Color(0xFFD6E36B), // Light Green
+                            Color(0xFFFF9500), // Orange
+                            Color(0xFFFF3B30), // Red
+                            Color(0xFF34C759), // Green
+                            Color(0xFFAF52DE), // Purple
+                            Color(0xFF5856D6), // Indigo
+                            Color(0xFFFF2D92), // Pink
+                          ];
+                          
+                          return Column(
+                            children: statusData.asMap().entries.map((entry) {
+                              final index = entry.key;
+                              final item = entry.value;
+                              final color = colors[index % colors.length];
+                              
+                              return Padding(
+                                padding: EdgeInsets.only(bottom: 8),
+                                child: _StatusRow(
+                                  color: color,
+                                  label: item.name,
+                                  value: '${item.quantity}',
+                                ),
+                              );
+                            }).toList(),
+                          );
+                        }),
                       ],
                     ),
                   ),
