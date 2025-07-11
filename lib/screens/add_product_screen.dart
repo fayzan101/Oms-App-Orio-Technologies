@@ -4,9 +4,17 @@ import 'report.dart' as report;
 import 'menu.dart' as menu;
 import 'package:flutter/services.dart'; // Added for SystemChrome
 import 'create_order.dart';
+import '../services/statement_service.dart';
 
 class AddProductScreen extends StatefulWidget {
-  const AddProductScreen({Key? key}) : super(key: key);
+  final int? platformId;
+  final int? customerPlatformId;
+  
+  const AddProductScreen({
+    Key? key, 
+    this.platformId,
+    this.customerPlatformId,
+  }) : super(key: key);
 
   @override
   State<AddProductScreen> createState() => _AddProductScreenState();
@@ -17,17 +25,306 @@ class _AddProductScreenState extends State<AddProductScreen> {
   String selectedProduct = 'Product Name';
   final TextEditingController skuController = TextEditingController();
   final TextEditingController priceController = TextEditingController();
-  final List<String> productList = [
-    'Causal Slip on SK40 - Dark Gray-43',
-    'Exclusive glow bundle pack-Black',
-    'Jersey hijab headwear turban-White',
-    'FLOWY CHIFFON INSTANT HIJAB-Maroon',
-    'Black Bucket Bag',
-    'Jeans-Blue-Medium',
-  ];
+  List<String> productList = [];
   final TextEditingController searchController = TextEditingController();
+  
+  // Platform data
+  List<Map<String, dynamic>> platforms = [];
+  Map<String, dynamic>? selectedPlatform;
+  
+  bool _isLoadingProducts = false;
+  bool _isLoadingPlatforms = false;
+  String? _productError;
+  String? _platformError;
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchPlatforms();
+  }
+
+  Future<void> _fetchPlatforms() async {
+    setState(() {
+      _isLoadingPlatforms = true;
+      _platformError = null;
+    });
+    try {
+      final service = StatementService();
+      final platformData = await service.fetchShopNames('OR-00009');
+      print('Add product screen received platform data: $platformData');
+      print('Platform data length: ${platformData.length}');
+      
+      setState(() {
+        platforms = platformData;
+        _isLoadingPlatforms = false;
+      });
+      print('Platforms list updated: $platforms');
+    } catch (e) {
+      print('Error fetching platforms: $e');
+      setState(() {
+        _platformError = 'Failed to load platforms: $e';
+        _isLoadingPlatforms = false;
+      });
+    }
+  }
+
+  Future<void> _fetchProducts() async {
+    if (selectedPlatform == null) {
+      setState(() {
+        _productError = 'Please select a platform first';
+      });
+      return;
+    }
+    
+    setState(() {
+      _isLoadingProducts = true;
+      _productError = null;
+    });
+    
+    try {
+      final service = StatementService();
+      final platformId = int.tryParse(selectedPlatform!['id']?.toString() ?? '');
+      final customerPlatformId = selectedPlatform!['customer_platform_id'] != null 
+          ? int.tryParse(selectedPlatform!['customer_platform_id']?.toString() ?? '')
+          : null;
+      
+      if (platformId == null) {
+        setState(() {
+          _productError = 'Invalid platform ID';
+          _isLoadingProducts = false;
+        });
+        return;
+      }
+      
+      final productData = await service.fetchProductSuggestions(
+        acno: 'OR-00009',
+        platformId: platformId,
+        customerPlatformId: customerPlatformId,
+      );
+      print('Add product screen received product data: $productData');
+      print('Product data length: ${productData.length}');
+      print('Using platform_id: $platformId, customer_platform_id: $customerPlatformId');
+      
+      final productNames = productData.map((e) => e['name']?.toString() ?? '').where((e) => e.isNotEmpty).toList();
+      print('Extracted product names: $productNames');
+      print('Product names length: ${productNames.length}');
+      
+      setState(() {
+        productList = productNames;
+        _isLoadingProducts = false;
+      });
+      print('Product list updated: $productList');
+    } catch (e) {
+      print('Error fetching products: $e');
+      setState(() {
+        _productError = 'Failed to load products: $e';
+        _isLoadingProducts = false;
+      });
+    }
+  }
+
+  void _showPlatformPicker() async {
+    if (_isLoadingPlatforms) {
+      showDialog(
+        context: context,
+        builder: (context) => const AlertDialog(
+          content: Row(
+            children: [
+              CircularProgressIndicator(),
+              SizedBox(width: 16),
+              Text('Loading platforms...'),
+            ],
+          ),
+        ),
+      );
+      return;
+    }
+
+    if (_platformError != null) {
+      showDialog(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: const Text('Error'),
+          content: Text(_platformError!),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+                _fetchPlatforms(); // Retry
+              },
+              child: const Text('Retry'),
+            ),
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('Cancel'),
+            ),
+          ],
+        ),
+      );
+      return;
+    }
+
+    if (platforms.isEmpty) {
+      showDialog(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: const Text('No Platforms'),
+          content: const Text('No platforms available. Please try again later.'),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+                _fetchPlatforms(); // Retry
+              },
+              child: const Text('Retry'),
+            ),
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('Cancel'),
+            ),
+          ],
+        ),
+      );
+      return;
+    }
+
+    Map<String, dynamic>? picked = await showModalBottomSheet<Map<String, dynamic>>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) {
+        return Container(
+          width: double.infinity,
+          padding: const EdgeInsets.only(top: 24, left: 16, right: 16, bottom: 24),
+          decoration: const BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.only(
+              topLeft: Radius.circular(28),
+              topRight: Radius.circular(28),
+            ),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Text('Select Platform', style: TextStyle(fontFamily: 'SF Pro Display', fontWeight: FontWeight.w700, fontSize: 18)),
+                  GestureDetector(
+                    onTap: () => Navigator.of(context).pop(),
+                    child: const Icon(Icons.close, size: 24, color: Color(0xFF222222)),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
+              Flexible(
+                child: ListView.separated(
+                  shrinkWrap: true,
+                  itemCount: platforms.length,
+                  separatorBuilder: (context, i) => const Divider(height: 1, color: Color(0xFFE0E0E0)),
+                  itemBuilder: (context, i) {
+                    final platform = platforms[i];
+                    return ListTile(
+                      title: Text(
+                        platform['platform_name']?.toString() ?? 'Unknown Platform',
+                        style: const TextStyle(fontFamily: 'SF Pro Display', fontSize: 15)
+                      ),
+                      subtitle: Text(
+                        'ID: ${platform['id']}',
+                        style: const TextStyle(fontFamily: 'SF Pro Display', fontSize: 12, color: Color(0xFF6B6B6B))
+                      ),
+                      onTap: () => Navigator.of(context).pop(platform),
+                      contentPadding: EdgeInsets.zero,
+                    );
+                  },
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+    
+    if (picked != null) {
+      setState(() {
+        selectedPlatform = picked;
+        selectedProduct = 'Product Name'; // Reset product selection
+        productList = []; // Clear previous products
+      });
+      // Fetch products for the selected platform
+      _fetchProducts();
+    }
+  }
 
   void _showProductPicker() async {
+    if (_isLoadingProducts) {
+      // Show loading dialog
+      showDialog(
+        context: context,
+        builder: (context) => const AlertDialog(
+          content: Row(
+            children: [
+              CircularProgressIndicator(),
+              SizedBox(width: 16),
+              Text('Loading products...'),
+            ],
+          ),
+        ),
+      );
+      return;
+    }
+
+    if (_productError != null) {
+      // Show error dialog
+      showDialog(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: const Text('Error'),
+          content: Text(_productError!),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+                _fetchProducts(); // Retry
+              },
+              child: const Text('Retry'),
+            ),
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('Cancel'),
+            ),
+          ],
+        ),
+      );
+      return;
+    }
+
+    if (productList.isEmpty) {
+      // Show empty state dialog
+      showDialog(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: const Text('No Products'),
+          content: const Text('No products available. Please try again later.'),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+                _fetchProducts(); // Retry
+              },
+              child: const Text('Retry'),
+            ),
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('Cancel'),
+            ),
+          ],
+        ),
+      );
+      return;
+    }
+
     String? picked = await showModalBottomSheet<String>(
       context: context,
       isScrollControlled: true,
@@ -84,18 +381,32 @@ class _AddProductScreenState extends State<AddProductScreen> {
                   ),
                   const SizedBox(height: 16),
                   Flexible(
-                    child: ListView.separated(
-                      shrinkWrap: true,
-                      itemCount: filtered.length,
-                      separatorBuilder: (context, i) => const Divider(height: 1, color: Color(0xFFE0E0E0)),
-                      itemBuilder: (context, i) {
-                        return ListTile(
-                          title: Text(filtered[i], style: const TextStyle(fontFamily: 'SF Pro Display', fontSize: 15)),
-                          onTap: () => Navigator.of(context).pop(filtered[i]),
-                          contentPadding: EdgeInsets.zero,
-                        );
-                      },
-                    ),
+                    child: filtered.isEmpty
+                        ? const Center(
+                            child: Padding(
+                              padding: EdgeInsets.all(16),
+                              child: Text(
+                                'No products found',
+                                style: TextStyle(
+                                  fontFamily: 'SF Pro Display',
+                                  fontSize: 16,
+                                  color: Color(0xFF6B6B6B),
+                                ),
+                              ),
+                            ),
+                          )
+                        : ListView.separated(
+                            shrinkWrap: true,
+                            itemCount: filtered.length,
+                            separatorBuilder: (context, i) => const Divider(height: 1, color: Color(0xFFE0E0E0)),
+                            itemBuilder: (context, i) {
+                              return ListTile(
+                                title: Text(filtered[i], style: const TextStyle(fontFamily: 'SF Pro Display', fontSize: 15)),
+                                onTap: () => Navigator.of(context).pop(filtered[i]),
+                                contentPadding: EdgeInsets.zero,
+                              );
+                            },
+                          ),
                   ),
                 ],
               ),
@@ -139,33 +450,80 @@ class _AddProductScreenState extends State<AddProductScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            GestureDetector(
-              onTap: _showProductPicker,
-              child: Container(
-                decoration: BoxDecoration(
-                  color: const Color(0xFFF5F5F7),
-                  borderRadius: BorderRadius.circular(10),
-                ),
+            // Platform Selection
+            if (_isLoadingPlatforms)
+              Container(
                 margin: const EdgeInsets.only(bottom: 14),
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 18),
-                child: Row(
-                  children: [
-                    Expanded(
-                      child: Text(
-                        selectedProduct,
-                        style: const TextStyle(
-                          fontFamily: 'SF Pro Display',
-                          fontWeight: FontWeight.w400,
-                          fontSize: 15,
-                          color: Color(0xFF222222),
+                padding: const EdgeInsets.symmetric(vertical: 16),
+                child: const Center(child: CircularProgressIndicator()),
+              )
+            else if (_platformError != null)
+              Container(
+                margin: const EdgeInsets.only(bottom: 14),
+                padding: const EdgeInsets.symmetric(vertical: 8),
+                child: Text(
+                  _platformError!,
+                  style: const TextStyle(color: Colors.red, fontSize: 12),
+                ),
+              )
+            else
+              GestureDetector(
+                onTap: _showPlatformPicker,
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFF5F5F7),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  margin: const EdgeInsets.only(bottom: 14),
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 18),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          selectedPlatform?['platform_name'] ?? 'Select Platform',
+                          style: const TextStyle(
+                            fontFamily: 'SF Pro Display',
+                            fontWeight: FontWeight.w400,
+                            fontSize: 15,
+                            color: Color(0xFF222222),
+                          ),
                         ),
                       ),
-                    ),
-                    const Icon(Icons.keyboard_arrow_down_rounded, color: Color(0xFF222222)),
-                  ],
+                      const Icon(Icons.keyboard_arrow_down_rounded, color: Color(0xFF222222)),
+                    ],
+                  ),
                 ),
               ),
-            ),
+            
+            // Product Selection (only show if platform is selected)
+            if (selectedPlatform != null)
+              GestureDetector(
+                onTap: _showProductPicker,
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFF5F5F7),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  margin: const EdgeInsets.only(bottom: 14),
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 18),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          selectedProduct,
+                          style: const TextStyle(
+                            fontFamily: 'SF Pro Display',
+                            fontWeight: FontWeight.w400,
+                            fontSize: 15,
+                            color: Color(0xFF222222),
+                          ),
+                        ),
+                      ),
+                      const Icon(Icons.keyboard_arrow_down_rounded, color: Color(0xFF222222)),
+                    ],
+                  ),
+                ),
+              ),
             _ProductField(hint: 'SKU Code', controller: skuController),
             _ProductField(
               hint: 'Price',

@@ -207,6 +207,57 @@ class StatementService {
     }
   }
 
+  Future<List<Map<String, dynamic>>> fetchProductSuggestions({
+    required String acno,
+    required int platformId,
+    int? customerPlatformId,
+  }) async {
+    final url = Uri.parse('https://oms.getorio.com/api/product/suggestproduct');
+    print('Fetching product suggestions for acno: $acno, platform_id: $platformId');
+    print('Product suggestions URL: $url');
+    
+    final Map<String, dynamic> requestBody = {
+      'acno': acno,
+      'platform_id': platformId,
+    };
+    
+    // Add customer_platform_id if platform_id is 3
+    if (platformId == 3 && customerPlatformId != null) {
+      requestBody['customer_platform_id'] = customerPlatformId;
+    }
+    
+    print('Product suggestions request body: $requestBody');
+    
+    final response = await http.post(
+      url,
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode(requestBody),
+    );
+    
+    print('Product suggestions response status: ${response.statusCode}');
+    print('Product suggestions response body: ${response.body}');
+    
+    if (response.statusCode == 200) {
+      final data = jsonDecode(response.body);
+      print('Product suggestions decoded data: $data');
+      print('Product suggestions data type: ${data.runtimeType}');
+      
+      if (data is List) {
+        print('Product suggestions is List, length: ${data.length}');
+        return data.cast<Map<String, dynamic>>();
+      } else if (data is Map && data['payload'] is List) {
+        print('Product suggestions has payload, length: ${(data['payload'] as List).length}');
+        return (data['payload'] as List).cast<Map<String, dynamic>>();
+      } else {
+        print('Product suggestions unexpected format: $data');
+        throw Exception('Unexpected response format');
+      }
+    } else {
+      print('Product suggestions failed with status: ${response.statusCode}');
+      throw Exception('Failed to load product suggestions');
+    }
+  }
+
   // Helper method to get current month statement
   Future<StatementModel> getCurrentMonthStatement({
     String? acno,

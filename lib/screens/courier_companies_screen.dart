@@ -16,7 +16,25 @@ class CourierCompaniesScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Couriers Companies'),
+        backgroundColor: Colors.white,
+        elevation: 0,
+        shadowColor: Colors.white,
+        foregroundColor: Colors.white,
+        surfaceTintColor: Colors.white,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back, color: Colors.black),
+          onPressed: () => Navigator.of(context).pop(),
+        ),
+        title: const Text(
+          'Couriers Companies',
+          style: TextStyle(
+            fontFamily: 'SF Pro Display',
+            fontWeight: FontWeight.w700,
+            fontSize: 20,
+            color: Colors.black,
+          ),
+        ),
+        centerTitle: false,
         actions: [
           IconButton(
             icon: const Icon(Icons.search, color: Colors.black),
@@ -116,8 +134,7 @@ class CourierCompaniesScreen extends StatelessWidget {
                                   icon: const Icon(Icons.delete, color: Color(0xFF007AFF)),
                                   onPressed: () {
                                     _showDeleteConfirmation(context, () {
-                                      // TODO: Implement actual delete logic here
-                                      _showDeleteSuccess(context);
+                                      _deleteCourier(context, company);
                                     });
                                   },
                                 ),
@@ -264,6 +281,43 @@ class CourierCompaniesScreen extends StatelessWidget {
         );
       },
     );
+  }
+
+  Future<void> _deleteCourier(BuildContext context, CourierAccount company) async {
+    try {
+      // Show loading indicator
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (BuildContext context) {
+          return const Center(
+            child: CircularProgressIndicator(),
+          );
+        },
+      );
+
+      // Call the delete API
+      final success = await _courierService.deleteCourier(company.id, company.acno);
+      
+      // Hide loading indicator
+      Navigator.of(context).pop();
+
+      if (success) {
+        // Show success snackbar
+        customSnackBar('Success', 'Courier deleted successfully');
+        
+        // Refresh the page by rebuilding
+        Navigator.of(context).pushReplacement(
+          MaterialPageRoute(builder: (_) => CourierCompaniesScreen()),
+        );
+      }
+    } catch (e) {
+      // Hide loading indicator
+      Navigator.of(context).pop();
+      
+      // Show error snackbar
+      customSnackBar('Error', 'Failed to delete courier: ${e.toString()}');
+    }
   }
 
   void _showDeleteSuccess(BuildContext context) {
