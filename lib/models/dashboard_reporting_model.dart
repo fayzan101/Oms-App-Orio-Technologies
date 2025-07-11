@@ -131,26 +131,31 @@ class DashboardReportingModel {
 
 class StatusSummary {
   final OrderStatusSummary orderStatusSummary;
+  final OrderStatusSummary failedStatusSummary;
 
   StatusSummary({
     required this.orderStatusSummary,
+    required this.failedStatusSummary,
   });
 
   factory StatusSummary.fromJson(Map<String, dynamic> json) {
     return StatusSummary(
       orderStatusSummary: OrderStatusSummary.fromJson(json['orderstatus_summary'] ?? {}),
+      failedStatusSummary: OrderStatusSummary.fromJson(json['failedstatus_summary'] ?? {}),
     );
   }
 
   factory StatusSummary.empty() {
     return StatusSummary(
       orderStatusSummary: OrderStatusSummary.empty(),
+      failedStatusSummary: OrderStatusSummary.empty(),
     );
   }
 
   Map<String, dynamic> toJson() {
     return {
       'orderstatus_summary': orderStatusSummary.toJson(),
+      'failedstatus_summary': failedStatusSummary.toJson(),
     };
   }
 }

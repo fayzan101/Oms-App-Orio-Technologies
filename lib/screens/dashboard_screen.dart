@@ -726,17 +726,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Obx(() {
-                          final statusData = controller.orderStatusSummary;
-                          // Filter for failed attempt items
-                          final failedAttemptItems = statusData.where((item) => 
-                            item.name.toLowerCase().contains('failed') || 
-                            item.name.toLowerCase().contains('return') ||
-                            item.name.toLowerCase().contains('cancelled')
-                          ).toList();
+                          final failedData = controller.failedStatusSummary;
+                          print('Dashboard UI: Failed status summary count: ${failedData.length}');
                           
-                          print('Dashboard UI: Failed attempt items count: ${failedAttemptItems.length}');
-                          
-                          if (failedAttemptItems.isEmpty) {
+                          if (failedData.isEmpty) {
                             return Column(
                               children: [
                                 Text('No failed attempt data available'),
@@ -752,14 +745,14 @@ class _DashboardScreenState extends State<DashboardScreen> {
                                         fontWeight: FontWeight.w400,
                                       ),
                                     ),
-                                    Text(
-                                      '0',
+                                    Obx(() => Text(
+                                      '${controller.totalFailedOrders.value}',
                                       style: TextStyle(
                                         fontSize: 18,
                                         color: Colors.black,
                                         fontWeight: FontWeight.w700,
                                       ),
-                                    ),
+                                    )),
                                   ],
                                 ),
                                 SizedBox(height: 4),
@@ -774,28 +767,25 @@ class _DashboardScreenState extends State<DashboardScreen> {
                                         fontWeight: FontWeight.w400,
                                       ),
                                     ),
-                                    Text(
-                                      '0',
+                                    Obx(() => Text(
+                                      '${controller.totalFailedAmount.value}',
                                       style: TextStyle(
                                         fontSize: 18,
                                         color: Colors.black,
                                         fontWeight: FontWeight.w700,
                                       ),
-                                    ),
+                                    )),
                                   ],
                                 ),
                               ],
                             );
                           }
                           
-                          final totalFailedQuantity = failedAttemptItems.fold<int>(0, (sum, item) => sum + item.quantity);
-                          final totalFailedAmount = failedAttemptItems.fold<int>(0, (sum, item) => sum + item.amount);
-                          
                           return Column(
                             children: [
-                              ...failedAttemptItems.map((item) {
-                                final progress = totalFailedQuantity > 0 
-                                    ? item.quantity / totalFailedQuantity 
+                              ...failedData.map((item) {
+                                final progress = controller.totalFailedOrders.value > 0 
+                                    ? item.quantity / controller.totalFailedOrders.value 
                                     : 0.0;
                                 print('Dashboard UI: Rendering failed attempt item: ${item.name}, Quantity: ${item.quantity}, Amount: ${item.amount}, Progress: $progress');
                                 return Padding(
@@ -820,14 +810,14 @@ class _DashboardScreenState extends State<DashboardScreen> {
                                       fontWeight: FontWeight.w400,
                                     ),
                                   ),
-                                  Text(
-                                    '$totalFailedQuantity',
+                                  Obx(() => Text(
+                                    '${controller.totalFailedOrders.value}',
                                     style: TextStyle(
                                       fontSize: 18,
                                       color: Colors.black,
                                       fontWeight: FontWeight.w700,
                                     ),
-                                  ),
+                                  )),
                                 ],
                               ),
                               SizedBox(height: 4),
@@ -842,14 +832,14 @@ class _DashboardScreenState extends State<DashboardScreen> {
                                       fontWeight: FontWeight.w400,
                                     ),
                                   ),
-                                  Text(
-                                    '$totalFailedAmount',
+                                  Obx(() => Text(
+                                    '${controller.totalFailedAmount.value}',
                                     style: TextStyle(
                                       fontSize: 18,
                                       color: Colors.black,
                                       fontWeight: FontWeight.w700,
                                     ),
-                                  ),
+                                  )),
                                 ],
                               ),
                             ],

@@ -30,6 +30,9 @@ class DashboardController extends GetxController {
   var orderStatusSummary = <OrderStatusDetail>[].obs;
   var totalOrders = 0.obs;
   var totalAmount = 0.obs;
+  var failedStatusSummary = <OrderStatusDetail>[].obs;
+  var totalFailedOrders = 0.obs;
+  var totalFailedAmount = 0.obs;
 
   // Graph data
   var orderGraph = <double>[].obs;
@@ -72,6 +75,9 @@ class DashboardController extends GetxController {
       print('DashboardController: Status Summary - Total Orders: ${data.statusSummary.orderStatusSummary.totalOrders}');
       print('DashboardController: Status Summary - Total Amount: ${data.statusSummary.orderStatusSummary.totalAmount}');
       print('DashboardController: Status Summary - Detail Count: ${data.statusSummary.orderStatusSummary.detail.length}');
+      print('DashboardController: Failed Status Summary - Total Orders: ${data.statusSummary.failedStatusSummary.totalOrders}');
+      print('DashboardController: Failed Status Summary - Total Amount: ${data.statusSummary.failedStatusSummary.totalAmount}');
+      print('DashboardController: Failed Status Summary - Detail Count: ${data.statusSummary.failedStatusSummary.detail.length}');
       
       dashboardData.value = data;
       _updateObservables(data);
@@ -83,6 +89,9 @@ class DashboardController extends GetxController {
       print('DashboardController: Updated observables - Order Status Summary Count: ${orderStatusSummary.value.length}');
       print('DashboardController: Updated observables - Total Orders: ${totalOrders.value}');
       print('DashboardController: Updated observables - Total Amount: ${totalAmount.value}');
+      print('DashboardController: Updated observables - Failed Status Summary Count: ${failedStatusSummary.value.length}');
+      print('DashboardController: Updated observables - Total Failed Orders: ${totalFailedOrders.value}');
+      print('DashboardController: Updated observables - Total Failed Amount: ${totalFailedAmount.value}');
       
     } catch (e) {
       error.value = e.toString();
@@ -142,6 +151,9 @@ class DashboardController extends GetxController {
     orderStatusSummary.value = data.statusSummary.orderStatusSummary.detail;
     totalOrders.value = data.statusSummary.orderStatusSummary.totalOrders;
     totalAmount.value = data.statusSummary.orderStatusSummary.totalAmount;
+    failedStatusSummary.value = data.statusSummary.failedStatusSummary.detail;
+    totalFailedOrders.value = data.statusSummary.failedStatusSummary.totalOrders;
+    totalFailedAmount.value = data.statusSummary.failedStatusSummary.totalAmount;
     
     // Update graph data
     orderGraph.value = data.orderGraphAsNumbers;
