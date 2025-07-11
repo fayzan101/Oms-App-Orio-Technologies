@@ -172,6 +172,41 @@ class StatementService {
     }
   }
 
+  Future<List<Map<String, dynamic>>> fetchBanks(int countryId) async {
+    final url = Uri.parse('https://oms.getorio.com/api/banks');
+    print('Fetching banks for country_id: $countryId');
+    print('Banks URL: $url');
+    
+    final response = await http.post(
+      url,
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({'country_id': countryId}),
+    );
+    
+    print('Banks response status: ${response.statusCode}');
+    print('Banks response body: ${response.body}');
+    
+    if (response.statusCode == 200) {
+      final data = jsonDecode(response.body);
+      print('Banks decoded data: $data');
+      print('Banks data type: ${data.runtimeType}');
+      
+      if (data is List) {
+        print('Banks is List, length: ${data.length}');
+        return data.cast<Map<String, dynamic>>();
+      } else if (data is Map && data['payload'] is List) {
+        print('Banks has payload, length: ${(data['payload'] as List).length}');
+        return (data['payload'] as List).cast<Map<String, dynamic>>();
+      } else {
+        print('Banks unexpected format: $data');
+        throw Exception('Unexpected response format');
+      }
+    } else {
+      print('Banks failed with status: ${response.statusCode}');
+      throw Exception('Failed to load banks');
+    }
+  }
+
   // Helper method to get current month statement
   Future<StatementModel> getCurrentMonthStatement({
     String? acno,

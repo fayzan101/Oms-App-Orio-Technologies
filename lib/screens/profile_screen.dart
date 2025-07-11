@@ -7,6 +7,7 @@ import 'report.dart' as report;
 import 'change_password_screen.dart';
 import '../utils/Layout/app_bottom_bar.dart';
 import '../services/auth_service.dart';
+import '../services/statement_service.dart';
 import '../models/user_model.dart';
 import '../utils/custom_snackbar.dart';
 
@@ -42,19 +43,15 @@ class _ProfileScreenState extends State<ProfileScreen> {
   final TextEditingController ibanController = TextEditingController();
 
   String? selectedBank;
-  final List<String> banks = [
-    'Bank Alfalah',
-    'HBL',
-    'UBL',
-    'MCB',
-    'Meezan',
-    'Other',
-  ];
+  List<String> banks = [];
+  bool _isLoadingBanks = false;
+  String? _bankError;
 
   @override
   void initState() {
     super.initState();
     fetchProfile();
+    _fetchBanks();
   }
 
   @override
@@ -119,7 +116,36 @@ class _ProfileScreenState extends State<ProfileScreen> {
       accountTitleController.text = profileData!['account_title'] ?? '';
       accountNumberController.text = profileData!['account_number'] ?? '';
       ibanController.text = profileData!['iban'] ?? '';
-      selectedBank = profileData!['bank_name'] ?? banks.first;
+      selectedBank = profileData!['bank_name'] ?? (banks.isNotEmpty ? banks.first : null);
+    }
+  }
+
+  Future<void> _fetchBanks() async {
+    setState(() {
+      _isLoadingBanks = true;
+      _bankError = null;
+    });
+    try {
+      final service = StatementService();
+      final bankData = await service.fetchBanks(1); // country_id = 1 for Pakistan
+      print('Profile screen received bank data: $bankData');
+      print('Bank data length: ${bankData.length}');
+      
+      final bankNames = bankData.map((e) => e['name']?.toString() ?? '').where((e) => e.isNotEmpty).toList();
+      print('Extracted bank names: $bankNames');
+      print('Bank names length: ${bankNames.length}');
+      
+      setState(() {
+        banks = bankNames;
+        _isLoadingBanks = false;
+      });
+      print('Banks list updated: $banks');
+    } catch (e) {
+      print('Error fetching banks: $e');
+      setState(() {
+        _bankError = 'Failed to load banks: $e';
+        _isLoadingBanks = false;
+      });
     }
   }
 
@@ -238,7 +264,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       _profileField('Business Address', businessAddressController, isEditing),
                       _profileField('NTN', ntnController, isEditing),
                       // Bank Name Dropdown
-                      if (isEditing) _bankDropdown(),
+                      if (isEditing) _bankDropdownSection(),
                       _profileField('Account Title', accountTitleController, isEditing),
                       _profileField('Account Number', accountNumberController, isEditing),
                       _profileField('IBAN Number', ibanController, isEditing),
@@ -332,36 +358,85 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
+  Widget _bankDropdownSection() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Padding(
+          padding: EdgeInsets.only(bottom: 8),
+          child: Text(
+            'Bank Name',
+            style: TextStyle(
+              fontFamily: 'SF Pro Display',
+              fontWeight: FontWeight.w600,
+              fontSize: 14,
+              color: Colors.black,
+            ),
+          ),
+        ),
+        if (_isLoadingBanks)
+          Container(
+            margin: const EdgeInsets.only(bottom: 12),
+            padding: const EdgeInsets.symmetric(vertical: 16),
+            child: const Center(child: CircularProgressIndicator()),
+          )
+        else if (_bankError != null)
+          Container(
+            margin: const EdgeInsets.only(bottom: 12),
+            padding: const EdgeInsets.symmetric(vertical: 8),
+            child: Text(
+              _bankError!,
+              style: const TextStyle(color: Colors.red, fontSize: 12),
+            ),
+          )
+        else
+          _bankDropdown(),
+      ],
+    );
+  }
+
   Widget _bankDropdown() {
     return Container(
-      margin: const EdgeInsets.only(bottom: 12),
+      margin: const EdgeInsets.only(bottom: 16),
       decoration: BoxDecoration(
         color: const Color(0xFFF5F5F7),
-        borderRadius: BorderRadius.circular(8),
+        borderRadius: BorderRadius.circular(10),
       ),
       child: DropdownButtonFormField<String>(
         value: selectedBank,
         decoration: const InputDecoration(
-          hintText: 'Bank Name',
+          hintText: 'Select Bank',
           border: InputBorder.none,
-          contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+          contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 18),
+          isDense: true,
         ),
         items: banks.map((bank) => DropdownMenuItem(
           value: bank,
-          child: Text(bank),
+          child: Text(
+            bank,
+            style: const TextStyle(
+              fontFamily: 'SF Pro Display',
+              fontWeight: FontWeight.w400,
+              fontSize: 15,
+              color: Colors.black,
+            ),
+            overflow: TextOverflow.ellipsis,
+          ),
         )).toList(),
-        onChanged: (value) {
+        onChanged: banks.isNotEmpty ? (value) {
           setState(() {
             selectedBank = value;
           });
-        },
-        icon: const Icon(Icons.keyboard_arrow_down_rounded),
+        } : null,
+        icon: const Icon(Icons.keyboard_arrow_down_rounded, color: Color(0xFF222222)),
         style: const TextStyle(
           fontFamily: 'SF Pro Display',
           fontWeight: FontWeight.w400,
           fontSize: 15,
           color: Colors.black,
         ),
+        dropdownColor: const Color(0xFFF5F5F7),
+        isExpanded: true,
       ),
     );
   }
