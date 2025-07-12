@@ -12,9 +12,9 @@ import 'order_list_screen.dart';
 import 'notification_screen.dart';
 import 'dashboard_notification_screen.dart';
 import 'search_screen.dart';
-import 'calendar_screen.dart'; // Import the new CalendarScreen
 import '../utils/Layout/app_bottom_bar.dart';
-import '../widgets/custom_date_selector.dart';
+import '../widgets/courier_logo_widget.dart';
+import '../models/courier_model.dart';
 
 class DashboardScreen extends StatefulWidget {
   DashboardScreen({Key? key}) : super(key: key);
@@ -25,19 +25,6 @@ class DashboardScreen extends StatefulWidget {
 
 class _DashboardScreenState extends State<DashboardScreen> {
   final DashboardController controller = Get.find<DashboardController>();
-  // Revert to current dates for normal operation
-  DateTime _startDate = DateTime.now().subtract(const Duration(days: 30));
-  DateTime _endDate = DateTime.now();
-
-  // Helper function to format date in proper ISO 8601 format (YYYY-MM-DD)
-  String _formatDateToISO(DateTime date) {
-    String year = date.year.toString();
-    String month = date.month.toString().padLeft(2, '0');
-    String day = date.day.toString().padLeft(2, '0');
-    final formattedDate = '$year-$month-$day';
-    print('_formatDateToISO: Input date: $date, Output: $formattedDate');
-    return formattedDate;
-  }
 
   // Helper function to get courier logo based on courier name
   String _getCourierLogo(String courierName) {
@@ -67,48 +54,24 @@ class _DashboardScreenState extends State<DashboardScreen> {
     }
   }
 
-  // Helper function to get dynamic date range text
-  String _getDateRangeText() {
-    final days = _endDate.difference(_startDate).inDays + 1;
-    print('Dashboard UI: Date range calculation - Start: $_startDate, End: $_endDate, Days: $days');
-    
-    if (days == 1) {
-      print('Dashboard UI: Date range text: Today');
-      return 'Today';
-    } else if (days == 7) {
-      print('Dashboard UI: Date range text: Last 7 Days');
-      return 'Last 7 Days';
-    } else if (days == 30) {
-      print('Dashboard UI: Date range text: Last 30 Days');
-      return 'Last 30 Days';
-    } else if (days == 31 && _startDate.day == 1) {
-      print('Dashboard UI: Date range text: Current Month');
-      return 'Current Month';
-    } else {
-      print('Dashboard UI: Date range text: Last $days Days');
-      return 'Last $days Days';
-    }
-  }
-
   @override
   void initState() {
     super.initState();
-    print('DashboardScreen initState - Start date: $_startDate, End date: $_endDate');
-    
-    // Test date formatting with the date from your Postman test
-    final testDate = DateTime(2025, 7, 11);
-    final formattedTestDate = _formatDateToISO(testDate);
-    print('Test date formatting: $testDate -> $formattedTestDate');
+    print('DashboardScreen initState');
     
     // Fetch dashboard data on screen load
     _fetchDashboardData();
   }
 
   Future<void> _fetchDashboardData() async {
-    final startStr = _formatDateToISO(_startDate);
-    final endStr = _formatDateToISO(_endDate);
+    // Use static date range - last 30 days
+    final endDate = DateTime.now();
+    final startDate = endDate.subtract(const Duration(days: 30));
+    
+    final startStr = '${startDate.year}-${startDate.month.toString().padLeft(2, '0')}-${startDate.day.toString().padLeft(2, '0')}';
+    final endStr = '${endDate.year}-${endDate.month.toString().padLeft(2, '0')}-${endDate.day.toString().padLeft(2, '0')}';
+    
     print('Dashboard fetch dates - Start: $startStr, End: $endStr');
-    print('Dashboard fetch dates - Start DateTime: $_startDate, End DateTime: $_endDate');
     await controller.fetchDashboardData(startDate: startStr, endDate: endStr);
   }
 
@@ -162,30 +125,14 @@ class _DashboardScreenState extends State<DashboardScreen> {
             ),
                         IconButton(
               icon: const Icon(Icons.calendar_today_outlined, color: Color(0xFF007AFF)),
-              onPressed: () async {
-                final picked = await showDialog<DateTimeRange>(
-                  context: context,
-                  barrierDismissible: true,
-                  builder: (context) => Dialog(
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                    child: Container(
-                      width: 320,
-                      padding: const EdgeInsets.all(24),
-                      child: CustomDateSelector(
-                        initialStartDate: _startDate,
-                        initialEndDate: _endDate,
-                      ),
-                    ),
-                  ),
+              onPressed: () {
+                // Calendar button disabled - using static date range
+                Get.snackbar(
+                  'Info',
+                  'Date range is fixed to last 30 days',
+                  snackPosition: SnackPosition.BOTTOM,
+                  duration: Duration(seconds: 2),
                 );
-                if (picked != null) {
-                  setState(() {
-                    _startDate = picked.start;
-                    _endDate = picked.end;
-                  });
-                  // Refresh dashboard data with new date range
-                  await _fetchDashboardData();
-                }
               },
             ),
           ],
@@ -258,14 +205,14 @@ class _DashboardScreenState extends State<DashboardScreen> {
                           color: Color(0xFFE8F4FD),
                           borderRadius: BorderRadius.circular(20),
                         ),
-                        child: Obx(() => Text(
-                          _getDateRangeText(),
+                        child: Text(
+                          'Last 30 Days',
                           style: TextStyle(
                             color: Color(0xFF007AFF),
                             fontSize: 12,
                             fontWeight: FontWeight.w500,
                           ),
-                        )),
+                        ),
                       ),
                     ],
                   ),
@@ -405,44 +352,196 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
                   // Pending Payment Cards
                   Obx(() {
-                    final courierData = controller.courierPaymentData;
-                    print('Dashboard UI: Courier data count: ${courierData.length}');
-                    print('Dashboard UI: Courier data: $courierData');
+                    final mergedData = controller.mergedCourierData;
+                    final courierData = controller.courierData;
+                    final courierPaymentData = controller.courierPaymentData;
+                    final isLoading = controller.isLoading.value;
+                    print('Dashboard UI: Merged courier data count: ${mergedData.length}, Loading: $isLoading');
+                    print('Dashboard UI: Raw courier data count: ${courierData.length}');
+                    print('Dashboard UI: Raw courier payment data count: ${courierPaymentData.length}');
                     
-                    if (courierData.isEmpty) {
-                      print('Dashboard UI: No courier data, showing fallback cards');
+                    // Show loading state while data is being fetched
+                    if (isLoading) {
+                      return Column(
+                        children: [
+                          Container(
+                            padding: EdgeInsets.all(16),
+                            decoration: BoxDecoration(
+                              color: Color(0xFFF8F9FA),
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: Row(
+                              children: [
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Container(
+                                        width: 100,
+                                        height: 14,
+                                        decoration: BoxDecoration(
+                                          color: Colors.grey[300],
+                                          borderRadius: BorderRadius.circular(4),
+                                        ),
+                                      ),
+                                      SizedBox(height: 8),
+                                      Container(
+                                        width: 80,
+                                        height: 20,
+                                        decoration: BoxDecoration(
+                                          color: Colors.grey[300],
+                                          borderRadius: BorderRadius.circular(4),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                                SizedBox(width: 8),
+                                Container(
+                                  width: 64,
+                                  height: 40,
+                                  decoration: BoxDecoration(
+                                    color: Colors.grey[300],
+                                    borderRadius: BorderRadius.circular(4),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          SizedBox(height: 16),
+                          Container(
+                            padding: EdgeInsets.all(16),
+                            decoration: BoxDecoration(
+                              color: Color(0xFFF8F9FA),
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: Row(
+                              children: [
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Container(
+                                        width: 100,
+                                        height: 14,
+                                        decoration: BoxDecoration(
+                                          color: Colors.grey[300],
+                                          borderRadius: BorderRadius.circular(4),
+                                        ),
+                                      ),
+                                      SizedBox(height: 8),
+                                      Container(
+                                        width: 80,
+                                        height: 20,
+                                        decoration: BoxDecoration(
+                                          color: Colors.grey[300],
+                                          borderRadius: BorderRadius.circular(4),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                                SizedBox(width: 8),
+                                Container(
+                                  width: 64,
+                                  height: 40,
+                                  decoration: BoxDecoration(
+                                    color: Colors.grey[300],
+                                    borderRadius: BorderRadius.circular(4),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      );
+                    }
+                    
+                    if (mergedData.isEmpty) {
+                      print('Dashboard UI: No merged courier data, checking raw data');
+                      
+                      // Try to use raw courier data with logos if available
+                      if (courierData.isNotEmpty) {
+                        print('Dashboard UI: Using raw courier data with logos');
+                        return Column(
+                          children: courierData.map((courier) {
+                            print('Dashboard UI: Rendering raw courier: "${courier.courierName}" -> Logo: ${courier.logo}, PNG: ${courier.png}');
+                            return Padding(
+                              padding: EdgeInsets.only(bottom: 16),
+                              child: PaymentCard(
+                                title: 'Pending Payment',
+                                amount: 'Rs. 0',
+                                shipment: '0',
+                                logoUrl: courier.logo,
+                                pngUrl: courier.png,
+                                fallbackLogoAsset: _getCourierLogo(courier.courierName),
+                              ),
+                            );
+                          }).toList(),
+                        );
+                      }
+                      
+                      // Try to use raw payment data if available
+                      if (courierPaymentData.isNotEmpty) {
+                        print('Dashboard UI: Using raw courier payment data');
+                        return Column(
+                          children: courierPaymentData.map((courier) {
+                            String fallbackLogo = _getCourierLogo(courier.courierName);
+                            print('Dashboard UI: Rendering payment courier: "${courier.courierName}" -> Fallback: $fallbackLogo, Pending: ${courier.pendingPayment}, Shipments: ${courier.shipments}');
+                            return Padding(
+                              padding: EdgeInsets.only(bottom: 16),
+                              child: PaymentCard(
+                                title: 'Pending Payment',
+                                amount: 'Rs. ${courier.pendingPayment}',
+                                shipment: '${courier.shipments}',
+                                fallbackLogoAsset: fallbackLogo,
+                              ),
+                            );
+                          }).toList(),
+                        );
+                      }
+                      
+                      // Show fallback cards if no data at all
+                      print('Dashboard UI: No courier data at all, showing fallback cards');
                       return Column(
                         children: [
                           PaymentCard(
                             title: 'Pending Payment',
                             amount: 'Rs. 0',
                             shipment: '0',
-                            logoAsset: 'assets/icon/tcs.png',
+                            fallbackLogoAsset: 'assets/icon/tcs.png',
                           ),
                           SizedBox(height: 16),
                           PaymentCard(
                             title: 'Pending Payment',
                             amount: 'Rs. 0',
                             shipment: '0',
-                            logoAsset: 'assets/icon/bluex.jpeg',
+                            fallbackLogoAsset: 'assets/icon/bluex.jpeg',
                           ),
                         ],
                       );
                     }
                     
-                    print('Dashboard UI: Rendering ${courierData.length} courier cards');
+                    print('Dashboard UI: Rendering ${mergedData.length} courier cards');
                     return Column(
-                      children: courierData.map((courier) {
-                        // Use our mapping since API paths don't exist in Flutter assets
-                        String logoAsset = _getCourierLogo(courier.courierName);
-                        print('Dashboard UI: Rendering courier: "${courier.courierName}" -> Logo: $logoAsset, Pending: ${courier.pendingPayment}, Shipments: ${courier.shipments}');
+                      children: mergedData.map((courier) {
+                        final courierName = courier['courierName'] as String? ?? 'Unknown';
+                        final pendingPayment = courier['pendingPayment'] as int? ?? 0;
+                        final shipments = courier['shipments'] as int? ?? 0;
+                        final logoUrl = courier['logoUrl'] as String?;
+                        final pngUrl = courier['pngUrl'] as String?;
+                        
+                        print('Dashboard UI: Rendering courier: "$courierName" -> Logo: $logoUrl, PNG: $pngUrl, Pending: $pendingPayment, Shipments: $shipments');
+                        
                         return Padding(
                           padding: EdgeInsets.only(bottom: 16),
                           child: PaymentCard(
                             title: 'Pending Payment',
-                            amount: 'Rs. ${courier.pendingPayment}',
-                            shipment: '${courier.shipments}',
-                            logoAsset: logoAsset,
+                            amount: 'Rs. $pendingPayment',
+                            shipment: '$shipments',
+                            logoUrl: logoUrl,
+                            pngUrl: pngUrl,
+                            fallbackLogoAsset: _getCourierLogo(courierName),
                           ),
                         );
                       }).toList(),
@@ -998,59 +1097,84 @@ class PaymentCard extends StatelessWidget {
   final String title;
   final String amount;
   final String shipment;
-  final String logoAsset;
+  final String? logoUrl;
+  final String? pngUrl;
+  final String? fallbackLogoAsset;
 
   const PaymentCard({
     Key? key,
     required this.title,
     required this.amount,
     required this.shipment,
-    required this.logoAsset,
+    this.logoUrl,
+    this.pngUrl,
+    this.fallbackLogoAsset,
   }) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
     return Container(
+      width: double.infinity,
       padding: EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: Color(0xFFF8F9FA),
         borderRadius: BorderRadius.circular(12),
       ),
       child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Column(
+                        Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    title,
-                    style: TextStyle(
-                      fontSize: 14,
-                      color: Color(0xFF666666),
-                      fontWeight: FontWeight.w500,
+                  Expanded(
+                    flex: 2,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          title,
+                          style: TextStyle(
+                            fontSize: 14,
+                            color: Color(0xFF666666),
+                            fontWeight: FontWeight.w500,
+                          ),
+                          overflow: TextOverflow.ellipsis,
+                          maxLines: 1,
+                        ),
+                        SizedBox(height: 4),
+                        Text(
+                          amount,
+                          style: TextStyle(
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.black,
+                          ),
+                          overflow: TextOverflow.ellipsis,
+                          maxLines: 1,
+                        ),
+                      ],
                     ),
                   ),
-                  SizedBox(height: 4),
-                  Text(
-                    amount,
-                    style: TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.black,
+                  SizedBox(width: 8),
+                  Flexible(
+                    child: CourierLogoWidget(
+                      logoUrl: logoUrl,
+                      pngUrl: pngUrl,
+                      width: 64,
+                      height: 40,
+                      fallbackWidget: fallbackLogoAsset != null 
+                          ? Image.asset(
+                              fallbackLogoAsset!,
+                              width: 64,
+                              height: 40,
+                              fit: BoxFit.contain,
+                            )
+                          : null,
                     ),
-        ),
+                  ),
                 ],
               ),
-              Image.asset(
-                logoAsset,
-                width: 64,
-                height: 40,
-                fit: BoxFit.contain,
-              ),
-            ],
-          ),
           SizedBox(height: 12),
           Container(
             height: 1,
@@ -1066,12 +1190,16 @@ class PaymentCard extends StatelessWidget {
                   color: Color(0xFF666666),
                 ),
               ),
-              Text(
-                shipment,
-                style: TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.black,
+              Expanded(
+                child: Text(
+                  shipment,
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.black,
+                  ),
+                  overflow: TextOverflow.ellipsis,
+                  maxLines: 1,
                 ),
               ),
             ],
