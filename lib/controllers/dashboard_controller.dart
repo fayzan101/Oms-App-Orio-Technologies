@@ -1,9 +1,12 @@
 import 'package:get/get.dart';
 import '../services/dashboard_service.dart';
+import '../services/courier_payment_service.dart';
 import '../models/dashboard_reporting_model.dart';
+import '../models/courier_model.dart';
 
 class DashboardController extends GetxController {
   final DashboardService _dashboardService = DashboardService();
+  final CourierPaymentService _courierPaymentService = CourierPaymentService();
 
   // Helper function to format date in proper ISO 8601 format (YYYY-MM-DD)
   String _formatDateToISO(DateTime date) {
@@ -25,6 +28,8 @@ class DashboardController extends GetxController {
   var isLoading = false.obs;
   var error = ''.obs;
   var courierPaymentData = <CourierPaymentData>[].obs;
+  var courierData = <Courier>[].obs; // New observable for courier data with logos
+  var mergedCourierData = <Map<String, dynamic>>[].obs; // Combined data with logos and payment info
   var accountNumber = ''.obs;
   var orderStatusSummary = <OrderStatusDetail>[].obs;
   var totalOrders = 0.obs;
@@ -60,13 +65,14 @@ class DashboardController extends GetxController {
       print('DashboardController: Fetching data with dates - Start: $startDate, End: $endDate');
       print('DashboardController: AC number: $acno');
       
+      // Fetch dashboard data first (this is required)
       final data = await _dashboardService.getDashboardReporting(
         startDate: startDate,
         endDate: endDate,
         acno: acno,
       );
       
-      print('DashboardController: Received data: $data');
+      print('DashboardController: Received dashboard data: $data');
       print('DashboardController: Orders: ${data.orders}');
       print('DashboardController: Sales: ${data.sales}');
       print('DashboardController: Total Current Outstanding: ${data.totalCurrentOutstanding}');
@@ -78,8 +84,25 @@ class DashboardController extends GetxController {
       print('DashboardController: Failed Status Summary - Total Amount: ${data.statusSummary.failedStatusSummary.totalAmount}');
       print('DashboardController: Failed Status Summary - Detail Count: ${data.statusSummary.failedStatusSummary.detail.length}');
       
+      // Try to fetch courier data (this is optional)
+      CourierPaymentResponse courierResponse;
+      try {
+        courierResponse = await _courierPaymentService.getCourierPaymentData(
+          startDate: startDate,
+          endDate: endDate,
+          acno: acno,
+        );
+        print('DashboardController: Received courier data: ${courierResponse.paymentCourierPayment.length} couriers');
+        for (final courier in courierResponse.paymentCourierPayment) {
+          print('DashboardController: Courier: ${courier.courierName} - Logo: ${courier.logo} - PNG: ${courier.png}');
+        }
+      } catch (courierError) {
+        print('DashboardController: Courier API failed, using empty response: $courierError');
+        courierResponse = CourierPaymentResponse(paymentCourierPayment: []);
+      }
+      
       dashboardData.value = data;
-      _updateObservables(data);
+      _updateObservables(data, courierResponse);
       
       print('DashboardController: Updated observables - Orders: ${orders.value}');
       print('DashboardController: Updated observables - Sales: ${revenue.value}');
@@ -91,6 +114,8 @@ class DashboardController extends GetxController {
       print('DashboardController: Updated observables - Failed Status Summary Count: ${failedStatusSummary.value.length}');
       print('DashboardController: Updated observables - Total Failed Orders: ${totalFailedOrders.value}');
       print('DashboardController: Updated observables - Total Failed Amount: ${totalFailedAmount.value}');
+      print('DashboardController: Updated observables - Courier Data Count: ${courierData.value.length}');
+      print('DashboardController: Updated observables - Merged Courier Data Count: ${mergedCourierData.value.length}');
       
     } catch (e) {
       error.value = e.toString();
@@ -123,7 +148,7 @@ class DashboardController extends GetxController {
     );
   }
 
-  void _updateObservables(DashboardReportingModel data) {
+  void _updateObservables(DashboardReportingModel data, CourierPaymentResponse courierResponse) {
     outstandingAmount.value = data.totalOutstanding;
     orders.value = data.orders;
     revenue.value = data.sales;
@@ -132,6 +157,73 @@ class DashboardController extends GetxController {
     totalOutstanding.value = data.totalOutstanding;
     totalCurrentOutstanding.value = data.totalCurrentOutstanding;
     courierPaymentData.value = data.paymentCourierPayment;
+    courierData.value = courierResponse.paymentCourierPayment; // Update courier data with logos
+    
+    // Merge courier data with payment data
+    final mergedData = <Map<String, dynamic>>[];
+    final courierMap = <String, Courier>{};
+    
+    print('DashboardController: Starting merge - Courier count: ${courierResponse.paymentCourierPayment.length}, Payment count: ${data.paymentCourierPayment.length}');
+    
+    try {
+      // Create a map of courier data by name
+      for (final courier in courierResponse.paymentCourierPayment) {
+        if (courier.courierName.isNotEmpty) {
+          courierMap[courier.courierName.toLowerCase()] = courier;
+          print('DashboardController: Added courier to map: ${courier.courierName.toLowerCase()}');
+        }
+      }
+      
+      // Merge with payment data
+      for (final payment in data.paymentCourierPayment) {
+        if (payment.courierName.isNotEmpty) {
+          final courierName = payment.courierName.toLowerCase();
+          final courier = courierMap[courierName];
+          
+          print('DashboardController: Processing payment for: $courierName, Found courier: ${courier != null}');
+          
+          mergedData.add({
+            'courierName': payment.courierName,
+            'pendingPayment': payment.pendingPayment,
+            'shipments': payment.shipments,
+            'logoUrl': courier?.logo,
+            'pngUrl': courier?.png,
+            'status': courier?.status ?? 'active',
+          });
+        }
+      }
+      
+      // Add couriers that don't have payment data
+      for (final courier in courierResponse.paymentCourierPayment) {
+        if (courier.courierName.isNotEmpty) {
+          final hasPaymentData = data.paymentCourierPayment.any(
+            (payment) => payment.courierName.toLowerCase() == courier.courierName.toLowerCase()
+          );
+          
+          print('DashboardController: Checking courier ${courier.courierName} - Has payment data: $hasPaymentData');
+          
+          if (!hasPaymentData) {
+            mergedData.add({
+              'courierName': courier.courierName,
+              'pendingPayment': 0,
+              'shipments': 0,
+              'logoUrl': courier.logo,
+              'pngUrl': courier.png,
+              'status': courier.status,
+            });
+            print('DashboardController: Added courier without payment data: ${courier.courierName}');
+          }
+        }
+      }
+      
+      print('DashboardController: Final merged data count: ${mergedData.length}');
+    } catch (e) {
+      print('DashboardController: Error merging courier data: $e');
+      // If merging fails, use empty data
+      mergedData.clear();
+    }
+    
+    mergedCourierData.value = mergedData;
     accountNumber.value = data.acno;
     
     // Update status summary data
