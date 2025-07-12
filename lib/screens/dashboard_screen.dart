@@ -14,6 +14,7 @@ import 'dashboard_notification_screen.dart';
 import 'search_screen.dart';
 import '../utils/Layout/app_bottom_bar.dart';
 import '../widgets/courier_logo_widget.dart';
+import '../widgets/custom_date_selector.dart';
 import '../models/courier_model.dart';
 
 class DashboardScreen extends StatefulWidget {
@@ -25,6 +26,12 @@ class DashboardScreen extends StatefulWidget {
 
 class _DashboardScreenState extends State<DashboardScreen> {
   final DashboardController controller = Get.find<DashboardController>();
+  final Rx<DateTimeRange> _currentDateRange = Rx<DateTimeRange>(
+    DateTimeRange(
+      start: DateTime.now().subtract(const Duration(days: 30)),
+      end: DateTime.now(),
+    ),
+  );
 
 
 
@@ -42,10 +49,18 @@ class _DashboardScreenState extends State<DashboardScreen> {
     final endDate = DateTime.now();
     final startDate = endDate.subtract(const Duration(days: 30));
     
+    await _fetchDashboardDataWithRange(startDate, endDate);
+  }
+
+  Future<void> _fetchDashboardDataWithRange(DateTime startDate, DateTime endDate) async {
     final startStr = '${startDate.year}-${startDate.month.toString().padLeft(2, '0')}-${startDate.day.toString().padLeft(2, '0')}';
     final endStr = '${endDate.year}-${endDate.month.toString().padLeft(2, '0')}-${endDate.day.toString().padLeft(2, '0')}';
     
     print('Dashboard fetch dates - Start: $startStr, End: $endStr');
+    
+    // Update the current date range
+    _currentDateRange.value = DateTimeRange(start: startDate, end: endDate);
+    
     await controller.fetchDashboardData(startDate: startStr, endDate: endStr);
   }
 
@@ -99,14 +114,31 @@ class _DashboardScreenState extends State<DashboardScreen> {
             ),
                         IconButton(
               icon: const Icon(Icons.calendar_today_outlined, color: Color(0xFF007AFF)),
-              onPressed: () {
-                // Calendar button disabled - using static date range
-                Get.snackbar(
-                  'Info',
-                  'Date range is fixed to last 30 days',
-                  snackPosition: SnackPosition.BOTTOM,
-                  duration: Duration(seconds: 2),
+              onPressed: () async {
+                // Show custom date selector as centered dialog
+                final result = await showDialog<DateTimeRange>(
+                  context: context,
+                  builder: (context) => Dialog(
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: Container(
+                      constraints: BoxConstraints(
+                        maxWidth: MediaQuery.of(context).size.width * 0.9,
+                        maxHeight: MediaQuery.of(context).size.height * 0.7,
+                      ),
+                      child: CustomDateSelector(
+                        initialStartDate: _currentDateRange.value.start,
+                        initialEndDate: _currentDateRange.value.end,
+                      ),
+                    ),
+                  ),
                 );
+                
+                if (result != null) {
+                  print('Dashboard: Date range selected - Start: ${result.start}, End: ${result.end}');
+                  await _fetchDashboardDataWithRange(result.start, result.end);
+                }
               },
             ),
           ],
@@ -173,21 +205,27 @@ class _DashboardScreenState extends State<DashboardScreen> {
                           color: Colors.black,
                         ),
                       ),
-                      Container(
-                        padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                        decoration: BoxDecoration(
-                          color: Color(0xFFE8F4FD),
-                          borderRadius: BorderRadius.circular(20),
-                        ),
-                        child: Text(
-                          'Last 30 Days',
-                          style: TextStyle(
-                            color: Color(0xFF007AFF),
-                            fontSize: 12,
-                            fontWeight: FontWeight.w500,
+                      Obx(() {
+                        final range = _currentDateRange.value;
+                        final days = range.end.difference(range.start).inDays;
+                        String displayText = 'Last $days Days';
+                        
+                        return Container(
+                          padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                          decoration: BoxDecoration(
+                            color: Color(0xFFE8F4FD),
+                            borderRadius: BorderRadius.circular(20),
                           ),
-                        ),
-                      ),
+                          child: Text(
+                            displayText,
+                            style: TextStyle(
+                              color: Color(0xFF007AFF),
+                              fontSize: 12,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        );
+                      }),
                     ],
                   ),
                   SizedBox(height: 20),
