@@ -28,6 +28,14 @@ class CourierPaymentService {
         final data = response.data is String ? jsonDecode(response.data) : response.data;
         print('CourierPaymentService: Raw response: $data');
         
+        // Debug: Print the actual image paths from API
+        if (data['paymentcourierpayment'] != null) {
+          final courierList = data['paymentcourierpayment'] as List;
+          for (var courier in courierList) {
+            print('CourierPaymentService: API returned - Name: ${courier['courier_name']}, Logo: ${courier['logo']}, PNG: ${courier['png']}');
+          }
+        }
+        
         final courierResponse = CourierPaymentResponse.fromJson(data);
         print('CourierPaymentService: Parsed ${courierResponse.paymentCourierPayment.length} couriers');
         

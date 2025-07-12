@@ -12,17 +12,17 @@ class Courier {
   });
 
   factory Courier.fromJson(Map<String, dynamic> json) {
+    // Get the base URL from the API service configuration
     final baseUrl = 'https://oms.getorio.com/';
     final logoPath = json['logo']?.toString() ?? '';
     final pngPath = json['png']?.toString() ?? '';
     
-    // Construct full URLs from relative paths
-    // Handle both "assets/" and "img/" paths
+    // Construct full URLs by merging base URL with relative paths
     final logoUrl = logoPath.isNotEmpty ? '$baseUrl$logoPath' : '';
     final pngUrl = pngPath.isNotEmpty ? '$baseUrl$pngPath' : '';
     
-    print('Courier.fromJson: $logoPath -> $logoUrl');
-    print('Courier.fromJson: $pngPath -> $pngUrl');
+    print('Courier.fromJson: Logo path: "$logoPath" -> URL: "$logoUrl"');
+    print('Courier.fromJson: PNG path: "$pngPath" -> URL: "$pngUrl"');
     
     return Courier(
       courierName: json['courier_name']?.toString() ?? '',

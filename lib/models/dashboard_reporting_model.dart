@@ -256,24 +256,31 @@ class CourierPaymentData {
   });
 
   factory CourierPaymentData.fromJson(Map<String, dynamic> json) {
+    final baseUrl = 'https://oms.getorio.com/';
     final courierName = json['courier_name']?.toString() ?? '';
-    final logo = json['logo']?.toString() ?? '';
-    final png = json['png']?.toString() ?? '';
+    final logoPath = json['logo']?.toString() ?? '';
+    final pngPath = json['png']?.toString() ?? '';
     final width = json['width']?.toString() ?? '60';
     final shipments = int.tryParse(json['shipments']?.toString() ?? '0') ?? 0;
     final pendingPayment = int.tryParse(json['pending_payment']?.toString() ?? '0') ?? 0;
     final status = json['status']?.toString() ?? 'active';
     
+    // Construct full URLs by merging base URL with relative paths
+    final logoUrl = logoPath.isNotEmpty ? '$baseUrl$logoPath' : '';
+    final pngUrl = pngPath.isNotEmpty ? '$baseUrl$pngPath' : '';
+    
     print('CourierPaymentData.fromJson: Parsing courier: "$courierName"');
-    print('  Logo: $logo');
-    print('  PNG: $png');
+    print('  Raw logo path from API: "$logoPath"');
+    print('  Raw PNG path from API: "$pngPath"');
+    print('  Constructed logo URL: "$logoUrl"');
+    print('  Constructed PNG URL: "$pngUrl"');
     print('  Shipments: $shipments');
     print('  Pending Payment: $pendingPayment');
     
     return CourierPaymentData(
       courierName: courierName,
-      logo: logo,
-      png: png,
+      logo: logoUrl,
+      png: pngUrl,
       width: width,
       shipments: shipments,
       pendingPayment: pendingPayment,

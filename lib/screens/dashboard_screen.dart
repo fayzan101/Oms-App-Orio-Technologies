@@ -26,33 +26,7 @@ class DashboardScreen extends StatefulWidget {
 class _DashboardScreenState extends State<DashboardScreen> {
   final DashboardController controller = Get.find<DashboardController>();
 
-  // Helper function to get courier logo based on courier name
-  String _getCourierLogo(String courierName) {
-    print('Getting logo for courier: "$courierName"');
-    
-    // Convert to lowercase for case-insensitive comparison
-    final name = courierName.toLowerCase().trim();
-    
-    // Map based on available assets and actual courier names from API
-    switch (name) {
-      case 'leopards':
-        return 'assets/icon/tcs.png'; // Using TCS logo for Leopards
-      case 'm&p':
-      case 'm & p':
-      case 'm and p':
-        return 'assets/icon/bluex.jpeg'; // Using BlueX logo for M&P
-      case 'riders':
-        return 'assets/icon/tcs.png'; // Using TCS logo for Riders
-      case 'bluex':
-      case 'blue x':
-        return 'assets/icon/bluex.jpeg';
-      case 'tcs':
-        return 'assets/icon/tcs.png';
-      default:
-        print('No specific logo found for courier: "$courierName", using default');
-        return 'assets/icon/tcs.png'; // Default logo
-    }
-  }
+
 
   @override
   void initState() {
@@ -352,13 +326,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
                   // Pending Payment Cards
                   Obx(() {
-                    final mergedData = controller.mergedCourierData;
-                    final courierData = controller.courierData;
                     final courierPaymentData = controller.courierPaymentData;
                     final isLoading = controller.isLoading.value;
-                    print('Dashboard UI: Merged courier data count: ${mergedData.length}, Loading: $isLoading');
-                    print('Dashboard UI: Raw courier data count: ${courierData.length}');
-                    print('Dashboard UI: Raw courier payment data count: ${courierPaymentData.length}');
+                    print('Dashboard UI: Courier payment data count: ${courierPaymentData.length}, Loading: $isLoading');
                     
                     // Show loading state while data is being fetched
                     if (isLoading) {
@@ -457,91 +427,43 @@ class _DashboardScreenState extends State<DashboardScreen> {
                       );
                     }
                     
-                    if (mergedData.isEmpty) {
-                      print('Dashboard UI: No merged courier data, checking raw data');
-                      
-                      // Try to use raw courier data with logos if available
-                      if (courierData.isNotEmpty) {
-                        print('Dashboard UI: Using raw courier data with logos');
-                        return Column(
-                          children: courierData.map((courier) {
-                            print('Dashboard UI: Rendering raw courier: "${courier.courierName}" -> Logo: ${courier.logo}, PNG: ${courier.png}');
-                            return Padding(
-                              padding: EdgeInsets.only(bottom: 16),
-                              child: PaymentCard(
-                                title: 'Pending Payment',
-                                amount: 'Rs. 0',
-                                shipment: '0',
-                                logoUrl: courier.logo,
-                                pngUrl: courier.png,
-                                fallbackLogoAsset: _getCourierLogo(courier.courierName),
-                              ),
-                            );
-                          }).toList(),
-                        );
-                      }
-                      
-                      // Try to use raw payment data if available
-                      if (courierPaymentData.isNotEmpty) {
-                        print('Dashboard UI: Using raw courier payment data');
-                        return Column(
-                          children: courierPaymentData.map((courier) {
-                            String fallbackLogo = _getCourierLogo(courier.courierName);
-                            print('Dashboard UI: Rendering payment courier: "${courier.courierName}" -> Fallback: $fallbackLogo, Pending: ${courier.pendingPayment}, Shipments: ${courier.shipments}');
-                            return Padding(
-                              padding: EdgeInsets.only(bottom: 16),
-                              child: PaymentCard(
-                                title: 'Pending Payment',
-                                amount: 'Rs. ${courier.pendingPayment}',
-                                shipment: '${courier.shipments}',
-                                fallbackLogoAsset: fallbackLogo,
-                              ),
-                            );
-                          }).toList(),
-                        );
-                      }
-                      
-                      // Show fallback cards if no data at all
-                      print('Dashboard UI: No courier data at all, showing fallback cards');
+                    if (courierPaymentData.isEmpty) {
+                      print('Dashboard UI: No courier payment data, showing fallback cards');
                       return Column(
                         children: [
                           PaymentCard(
                             title: 'Pending Payment',
                             amount: 'Rs. 0',
                             shipment: '0',
-                            fallbackLogoAsset: 'assets/icon/tcs.png',
                           ),
                           SizedBox(height: 16),
                           PaymentCard(
                             title: 'Pending Payment',
                             amount: 'Rs. 0',
                             shipment: '0',
-                            fallbackLogoAsset: 'assets/icon/bluex.jpeg',
                           ),
                         ],
                       );
                     }
                     
-                    print('Dashboard UI: Rendering ${mergedData.length} courier cards');
+                    print('Dashboard UI: Rendering ${courierPaymentData.length} courier cards');
                     return Column(
-                      children: mergedData.map((courier) {
-                        final courierName = courier['courierName'] as String? ?? 'Unknown';
-                        final pendingPayment = courier['pendingPayment'] as int? ?? 0;
-                        final shipments = courier['shipments'] as int? ?? 0;
-                        final logoUrl = courier['logoUrl'] as String?;
-                        final pngUrl = courier['pngUrl'] as String?;
-                        
-                        print('Dashboard UI: Rendering courier: "$courierName" -> Logo: $logoUrl, PNG: $pngUrl, Pending: $pendingPayment, Shipments: $shipments');
+                      children: courierPaymentData.map((courier) {
+                        print('Dashboard UI: Rendering courier: "${courier.courierName}"');
+                        print('  Logo URL: "${courier.logo}"');
+                        print('  PNG URL: "${courier.png}"');
+                        print('  Pending Payment: ${courier.pendingPayment}');
+                        print('  Shipments: ${courier.shipments}');
                         
                         return Padding(
                           padding: EdgeInsets.only(bottom: 16),
                           child: PaymentCard(
                             title: 'Pending Payment',
-                            amount: 'Rs. $pendingPayment',
-                            shipment: '$shipments',
-                            logoUrl: logoUrl,
-                            pngUrl: pngUrl,
-                            fallbackLogoAsset: _getCourierLogo(courierName),
+                            amount: 'Rs. ${courier.pendingPayment}',
+                            shipment: '${courier.shipments}',
+                            logoUrl: courier.logo,
+                            pngUrl: courier.png,
+                            courierName: courier.courierName,
                           ),
                         );
                       }).toList(),
@@ -1099,7 +1021,7 @@ class PaymentCard extends StatelessWidget {
   final String shipment;
   final String? logoUrl;
   final String? pngUrl;
-  final String? fallbackLogoAsset;
+  final String? courierName;
 
   const PaymentCard({
     Key? key,
@@ -1108,7 +1030,7 @@ class PaymentCard extends StatelessWidget {
     required this.shipment,
     this.logoUrl,
     this.pngUrl,
-    this.fallbackLogoAsset,
+    this.courierName,
   }) : super(key: key);
 
   @override
@@ -1123,38 +1045,38 @@ class PaymentCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-                        Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
+            children: [
                   Expanded(
                     flex: 2,
                     child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          title,
-                          style: TextStyle(
-                            fontSize: 14,
-                            color: Color(0xFF666666),
-                            fontWeight: FontWeight.w500,
-                          ),
-                          overflow: TextOverflow.ellipsis,
-                          maxLines: 1,
-                        ),
-                        SizedBox(height: 4),
-                        Text(
-                          amount,
-                          style: TextStyle(
-                            fontSize: 20,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.black,
-                          ),
-                          overflow: TextOverflow.ellipsis,
-                          maxLines: 1,
-                        ),
-                      ],
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: Color(0xFF666666),
+                      fontWeight: FontWeight.w500,
                     ),
+                          overflow: TextOverflow.ellipsis,
+                          maxLines: 1,
+                  ),
+                  SizedBox(height: 4),
+                  Text(
+                    amount,
+                    style: TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.black,
+                    ),
+                          overflow: TextOverflow.ellipsis,
+                          maxLines: 1,
+        ),
+                ],
+              ),
                   ),
                   SizedBox(width: 8),
                   Flexible(
@@ -1163,18 +1085,10 @@ class PaymentCard extends StatelessWidget {
                       pngUrl: pngUrl,
                       width: 64,
                       height: 40,
-                      fallbackWidget: fallbackLogoAsset != null 
-                          ? Image.asset(
-                              fallbackLogoAsset!,
-                              width: 64,
-                              height: 40,
-                              fit: BoxFit.contain,
-                            )
-                          : null,
                     ),
                   ),
-                ],
-              ),
+            ],
+          ),
           SizedBox(height: 12),
           Container(
             height: 1,
@@ -1192,11 +1106,11 @@ class PaymentCard extends StatelessWidget {
               ),
               Expanded(
                 child: Text(
-                  shipment,
-                  style: TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.black,
+                shipment,
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.black,
                   ),
                   overflow: TextOverflow.ellipsis,
                   maxLines: 1,
