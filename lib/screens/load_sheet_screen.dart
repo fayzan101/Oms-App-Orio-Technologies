@@ -152,7 +152,7 @@ class _LoadSheetScreenState extends State<LoadSheetScreen> {
         surfaceTintColor: Colors.white,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new, color: Colors.black, size: 22),
+          icon: const Icon(Icons.arrow_back_ios_new_rounded, color: Colors.black, size: 22),
           onPressed: () => Navigator.of(context).pop(),
         ),
         title: const Text(
@@ -168,7 +168,7 @@ class _LoadSheetScreenState extends State<LoadSheetScreen> {
         actions: [
           if (_searchQuery != null && _searchQuery!.isNotEmpty)
             IconButton(
-              icon: const Icon(Icons.clear, color: Colors.grey),
+              icon: const Icon(Icons.clear_rounded, color: Colors.grey),
               onPressed: () {
                 setState(() {
                   _searchController.clear();
@@ -178,7 +178,7 @@ class _LoadSheetScreenState extends State<LoadSheetScreen> {
               },
             ),
           IconButton(
-            icon: const Icon(Icons.calendar_today_outlined, color: Colors.black),
+            icon: const Icon(Icons.calendar_today_rounded, color: Colors.black),
             onPressed: () async {
               final picked = await showDialog<DateTimeRange>(
                 context: context,
@@ -219,7 +219,7 @@ class _LoadSheetScreenState extends State<LoadSheetScreen> {
                 controller: _searchController,
                 decoration: InputDecoration(
                   hintText: 'Search by sheet no, courier, account, CN, ...',
-                  prefixIcon: Icon(Icons.search),
+                  prefixIcon: Icon(Icons.search_rounded),
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
                   ),
@@ -232,7 +232,7 @@ class _LoadSheetScreenState extends State<LoadSheetScreen> {
           ],
         ),
       ),
-      bottomNavigationBar: const AppBottomBar(currentTab: 2),
+              bottomNavigationBar: const AppBottomBar(selectedIndex: 2),
       floatingActionButton: MediaQuery.of(context).viewInsets.bottom == 0
           ? FloatingActionButton(
               onPressed: () {
@@ -240,7 +240,7 @@ class _LoadSheetScreenState extends State<LoadSheetScreen> {
                 customSnackBar('Info', 'Add load sheet functionality not implemented yet');
               },
               backgroundColor: const Color(0xFF0A253B),
-              child: const Icon(Icons.edit, color: Colors.white),
+              child: const Icon(Icons.edit_rounded, color: Colors.white),
               elevation: 4,
             )
           : null,
@@ -370,7 +370,7 @@ class _LoadSheetScreenState extends State<LoadSheetScreen> {
                               },
                               child: Row(
                                 children: const [
-                                  Icon(Icons.edit, color: Color(0xFF007AFF)),
+                                  Icon(Icons.edit_rounded, color: Color(0xFF007AFF)),
                                   SizedBox(width: 4),
                                   Text('Edit', style: TextStyle(color: Color(0xFF007AFF), fontWeight: FontWeight.w500)),
                                 ],
@@ -543,7 +543,7 @@ class _LoadsheetDetailsBottomSheetState extends State<_LoadsheetDetailsBottomShe
                 ),
               ),
               IconButton(
-                icon: const Icon(Icons.close),
+                icon: const Icon(Icons.close_rounded),
                 onPressed: () => Navigator.of(context).pop(),
               ),
             ],
@@ -581,7 +581,7 @@ class _LoadsheetDetailsBottomSheetState extends State<_LoadsheetDetailsBottomShe
                 },
                 child: Row(
                   children: const [
-                    Icon(Icons.delete_outline, color: Color(0xFF007AFF)),
+                    Icon(Icons.delete_rounded, color: Color(0xFF007AFF)),
                     SizedBox(width: 4),
                     Text('Delete', style: TextStyle(color: Color(0xFF007AFF), fontWeight: FontWeight.w500)),
                   ],
@@ -659,7 +659,7 @@ class _DeleteConfirmationBottomSheet extends StatelessWidget {
                 shape: BoxShape.circle,
               ),
               padding: const EdgeInsets.all(24),
-              child: Icon(Icons.delete_outline, size: 56, color: Color(0xFF007AFF)),
+              child: Icon(Icons.delete_rounded, size: 56, color: Color(0xFF007AFF)),
             ),
             const SizedBox(height: 24),
             const Text(
@@ -748,7 +748,7 @@ class _DeleteSuccessBottomSheet extends StatelessWidget {
                 shape: BoxShape.circle,
               ),
               padding: const EdgeInsets.all(32),
-              child: const Icon(Icons.check, color: Color(0xFF007AFF), size: 64),
+              child: const Icon(Icons.check_rounded, color: Color(0xFF007AFF), size: 64),
             ),
             const SizedBox(height: 24),
             const Text(

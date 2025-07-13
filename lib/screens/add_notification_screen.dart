@@ -145,7 +145,7 @@ class _AddNotificationScreenState extends State<AddNotificationScreen> {
     return Scaffold(
       appBar: AppBar(
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
+          icon: const Icon(Icons.arrow_back_rounded),
           onPressed: () => Get.back(),
         ),
         title: Text(widget.isEdit ? 'Edit Notification' : 'Add Notification'),
@@ -230,11 +230,11 @@ class _AddNotificationScreenState extends State<AddNotificationScreen> {
       floatingActionButton: FloatingActionButton(
         backgroundColor: const Color(0xFF0A2A3A),
         onPressed: () {},
-        child: const Icon(Icons.edit, color: Colors.white),
+        child: const Icon(Icons.edit_rounded, color: Colors.white),
       ),
       floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
       resizeToAvoidBottomInset: false,
-      bottomNavigationBar: const AppBottomBar(currentTab: 3),
+              bottomNavigationBar: const AppBottomBar(selectedIndex: 3),
     );
   }
 

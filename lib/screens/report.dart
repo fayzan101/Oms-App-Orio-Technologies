@@ -92,7 +92,7 @@ class ReportsScreen extends StatelessWidget {
             ],
           ),
         ),
-        bottomNavigationBar: const AppBottomBar(currentTab: 2),
+        bottomNavigationBar: const AppBottomBar(selectedIndex: 2),
         floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
         floatingActionButton: FloatingActionButton(
           onPressed: () {
@@ -101,7 +101,7 @@ class ReportsScreen extends StatelessWidget {
           backgroundColor: const Color(0xFF0A253B),
           elevation: 4,
           shape: const CircleBorder(),
-          child: const Icon(Icons.edit, color: Colors.white, size: 28),
+          child: const Icon(Icons.edit_rounded, color: Colors.white, size: 28),
         ),
       ),
     );
@@ -192,26 +192,26 @@ class CustomBottomNavBar extends StatelessWidget {
                 mainAxisAlignment: MainAxisAlignment.spaceAround,
                 children: [
                   _NavBarItem(
-                    icon: Icons.home_outlined,
+                    icon: Icons.home_rounded,
                     label: 'Home',
                     selected: selectedIndex == 0,
                     onTap: onHomeTap ?? () {},
                   ),
                   _NavBarItem(
-                    icon: Icons.shopping_bag_outlined,
+                    icon: Icons.shopping_bag_rounded,
                     label: 'Order List',
                     selected: selectedIndex == 1,
                     onTap: onOrderListTap ?? () {},
                   ),
                   const SizedBox(width: 56), // Space for FAB
                   _NavBarItem(
-                    icon: Icons.tune_outlined,
+                    icon: Icons.tune_rounded,
                     label: 'Reports',
                     selected: selectedIndex == 2,
                     onTap: onReportsTap ?? () {},
                   ),
                   _NavBarItem(
-                    icon: Icons.menu,
+                    icon: Icons.menu_rounded,
                     label: 'Menu',
                     selected: selectedIndex == 4,
                     onTap: onMenuTap ?? () {},

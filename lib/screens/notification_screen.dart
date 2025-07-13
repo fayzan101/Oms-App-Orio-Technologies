@@ -91,7 +91,7 @@ class _NotificationScreenState extends State<NotificationScreen> {
     return Scaffold(
       appBar: AppBar(
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.black),
+          icon: const Icon(Icons.arrow_back_rounded, color: Colors.black),
           onPressed: () {
             Get.back();
           },
@@ -137,7 +137,7 @@ class _NotificationScreenState extends State<NotificationScreen> {
                         controller: _searchController,
                         decoration: InputDecoration(
                           hintText: 'Search by message, subject, status, or courier',
-                          prefixIcon: Icon(Icons.search),
+                          prefixIcon: Icon(Icons.search_rounded),
                           border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(12),
                           ),
@@ -175,7 +175,7 @@ class _NotificationScreenState extends State<NotificationScreen> {
                                             const Text('Actions', style: TextStyle(fontWeight: FontWeight.w500)),
                                             const SizedBox(width: 16),
                                             IconButton(
-                                              icon: const Icon(Icons.edit, color: Color(0xFF007AFF)),
+                                              icon: const Icon(Icons.edit_rounded, color: Color(0xFF007AFF)),
                                               onPressed: () {
                                                 Get.toNamed('/edit-notification', arguments: notification);
                                               },
@@ -183,7 +183,7 @@ class _NotificationScreenState extends State<NotificationScreen> {
                                             const Text('Edit', style: TextStyle(color: Color(0xFF007AFF), fontWeight: FontWeight.w500)),
                                             const SizedBox(width: 8),
                                             IconButton(
-                                              icon: const Icon(Icons.delete, color: Color(0xFF007AFF)),
+                                              icon: const Icon(Icons.delete_rounded, color: Color(0xFF007AFF)),
                                               onPressed: () {
                                                 _showDeleteConfirmation(context, () {
                                                   _deleteNotification(notification);
@@ -208,12 +208,12 @@ class _NotificationScreenState extends State<NotificationScreen> {
               onPressed: () {
                 Get.toNamed('/add-notification');
               },
-              child: const Icon(Icons.edit, color: Colors.white),
+              child: const Icon(Icons.edit_rounded, color: Colors.white),
             )
           : null,
       floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
       resizeToAvoidBottomInset: false,
-      bottomNavigationBar: const AppBottomBar(currentTab: 3),
+              bottomNavigationBar: const AppBottomBar(selectedIndex: 3),
     );
   }
 
@@ -299,7 +299,7 @@ class _NotificationScreenState extends State<NotificationScreen> {
                     shape: BoxShape.circle,
                   ),
                   padding: const EdgeInsets.all(32),
-                  child: const Icon(Icons.delete_outline, color: Color(0xFF007AFF), size: 64),
+                  child: const Icon(Icons.delete_rounded, color: Color(0xFF007AFF), size: 64),
                 ),
                 const SizedBox(height: 24),
                 const Text(
@@ -384,7 +384,7 @@ class _NotificationScreenState extends State<NotificationScreen> {
                     shape: BoxShape.circle,
                   ),
                   padding: const EdgeInsets.all(32),
-                  child: const Icon(Icons.check, color: Color(0xFF007AFF), size: 64),
+                  child: const Icon(Icons.check_rounded, color: Color(0xFF007AFF), size: 64),
                 ),
                 const SizedBox(height: 24),
                 const Text(

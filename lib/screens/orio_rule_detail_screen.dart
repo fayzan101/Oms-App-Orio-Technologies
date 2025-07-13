@@ -50,20 +50,20 @@ class _OrioRuleDetailScreenState extends State<OrioRuleDetailScreen> {
     return Scaffold(
       appBar: AppBar(
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
+          icon: const Icon(Icons.arrow_back_rounded),
           onPressed: () => Get.back(),
         ),
         title: const Text('Orio Rules'),
         actions: [
           IconButton(
-            icon: const Icon(Icons.calendar_today_outlined, color: Color(0xFF007AFF)),
+            icon: const Icon(Icons.calendar_today_rounded, color: Color(0xFF007AFF)),
             onPressed: () {
               Get.to(() => const CalendarScreen());
             },
           ),
           TextButton.icon(
             onPressed: () {},
-            icon: const Icon(Icons.add, color: Color(0xFF007AFF)),
+            icon: const Icon(Icons.add_rounded, color: Color(0xFF007AFF)),
             label: const Text(
               'Create Rule',
               style: TextStyle(color: Color(0xFF007AFF), fontWeight: FontWeight.w600),
@@ -150,10 +150,10 @@ class _OrioRuleDetailScreenState extends State<OrioRuleDetailScreen> {
       floatingActionButton: FloatingActionButton(
         backgroundColor: const Color(0xFF0A2A3A),
         onPressed: () {},
-        child: const Icon(Icons.edit, color: Colors.white),
+        child: const Icon(Icons.edit_rounded, color: Colors.white),
       ),
       floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
-      bottomNavigationBar: const AppBottomBar(currentTab: 2),
+              bottomNavigationBar: const AppBottomBar(selectedIndex: 2),
     );
   }
 

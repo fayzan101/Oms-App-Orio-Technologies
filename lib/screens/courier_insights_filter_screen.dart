@@ -88,7 +88,7 @@ class _CourierInsightsFilterScreenState extends State<CourierInsightsFilterScree
         foregroundColor: Colors.white,
         surfaceTintColor: Colors.white,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new, color: Colors.black, size: 22),
+          icon: const Icon(Icons.arrow_back_ios_new_rounded, color: Colors.black, size: 22),
           onPressed: () => Navigator.of(context).pop(),
         ),
         title: const Text('Filter', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 18, color: Colors.black)),
@@ -256,7 +256,7 @@ class _CourierInsightsFilterScreenState extends State<CourierInsightsFilterScree
                         ),
                       ),
                     ),
-                    const Icon(Icons.arrow_drop_down, color: Colors.grey),
+                    const Icon(Icons.arrow_drop_down_rounded, color: Colors.grey),
                   ],
                 ),
               ),
@@ -325,7 +325,7 @@ class _SearchDialogState extends State<_SearchDialog> {
                   ),
                 ),
                 IconButton(
-                  icon: const Icon(Icons.close),
+                  icon: const Icon(Icons.close_rounded),
                   onPressed: () => Navigator.of(context).pop(),
                 ),
               ],
@@ -335,7 +335,7 @@ class _SearchDialogState extends State<_SearchDialog> {
               controller: _searchController,
               decoration: const InputDecoration(
                 hintText: 'Search...',
-                prefixIcon: Icon(Icons.search),
+                prefixIcon: Icon(Icons.search_rounded),
                 border: OutlineInputBorder(),
                 contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
               ),
@@ -358,8 +358,8 @@ class _SearchDialogState extends State<_SearchDialog> {
                         return ListTile(
                           title: Text(option),
                           leading: isSelected
-                              ? const Icon(Icons.check_circle, color: Color(0xFF007AFF))
-                              : const Icon(Icons.circle_outlined, color: Colors.grey),
+                              ? const Icon(Icons.check_circle_rounded, color: Color(0xFF007AFF))
+                              : const Icon(Icons.radio_button_unchecked_rounded, color: Colors.grey),
                           onTap: () => widget.onSelected(option),
                           tileColor: isSelected ? const Color(0xFFE6F0FF) : null,
                           shape: RoundedRectangleBorder(

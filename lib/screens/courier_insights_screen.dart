@@ -171,7 +171,7 @@ class _CourierInsightsScreenState extends State<CourierInsightsScreen> {
                       ),
                     ),
                     IconButton(
-                      icon: const Icon(Icons.close),
+                      icon: const Icon(Icons.close_rounded),
                       onPressed: () => Navigator.of(context).pop(),
                     ),
                   ],
@@ -245,7 +245,7 @@ class _CourierInsightsScreenState extends State<CourierInsightsScreen> {
         surfaceTintColor: Colors.white,
         automaticallyImplyLeading: false,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new, color: Colors.black, size: 22),
+          icon: const Icon(Icons.arrow_back_ios_new_rounded, color: Colors.black, size: 22),
           onPressed: () => Navigator.of(context).pop(),
         ),
         title: const Text(
@@ -264,7 +264,7 @@ class _CourierInsightsScreenState extends State<CourierInsightsScreen> {
         actions: [
           if (_searchQuery != null && _searchQuery!.isNotEmpty)
             IconButton(
-              icon: const Icon(Icons.clear, color: Colors.grey),
+              icon: const Icon(Icons.clear_rounded, color: Colors.grey),
               onPressed: () {
                 setState(() {
                   _searchController.clear();
@@ -276,7 +276,7 @@ class _CourierInsightsScreenState extends State<CourierInsightsScreen> {
           Padding(
             padding: const EdgeInsets.only(right: 8.0),
             child: IconButton(
-              icon: const Icon(Icons.filter_list, color: Colors.black),
+              icon: const Icon(Icons.filter_list_rounded, color: Colors.black),
               onPressed: () async {
                 await Navigator.of(context).push(
                   MaterialPageRoute(
@@ -314,7 +314,7 @@ class _CourierInsightsScreenState extends State<CourierInsightsScreen> {
             ),
           ),
           IconButton(
-            icon: const Icon(Icons.calendar_today_outlined, color: Colors.black),
+            icon: const Icon(Icons.calendar_today_rounded, color: Colors.black),
             onPressed: () async {
               final picked = await showDialog<DateTimeRange>(
                 context: context,
@@ -355,7 +355,7 @@ class _CourierInsightsScreenState extends State<CourierInsightsScreen> {
                 controller: _searchController,
                 decoration: InputDecoration(
                   hintText: 'Search by any field',
-                  prefixIcon: Icon(Icons.search),
+                  prefixIcon: Icon(Icons.search_rounded),
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
                   ),
@@ -462,7 +462,7 @@ class _CourierInsightsScreenState extends State<CourierInsightsScreen> {
                                                   },
                                                   child: Row(
                                                     children: const [
-                                                      Icon(Icons.place_outlined, color: Color(0xFF007AFF)),
+                                                      Icon(Icons.place_rounded, color: Color(0xFF007AFF)),
                                                       SizedBox(width: 4),
                                                       Text('Tracking', style: TextStyle(color: Color(0xFF007AFF), fontWeight: FontWeight.w500)),
                                                     ],
@@ -512,7 +512,7 @@ class _CourierInsightsScreenState extends State<CourierInsightsScreen> {
               backgroundColor: const Color(0xFF0A253B),
               elevation: 4,
               shape: const CircleBorder(),
-              child: const Icon(Icons.edit, color: Colors.white, size: 28),
+              child: const Icon(Icons.edit_rounded, color: Colors.white, size: 28),
             )
           : null,
     );

@@ -40,7 +40,7 @@ class _SearchScreenState extends State<SearchScreen> {
             child: Row(
               children: [
                 IconButton(
-                  icon: const Icon(Icons.arrow_back_ios_new, color: Colors.black, size: 22),
+                  icon: const Icon(Icons.arrow_back_ios_new_rounded, color: Colors.black, size: 22),
                   onPressed: () => Navigator.of(context).pop(),
                 ),
                 Expanded(
@@ -53,7 +53,7 @@ class _SearchScreenState extends State<SearchScreen> {
                     child: Row(
                       children: [
                         const SizedBox(width: 12),
-                        const Icon(Icons.search, color: Color(0xFFB0B0B0)),
+                        const Icon(Icons.search_rounded, color: Color(0xFFB0B0B0)),
                         const SizedBox(width: 8),
                         Expanded(
                           child: TextField(
@@ -70,7 +70,7 @@ class _SearchScreenState extends State<SearchScreen> {
                           ),
                         ),
                         IconButton(
-                          icon: const Icon(Icons.search, color: Color(0xFFB0B0B0)),
+                          icon: const Icon(Icons.search_rounded, color: Color(0xFFB0B0B0)),
                           onPressed: () {},
                         ),
                       ],
@@ -86,7 +86,7 @@ class _SearchScreenState extends State<SearchScreen> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: const [
-            Icon(Icons.search, size: 56, color: Color(0xFF0A253B)),
+            Icon(Icons.search_rounded, size: 56, color: Color(0xFF0A253B)),
             SizedBox(height: 16),
             Text(
               'No recent searches',

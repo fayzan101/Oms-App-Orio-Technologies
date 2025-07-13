@@ -95,7 +95,7 @@ class _MenuScreenState extends State<MenuScreen> {
                     shape: BoxShape.circle,
                   ),
                   padding: EdgeInsets.all(32),
-                  child: Icon(Icons.check_circle_outline, color: Color(0xFF007AFF), size: 64),
+                  child: Icon(Icons.check_circle_rounded, color: Color(0xFF007AFF), size: 64),
                 ),
                 SizedBox(height: 24),
                 Text(
@@ -187,7 +187,7 @@ class _MenuScreenState extends State<MenuScreen> {
                           color: const Color(0xFFE5E5E5),
                           shape: BoxShape.circle,
                         ),
-                        child: Icon(Icons.person, size: 38, color: Colors.grey[400]),
+                        child: Icon(Icons.person_rounded, size: 38, color: Colors.grey[400]),
                       ),
                       const SizedBox(width: 16),
                       // Name, Email, Profile Button
@@ -275,21 +275,21 @@ class _MenuScreenState extends State<MenuScreen> {
                   padding: const EdgeInsets.only(top: 0),
                   children: [
                     _MenuItem(
-                      icon: Icons.local_shipping_outlined,
+                      icon: Icons.local_shipping_rounded,
                       label: 'Courier Companies',
                       onTap: () {
                         Get.toNamed('/courier-companies');
                       },
                     ),
                     _MenuItem(
-                      icon: Icons.notifications_none_outlined,
+                      icon: Icons.notifications_none_rounded,
                       label: 'Notifications',
                       onTap: () {
                         Get.toNamed('/notifications');
                       },
                     ),
                     _MenuItem(
-                      icon: Icons.tune,
+                      icon: Icons.tune_rounded,
                       label: 'Rules',
                       onTap: () {
                         Navigator.of(context).push(
@@ -298,14 +298,14 @@ class _MenuScreenState extends State<MenuScreen> {
                       },
                     ),
                     _MenuItem(
-                      icon: Icons.play_circle_outline,
+                      icon: Icons.play_circle_rounded,
                       label: 'Help Videos',
                       onTap: () {
                         Get.toNamed('/help-videos');
                       },
                     ),
                     _MenuItem(
-                      icon: Icons.power_settings_new,
+                      icon: Icons.power_settings_new_rounded,
                       label: 'Sign Out',
                       onTap: () => showLogoutBottomSheet(Get.context!),
                       iconColor: const Color(0xFF007AFF),
@@ -316,7 +316,7 @@ class _MenuScreenState extends State<MenuScreen> {
             ],
           ),
         ),
-        bottomNavigationBar: const AppBottomBar(currentTab: 3),
+        bottomNavigationBar: const AppBottomBar(selectedIndex: 3),
         floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
         floatingActionButton: FloatingActionButton(
           onPressed: () {
@@ -325,7 +325,7 @@ class _MenuScreenState extends State<MenuScreen> {
           backgroundColor: const Color(0xFF0A253B),
           elevation: 4,
           shape: const CircleBorder(),
-          child: const Icon(Icons.edit, color: Colors.white, size: 28),
+          child: const Icon(Icons.edit_rounded, color: Colors.white, size: 28),
         ),
       ),
     );
@@ -362,7 +362,7 @@ void showLogoutBottomSheet(BuildContext context) async {
                   shape: BoxShape.circle,
                 ),
                 padding: EdgeInsets.all(32),
-                child: Icon(Icons.delete_outline, color: Color(0xFF007AFF), size: 64),
+                child: Icon(Icons.delete_rounded, color: Color(0xFF007AFF), size: 64),
               ),
               SizedBox(height: 24),
               Text(
@@ -486,7 +486,7 @@ class _MenuItem extends StatelessWidget {
                   ),
                 ),
               ),
-              const Icon(Icons.chevron_right, color: Color(0xFF8E8E93), size: 22),
+              const Icon(Icons.chevron_right_rounded, color: Color(0xFF8E8E93), size: 22),
             ],
           ),
         ),
@@ -519,26 +519,26 @@ class CustomBottomNavBar extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.spaceAround,
             children: [
               _NavBarItem(
-                icon: Icons.home_outlined,
+                icon: Icons.home_rounded,
                 label: 'Home',
                 selected: selectedIndex == 0,
                 onTap: onHomeTap ?? () {},
               ),
               _NavBarItem(
-                icon: Icons.shopping_bag_outlined,
+                icon: Icons.shopping_bag_rounded,
                 label: 'Order List',
                 selected: selectedIndex == 1,
                 onTap: onOrderListTap ?? () {},
               ),
               const SizedBox(width: 56), // Space for FAB
               _NavBarItem(
-                icon: Icons.tune_outlined,
+                icon: Icons.tune_rounded,
                 label: 'Reports',
                 selected: selectedIndex == 2,
                 onTap: onReportsTap ?? () {},
               ),
               _NavBarItem(
-                icon: Icons.menu,
+                icon: Icons.menu_rounded,
                 label: 'Menu',
                 selected: selectedIndex == 4,
                 onTap: onMenuTap ?? () {},

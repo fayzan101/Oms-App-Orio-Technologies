@@ -71,7 +71,7 @@ class _BankSearchDialogState extends State<_BankSearchDialog> {
               controller: searchController,
               decoration: InputDecoration(
                 hintText: 'Search bank...',
-                prefixIcon: Icon(Icons.search),
+                prefixIcon: Icon(Icons.search_rounded),
                 border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
                 contentPadding: EdgeInsets.symmetric(vertical: 0, horizontal: 12),
               ),
@@ -169,7 +169,7 @@ void _showProfileUpdateSuccessDialog(BuildContext context) {
                   shape: BoxShape.circle,
                 ),
                 padding: const EdgeInsets.all(32),
-                child: const Icon(Icons.check, color: Color(0xFF007AFF), size: 64),
+                child: const Icon(Icons.check_rounded, color: Color(0xFF007AFF), size: 64),
               ),
               const SizedBox(height: 24),
               const Text(
@@ -398,7 +398,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         surfaceTintColor: Colors.white,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new, color: Colors.black, size: 22),
+          icon: const Icon(Icons.arrow_back_ios_new_rounded, color: Colors.black, size: 22),
           onPressed: () => Navigator.of(context).pop(),
         ),
         title: const Text(
@@ -415,7 +415,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
           if (!isLoading && error == null)
             IconButton(
               icon: Icon(
-                isEditing ? Icons.close : Icons.edit,
+                isEditing ? Icons.close_rounded : Icons.edit_rounded,
                 color: Colors.black,
               ),
               onPressed: () {
@@ -472,7 +472,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                               child: Column(
                                 mainAxisAlignment: MainAxisAlignment.center,
                                 children: const [
-                                  Icon(Icons.cloud_upload_outlined, color: Color(0xFF007AFF), size: 36),
+                                  Icon(Icons.cloud_upload_rounded, color: Color(0xFF007AFF), size: 36),
                                   SizedBox(height: 8),
                                   Text('Upload CNIC Image', style: TextStyle(fontFamily: 'SF Pro Display', fontWeight: FontWeight.w500, fontSize: 15, color: Color(0xFF007AFF))),
                                 ],
@@ -538,10 +538,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
       floatingActionButton: FloatingActionButton(
         onPressed: () {},
         backgroundColor: const Color(0xFF0A253B),
-        child: const Icon(Icons.edit, color: Colors.white),
+        child: const Icon(Icons.edit_rounded, color: Colors.white),
         elevation: 4,
       ),
-      bottomNavigationBar: const AppBottomBar(currentTab: 3),
+              bottomNavigationBar: const AppBottomBar(selectedIndex: 3),
     );
   }
 

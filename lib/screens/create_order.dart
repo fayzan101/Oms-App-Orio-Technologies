@@ -340,22 +340,15 @@ class _CreateOrderScreenState extends State<CreateOrderScreen> {
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
-        backgroundColor: Colors.white,
-        elevation: 0,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back_ios_new, color: Colors.black, size: 22),
           onPressed: () => Get.offAll(() => menu.MenuScreen()),
         ),
-        title: const Text(
-          'Create Order',
-          style: TextStyle(
-            fontFamily: 'SF Pro Display',
-            fontWeight: FontWeight.w700,
-            fontSize: 20,
-            color: Colors.black,
-          ),
-        ),
-        centerTitle: false,
+        title: const Text('Create Order', style: TextStyle(color: Colors.black)),
+        backgroundColor: Colors.white,
+        shadowColor: Colors.white,
+        foregroundColor: Colors.white,
+        surfaceTintColor: Colors.white,
       ),
       body: Column(
         children: [
@@ -623,7 +616,7 @@ class _CreateOrderScreenState extends State<CreateOrderScreen> {
         backgroundColor: const Color(0xFF0A253B),
         elevation: 4,
         shape: const CircleBorder(),
-        child: const Icon(Icons.edit, color: Colors.white, size: 28),
+        child: const Icon(Icons.edit_rounded, color: Colors.white, size: 28),
       ),
     );
   }

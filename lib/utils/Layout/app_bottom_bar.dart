@@ -2,122 +2,137 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
 class AppBottomBar extends StatelessWidget {
-  final int currentTab;
-  const AppBottomBar({Key? key, required this.currentTab}) : super(key: key);
+  final int selectedIndex;
+  final VoidCallback? onMenuTap;
+  final VoidCallback? onHomeTap;
+  final VoidCallback? onReportsTap;
+  final VoidCallback? onOrderListTap;
+  
+  const AppBottomBar({
+    Key? key, 
+    required this.selectedIndex, 
+    this.onMenuTap, 
+    this.onHomeTap, 
+    this.onReportsTap, 
+    this.onOrderListTap
+  }) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
-    final mediaQuery = MediaQuery.of(context);
-    double barHeight = mediaQuery.size.height * 0.09;
-    double iconSize = mediaQuery.size.width * 0.07;
-    double fontSize = 12;
-
-    return Container(
-      decoration: BoxDecoration(
-        boxShadow: [
-          BoxShadow(
-            color: const Color.fromARGB(255, 205, 203, 203).withOpacity(0.2),
-            spreadRadius: 5,
-            blurRadius: 10,
-            offset: const Offset(0, -4),
+    return SafeArea(
+      top: false,
+      child: Stack(
+        children: [
+          // The border line
+          Positioned(
+            top: 0,
+            left: 0,
+            right: 0,
+            child: Container(
+              height: 4,
+              color: Color(0xFFB0B0B0), // bold grey
+              // Add a subtle shadow below the line
+              child: DecoratedBox(
+                decoration: BoxDecoration(
+                  boxShadow: [
+                    BoxShadow(
+                      color: Color(0x22000000), // subtle grey shadow
+                      blurRadius: 4,
+                      offset: Offset(0, 2),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+          // The actual BottomAppBar
+          BottomAppBar(
+            shape: const CircularNotchedRectangle(),
+            notchMargin: 8,
+            elevation: 0,
+            color: Colors.white,
+            child: SizedBox(
+              height: 64,
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceAround,
+                children: [
+                  _NavBarItem(
+                    icon: Icons.home_rounded,
+                    label: 'Home',
+                    selected: selectedIndex == 0,
+                    onTap: onHomeTap ?? () => Get.offAllNamed('/dashboard'),
+                  ),
+                  _NavBarItem(
+                    icon: Icons.shopping_bag_rounded,
+                    label: 'Order List',
+                    selected: selectedIndex == 1,
+                    onTap: onOrderListTap ?? () => Get.offAllNamed('/order-list'),
+                  ),
+                  const SizedBox(width: 56), // Space for FAB
+                  _NavBarItem(
+                    icon: Icons.tune_rounded,
+                    label: 'Reports',
+                    selected: selectedIndex == 2,
+                    onTap: onReportsTap ?? () => Get.offAllNamed('/reports'),
+                  ),
+                  _NavBarItem(
+                    icon: Icons.menu_rounded,
+                    label: 'Menu',
+                    selected: selectedIndex == 3,
+                    onTap: onMenuTap ?? () => Get.offAllNamed('/menu'),
+                    selectedColor: const Color(0xFF007AFF),
+                  ),
+                ],
+              ),
+            ),
           ),
         ],
-      ),
-      child: BottomAppBar(
-        color: Colors.white,
-        elevation: 18.0,
-        shape: const CircularNotchedRectangle(),
-        notchMargin: 8,
-        child: SizedBox(
-          height: barHeight,
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceAround,
-            children: [
-              _NavButton(
-                icon: Icons.home,
-                label: 'Home',
-                tab: 0,
-                currentTab: currentTab,
-                onTap: () => Get.offAllNamed('/dashboard'),
-                iconSize: iconSize,
-                fontSize: fontSize,
-              ),
-              _NavButton(
-                icon: Icons.list_alt,
-                label: 'Order List',
-                tab: 1,
-                currentTab: currentTab,
-                onTap: () => Get.offAllNamed('/order-list'),
-                iconSize: iconSize,
-                fontSize: fontSize,
-              ),
-              _NavButton(
-                icon: Icons.bar_chart,
-                label: 'Reports',
-                tab: 2,
-                currentTab: currentTab,
-                onTap: () => Get.offAllNamed('/reports'),
-                iconSize: iconSize,
-                fontSize: fontSize,
-              ),
-              _NavButton(
-                icon: Icons.menu,
-                label: 'Menu',
-                tab: 3,
-                currentTab: currentTab,
-                onTap: () => Get.offAllNamed('/menu'),
-                iconSize: iconSize,
-                fontSize: fontSize,
-              ),
-            ],
-          ),
-        ),
       ),
     );
   }
 }
 
-class _NavButton extends StatelessWidget {
+class _NavBarItem extends StatelessWidget {
   final IconData icon;
   final String label;
-  final int tab;
-  final int currentTab;
+  final bool selected;
   final VoidCallback onTap;
-  final double iconSize;
-  final double fontSize;
+  final Color? selectedColor;
 
-  const _NavButton({
+  const _NavBarItem({
+    Key? key,
     required this.icon,
     required this.label,
-    required this.tab,
-    required this.currentTab,
+    required this.selected,
     required this.onTap,
-    required this.iconSize,
-    required this.fontSize,
-  });
+    this.selectedColor,
+  }) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
-    final isSelected = currentTab == tab;
-    final color = isSelected ? Theme.of(context).primaryColor : Colors.grey.shade700;
-    return MaterialButton(
-      onPressed: onTap,
-      padding: EdgeInsets.zero, // Remove extra padding
-      minWidth: 0, // Remove minimum width constraint
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(icon, color: color, size: iconSize),
-          const SizedBox(height: 4),
-          Text(
-            label,
-            style: TextStyle(
-              color: color,
-              fontSize: fontSize,
-              fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+    final color = selected
+        ? (selectedColor ?? const Color(0xFF007AFF))
+        : const Color(0xFF222222);
+    return Expanded(
+      child: InkWell(
+        onTap: onTap,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const SizedBox(height: 8),
+            Icon(icon, color: color, size: 26),
+            const SizedBox(height: 2),
+            Text(
+              label,
+              style: TextStyle(
+                fontFamily: 'SF Pro Display',
+                fontWeight: selected ? FontWeight.w700 : FontWeight.w400,
+                fontSize: 12,
+                color: color,
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

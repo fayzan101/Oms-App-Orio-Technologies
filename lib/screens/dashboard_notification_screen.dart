@@ -42,7 +42,7 @@ class DashboardNotificationScreen extends StatelessWidget {
         backgroundColor: Colors.white,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new, color: Colors.black, size: 22),
+          icon: const Icon(Icons.arrow_back_ios_new_rounded, color: Colors.black, size: 22),
           onPressed: () => Navigator.of(context).pop(),
         ),
         title: const Text(
@@ -133,11 +133,11 @@ class DashboardNotificationScreen extends StatelessWidget {
       floatingActionButton: FloatingActionButton(
         onPressed: () {},
         backgroundColor: const Color(0xFF0A253B),
-        child: const Icon(Icons.edit, color: Colors.white),
+        child: const Icon(Icons.edit_rounded, color: Colors.white),
         elevation: 4,
       ),
       floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
-      bottomNavigationBar: const AppBottomBar(currentTab: 0),
+              bottomNavigationBar: const AppBottomBar(selectedIndex: 0),
     );
   }
 } 

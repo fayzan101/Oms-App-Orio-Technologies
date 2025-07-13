@@ -31,11 +31,11 @@ class CustomNavBar extends StatelessWidget {
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceAround,
                 children: [
-                  _navBarItem(Icons.home, 'Home', 0),
-                  _navBarItem(Icons.list_alt, 'Order List', 1),
+                  _navBarItem(Icons.home_rounded, 'Home', 0),
+                  _navBarItem(Icons.list_alt_rounded, 'Order List', 1),
                   const SizedBox(width: 48), // Space for FAB
-                  _navBarItem(Icons.bar_chart, 'Reports', 2),
-                  _navBarItem(Icons.menu, 'Menu', 3),
+                  _navBarItem(Icons.bar_chart_rounded, 'Reports', 2),
+                  _navBarItem(Icons.menu_rounded, 'Menu', 3),
                 ],
               ),
             ),

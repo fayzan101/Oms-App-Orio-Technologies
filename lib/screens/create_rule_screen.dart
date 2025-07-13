@@ -32,7 +32,7 @@ class _CreateRuleScreenState extends State<CreateRuleScreen> {
     return Scaffold(
       appBar: AppBar(
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
+          icon: const Icon(Icons.arrow_back_rounded),
           onPressed: () => Get.back(),
         ),
         title: const Text('Create Rules'),
@@ -185,10 +185,10 @@ class _CreateRuleScreenState extends State<CreateRuleScreen> {
       floatingActionButton: FloatingActionButton(
         backgroundColor: const Color(0xFF0A2A3A),
         onPressed: () {},
-        child: const Icon(Icons.edit, color: Colors.white),
+        child: const Icon(Icons.edit_rounded, color: Colors.white),
       ),
       floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
-      bottomNavigationBar: const AppBottomBar(currentTab: 2),
+              bottomNavigationBar: const AppBottomBar(selectedIndex: 2),
     );
   }
 
@@ -258,7 +258,7 @@ class _CreateRuleScreenState extends State<CreateRuleScreen> {
                           ),
                         ),
                         IconButton(
-                          icon: const Icon(Icons.close),
+                          icon: const Icon(Icons.close_rounded),
                           onPressed: () => Navigator.of(context).pop(),
                         ),
                       ],
@@ -274,7 +274,7 @@ class _CreateRuleScreenState extends State<CreateRuleScreen> {
                         decoration: const InputDecoration(
                           hintText: 'Search',
                           border: InputBorder.none,
-                          prefixIcon: Icon(Icons.search),
+                          prefixIcon: Icon(Icons.search_rounded),
                           contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 14),
                         ),
                         onChanged: (val) {
@@ -338,7 +338,7 @@ class _RuleSuccessBottomSheet extends StatelessWidget {
                 shape: BoxShape.circle,
               ),
               padding: const EdgeInsets.all(32),
-              child: const Icon(Icons.check, color: Color(0xFF007AFF), size: 64),
+              child: const Icon(Icons.check_rounded, color: Color(0xFF007AFF), size: 64),
             ),
             const SizedBox(height: 24),
             const Text(
@@ -406,7 +406,7 @@ class _RuleConfirmBottomSheet extends StatelessWidget {
                 shape: BoxShape.circle,
               ),
               padding: const EdgeInsets.all(24),
-              child: const Icon(Icons.help_outline, size: 56, color: Color(0xFF007AFF)),
+              child: const Icon(Icons.help_outline_rounded, size: 56, color: Color(0xFF007AFF)),
             ),
             const SizedBox(height: 24),
             const Text(

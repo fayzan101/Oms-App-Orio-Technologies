@@ -27,7 +27,7 @@ class _QuickEditScreenState extends State<QuickEditScreen> {
         backgroundColor: Colors.white,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new, color: Colors.black, size: 22),
+          icon: const Icon(Icons.arrow_back_ios_new_rounded, color: Colors.black, size: 22),
           onPressed: () => Navigator.of(context).pop(),
         ),
         title: const Text(
@@ -101,11 +101,11 @@ class _QuickEditScreenState extends State<QuickEditScreen> {
       floatingActionButton: FloatingActionButton(
         onPressed: () {},
         backgroundColor: const Color(0xFF0A253B),
-        child: const Icon(Icons.edit, color: Colors.white),
+        child: const Icon(Icons.edit_rounded, color: Colors.white),
         elevation: 4,
       ),
       floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
-      bottomNavigationBar: const AppBottomBar(currentTab: 1),
+              bottomNavigationBar: const AppBottomBar(selectedIndex: 1),
     );
   }
 
@@ -152,7 +152,7 @@ class _QuickEditSuccessBottomSheet extends StatelessWidget {
                 shape: BoxShape.circle,
               ),
               padding: const EdgeInsets.all(32),
-              child: const Icon(Icons.check, color: Color(0xFF007AFF), size: 64),
+              child: const Icon(Icons.check_rounded, color: Color(0xFF007AFF), size: 64),
             ),
             const SizedBox(height: 24),
             const Text(

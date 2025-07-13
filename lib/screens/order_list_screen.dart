@@ -29,6 +29,10 @@ class _OrderListScreenState extends State<OrderListScreen> {
   final ScrollController _scrollController = ScrollController();
   final Set<int> expanded = {};
 
+  // Selection state
+  bool selectAll = false;
+  final Set<int> selectedOrders = {};
+
   // Report summary state
   int totalOrders = 0;
   int fulfilledOrders = 0;
@@ -48,7 +52,7 @@ class _OrderListScreenState extends State<OrderListScreen> {
     fetchReportSummary();
     fetchOrders(reset: true);
     _scrollController.addListener(() {
-      if (_scrollController.position.pixels >= _scrollController.position.maxScrollExtent - 200 && !isLoading && hasMore) {
+      if (mounted && _scrollController.position.pixels >= _scrollController.position.maxScrollExtent - 200 && !isLoading && hasMore) {
         fetchOrders();
       }
     });
@@ -158,7 +162,7 @@ class _OrderListScreenState extends State<OrderListScreen> {
                     shape: BoxShape.circle,
                   ),
                   padding: const EdgeInsets.all(24),
-                  child: Icon(Icons.delete_outline, size: 56, color: Color(0xFF007AFF)),
+                  child: Icon(Icons.delete_rounded, size: 56, color: Color(0xFF007AFF)),
                 ),
                 const SizedBox(height: 24),
                 const Text(
@@ -187,7 +191,7 @@ class _OrderListScreenState extends State<OrderListScreen> {
                   children: [
                     Expanded(
                       child: ElevatedButton(
-                        onPressed: () => Navigator.of(context).pop(false),
+                        onPressed: () => Get.back(result: false),
                         style: ElevatedButton.styleFrom(
                           backgroundColor: const Color(0xFFF3F4F6),
                           foregroundColor: const Color(0xFF111827),
@@ -202,7 +206,7 @@ class _OrderListScreenState extends State<OrderListScreen> {
                     Expanded(
                       child: ElevatedButton(
                         onPressed: () {
-                          Navigator.of(context).pop(true);
+                          Get.back(result: true);
                           onConfirm();
                         },
                         style: ElevatedButton.styleFrom(
@@ -260,8 +264,8 @@ class _OrderListScreenState extends State<OrderListScreen> {
                       ),
                     ),
                     IconButton(
-                      icon: const Icon(Icons.close),
-                      onPressed: () => Navigator.of(context).pop(),
+                      icon: const Icon(Icons.close_rounded),
+                      onPressed: () => Get.back(),
                     ),
                   ],
                 ),
@@ -333,8 +337,8 @@ class _OrderListScreenState extends State<OrderListScreen> {
         surfaceTintColor: Colors.white,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new, color: Colors.black, size: 22),
-          onPressed: () => Navigator.of(context).pop(),
+          icon: const Icon(Icons.arrow_back_ios_new_rounded, color: Colors.black, size: 22),
+          onPressed: () => Get.offAllNamed('/dashboard'),
         ),
         title: const Text(
           'Orders',
@@ -349,7 +353,7 @@ class _OrderListScreenState extends State<OrderListScreen> {
         actions: [
           if (_searchQuery != null && _searchQuery!.isNotEmpty)
             IconButton(
-              icon: const Icon(Icons.clear, color: Colors.grey),
+              icon: const Icon(Icons.clear_rounded, color: Colors.grey),
               onPressed: () {
                 setState(() {
                   _searchController.clear();
@@ -359,15 +363,13 @@ class _OrderListScreenState extends State<OrderListScreen> {
               },
             ),
           IconButton(
-            icon: const Icon(Icons.filter_list, color: Colors.black),
+            icon: const Icon(Icons.filter_list_rounded, color: Colors.black),
             onPressed: () {
-              Navigator.of(context).push(
-                MaterialPageRoute(builder: (_) => const FilterScreen()),
-              );
+              Get.to(() => const FilterScreen());
             },
           ),
           IconButton(
-            icon: const Icon(Icons.calendar_today_outlined, color: Colors.black),
+            icon: const Icon(Icons.calendar_today_rounded, color: Colors.black),
             onPressed: () async {
               final picked = await showDialog<DateTimeRange>(
                 context: context,
@@ -408,7 +410,7 @@ class _OrderListScreenState extends State<OrderListScreen> {
                 controller: _searchController,
                 decoration: InputDecoration(
                   hintText: 'Search by any field',
-                  prefixIcon: Icon(Icons.search),
+                  prefixIcon: Icon(Icons.search_rounded),
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
                   ),
@@ -440,10 +442,21 @@ class _OrderListScreenState extends State<OrderListScreen> {
             Row(
               children: [
                 Checkbox(
-                  value: false, // selectAll is removed, so this will always be false
-                  onChanged: (val) {
-                    // This functionality is removed
-                  },
+                  value: selectAll,
+                                      onChanged: (val) {
+                      setState(() {
+                        selectAll = val ?? false;
+                        final currentList = (_searchQuery != null && _searchQuery!.isNotEmpty ? _filteredOrders : orders);
+                        if (val == true) {
+                          selectedOrders.clear();
+                          for (int i = 0; i < currentList.length; i++) {
+                            selectedOrders.add(i);
+                          }
+                        } else {
+                          selectedOrders.clear();
+                        }
+                      });
+                    },
                   activeColor: const Color(0xFF007AFF),
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
                   materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
@@ -453,9 +466,7 @@ class _OrderListScreenState extends State<OrderListScreen> {
                 const Spacer(),
                 GestureDetector(
                   onTap: () {
-                    Navigator.of(context).push(
-                      MaterialPageRoute(builder: (_) => const CreateCnScreen()),
-                    );
+                    Get.to(() => const CreateCnScreen());
                   },
                   child: const Text('Create CN', style: TextStyle(fontFamily: 'SF Pro Display', fontWeight: FontWeight.w500, fontSize: 15, color: Color(0xFF007AFF), decoration: TextDecoration.underline)),
                 ),
@@ -509,6 +520,25 @@ class _OrderListScreenState extends State<OrderListScreen> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           ListTile(
+                            leading: Checkbox(
+                              value: selectedOrders.contains(i),
+                              onChanged: (val) {
+                                setState(() {
+                                  if (val == true) {
+                                    selectedOrders.add(i);
+                                  } else {
+                                    selectedOrders.remove(i);
+                                  }
+                                  // Update select all state
+                                  final currentList = (_searchQuery != null && _searchQuery!.isNotEmpty ? _filteredOrders : orders);
+                                  selectAll = selectedOrders.length == currentList.length;
+                                });
+                              },
+                              activeColor: const Color(0xFF007AFF),
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
+                              materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                              visualDensity: VisualDensity.compact,
+                            ),
                             title: Text('Order ID:  ${order['id'] ?? ''}'),
                             trailing: Icon(isExpanded ? Icons.keyboard_arrow_up_rounded : Icons.keyboard_arrow_down_rounded),
                           ),
@@ -548,7 +578,7 @@ class _OrderListScreenState extends State<OrderListScreen> {
                                             },
                                             child: Row(
                                               children: const [
-                                                Icon(Icons.delete_outline, color: Color(0xFF007AFF)),
+                                                Icon(Icons.delete_rounded, color: Color(0xFF007AFF)),
                                                 SizedBox(width: 4),
                                                 Text('Delete', style: TextStyle(color: Color(0xFF007AFF), fontWeight: FontWeight.w500)),
                                               ],
@@ -557,13 +587,11 @@ class _OrderListScreenState extends State<OrderListScreen> {
                                           SizedBox(height: 8),
                                           GestureDetector(
                                             onTap: () {
-                                              Navigator.of(context).push(
-                                                MaterialPageRoute(builder: (_) => const QuickEditScreen()),
-                                              );
+                                              Get.to(() => const QuickEditScreen());
                                             },
                                             child: Row(
                                               children: const [
-                                                Icon(Icons.edit, color: Color(0xFF007AFF)),
+                                                Icon(Icons.edit_rounded, color: Color(0xFF007AFF)),
                                                 SizedBox(width: 4),
                                                 Text('Quick Edit', style: TextStyle(color: Color(0xFF007AFF), fontWeight: FontWeight.w500)),
                                               ],
@@ -576,7 +604,7 @@ class _OrderListScreenState extends State<OrderListScreen> {
                                             },
                                             child: Row(
                                               children: const [
-                                                Icon(Icons.place_outlined, color: Color(0xFF007AFF)),
+                                                Icon(Icons.place_rounded, color: Color(0xFF007AFF)),
                                                 SizedBox(width: 4),
                                                 Text('Tracking', style: TextStyle(color: Color(0xFF007AFF), fontWeight: FontWeight.w500)),
                                               ],
@@ -599,19 +627,16 @@ class _OrderListScreenState extends State<OrderListScreen> {
           ],
         ),
       ),
-      bottomNavigationBar: const AppBottomBar(currentTab: 1),
+              bottomNavigationBar: const AppBottomBar(selectedIndex: 1),
       floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
       floatingActionButton: FloatingActionButton(
         onPressed: () {
-          Navigator.of(context).pushAndRemoveUntil(
-            MaterialPageRoute(builder: (_) => create_order.CreateOrderScreen()),
-            (route) => false,
-          );
+          Get.offAll(() => create_order.CreateOrderScreen());
         },
         backgroundColor: const Color(0xFF0A253B),
         elevation: 4,
         shape: const CircleBorder(),
-        child: const Icon(Icons.edit, color: Colors.white, size: 28),
+        child: const Icon(Icons.edit_rounded, color: Colors.white, size: 28),
       ),
     );
   }
@@ -668,8 +693,8 @@ class _BulkTrackingBottomSheet extends StatelessWidget {
                   ),
                 ),
                 IconButton(
-                  icon: const Icon(Icons.close),
-                  onPressed: () => Navigator.of(context).pop(),
+                  icon: const Icon(Icons.close_rounded),
+                  onPressed: () => Get.back(),
                 ),
               ],
             ),

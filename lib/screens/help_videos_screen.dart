@@ -104,10 +104,10 @@ class _HelpVideosScreenState extends State<HelpVideosScreen> {
                   controller: _searchController,
                   decoration: InputDecoration(
                     hintText: 'Search help videos...',
-                    prefixIcon: const Icon(Icons.search),
+                    prefixIcon: const Icon(Icons.search_rounded),
                     suffixIcon: _searchController.text.isNotEmpty
                         ? IconButton(
-                            icon: const Icon(Icons.clear),
+                            icon: const Icon(Icons.clear_rounded),
                             onPressed: () {
                               _searchController.clear();
                               _filterVideos();
@@ -183,10 +183,10 @@ class _HelpVideosScreenState extends State<HelpVideosScreen> {
         onPressed: () {
           Get.toNamed('/create-order');
         },
-        child: const Icon(Icons.edit, color: Colors.white),
+        child: const Icon(Icons.edit_rounded, color: Colors.white),
       ),
       floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
-      bottomNavigationBar: const AppBottomBar(currentTab: 3),
+              bottomNavigationBar: const AppBottomBar(selectedIndex: 3),
     );
   }
 
@@ -200,7 +200,7 @@ class _HelpVideosScreenState extends State<HelpVideosScreen> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.error_outline, size: 64, color: Colors.grey[400]),
+            Icon(Icons.error_outline_rounded, size: 64, color: Colors.grey[400]),
             const SizedBox(height: 16),
             Text(
               'Error loading videos',
@@ -227,7 +227,7 @@ class _HelpVideosScreenState extends State<HelpVideosScreen> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.video_library_outlined, size: 64, color: Colors.grey[400]),
+            Icon(Icons.video_library_rounded, size: 64, color: Colors.grey[400]),
             const SizedBox(height: 16),
             Text(
               _videos.isEmpty ? 'No help videos found' : 'No videos match your search',
@@ -277,7 +277,7 @@ class _HelpVideosScreenState extends State<HelpVideosScreen> {
                             width: double.infinity,
                             errorBuilder: (c, e, s) => Container(
                               color: Colors.grey[200],
-                              child: const Icon(Icons.video_library, size: 48),
+                              child: const Icon(Icons.video_library_rounded, size: 48),
                             ),
                           ),
                         ),
@@ -300,7 +300,7 @@ class _HelpVideosScreenState extends State<HelpVideosScreen> {
                             child: Row(
                               children: [
                                 const SizedBox(width: 8),
-                                const Icon(Icons.play_arrow, color: Colors.white, size: 28),
+                                const Icon(Icons.play_arrow_rounded, color: Colors.white, size: 28),
                                 const Spacer(),
                                 Container(
                                   padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),

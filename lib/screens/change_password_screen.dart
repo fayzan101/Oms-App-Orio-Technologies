@@ -96,7 +96,7 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
       resizeToAvoidBottomInset: false,
       appBar: AppBar(
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
+          icon: const Icon(Icons.arrow_back_rounded),
           onPressed: () => Get.back(),
         ),
         title: const Text('Change Password'),
@@ -150,10 +150,10 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
       floatingActionButton: FloatingActionButton(
         backgroundColor: const Color(0xFF0A2A3A),
         onPressed: () {},
-        child: const Icon(Icons.edit, color: Colors.white),
+        child: const Icon(Icons.edit_rounded, color: Colors.white),
       ),
       floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
-      bottomNavigationBar: const AppBottomBar(currentTab: 3),
+              bottomNavigationBar: const AppBottomBar(selectedIndex: 3),
     );
   }
 
@@ -170,7 +170,7 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
         fillColor: const Color(0xFFF7F8FA),
         contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
         suffixIcon: IconButton(
-          icon: Icon(obscure ? Icons.visibility_off : Icons.visibility),
+          icon: Icon(obscure ? Icons.visibility_off_rounded : Icons.visibility_rounded),
           onPressed: toggle,
         ),
       ),

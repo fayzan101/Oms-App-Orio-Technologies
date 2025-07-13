@@ -15,9 +15,10 @@ dependencies:
   cupertino_icons: ^1.0.8
   http: ^1.1.0
   dio: ^5.4.0
-  flutter_svg: ^2.0.7 
+  flutter_svg: ^2.0.7
   fl_chart: ^0.63.0
   table_calendar: ^3.2.0
+  material_symbols_icons: ^4.2668.0  # <-- Added dependency
 
 dev_dependencies:
   flutter_test:
@@ -31,7 +32,7 @@ flutter:
   assets:
     - assets/icon/app_icon.jpg 
     - assets/icon/facebook.png
-    - assets/icon/google.png   # <-- your launcher icon
+    - assets/icon/google.png
     - assets/man.jpg
     - assets/chart.jpg
     - assets/frame.svg

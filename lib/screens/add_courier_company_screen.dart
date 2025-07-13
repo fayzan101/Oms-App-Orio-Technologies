@@ -111,7 +111,7 @@ class _AddCourierCompanyScreenState extends State<AddCourierCompanyScreen> {
         foregroundColor: Colors.white,
         surfaceTintColor: Colors.white,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.black),
+          icon: const Icon(Icons.arrow_back_rounded, color: Colors.black),
           onPressed: () => Get.back(),
         ),
         title: Text(
@@ -173,7 +173,7 @@ class _AddCourierCompanyScreenState extends State<AddCourierCompanyScreen> {
                                     ),
                                   ),
                                 ),
-                                const Icon(Icons.arrow_drop_down, color: Colors.grey),
+                                const Icon(Icons.arrow_drop_down_rounded, color: Colors.grey),
                               ],
                             ),
                           ),
@@ -203,7 +203,7 @@ class _AddCourierCompanyScreenState extends State<AddCourierCompanyScreen> {
                   obscureText: obscurePassword,
                   decoration: _inputDecoration('Password').copyWith(
                     suffixIcon: IconButton(
-                      icon: Icon(obscurePassword ? Icons.visibility_off : Icons.visibility),
+                      icon: Icon(obscurePassword ? Icons.visibility_off_rounded : Icons.visibility_rounded),
                       onPressed: () => setState(() => obscurePassword = !obscurePassword),
                     ),
                   ),
@@ -271,10 +271,10 @@ class _AddCourierCompanyScreenState extends State<AddCourierCompanyScreen> {
       floatingActionButton: FloatingActionButton(
         backgroundColor: const Color(0xFF0A2A3A),
         onPressed: () {},
-        child: const Icon(Icons.edit, color: Colors.white),
+        child: const Icon(Icons.edit_rounded, color: Colors.white),
       ),
       floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
-      bottomNavigationBar: const AppBottomBar(currentTab: 3),
+              bottomNavigationBar: const AppBottomBar(selectedIndex: 3),
     );
   }
 
@@ -457,7 +457,7 @@ class _CourierUpdateSuccessBottomSheet extends StatelessWidget {
                 shape: BoxShape.circle,
               ),
               padding: const EdgeInsets.all(32),
-              child: const Icon(Icons.check, color: Color(0xFF007AFF), size: 64),
+              child: const Icon(Icons.check_rounded, color: Color(0xFF007AFF), size: 64),
             ),
             const SizedBox(height: 24),
             const Text(
@@ -526,7 +526,7 @@ class _CourierAddSuccessBottomSheet extends StatelessWidget {
                 shape: BoxShape.circle,
               ),
               padding: const EdgeInsets.all(32),
-              child: const Icon(Icons.check, color: Color(0xFF007AFF), size: 64),
+              child: const Icon(Icons.check_rounded, color: Color(0xFF007AFF), size: 64),
             ),
             const SizedBox(height: 24),
             const Text(
@@ -628,7 +628,7 @@ class _CourierSearchDialogState extends State<_CourierSearchDialog> {
                   ),
                 ),
                 IconButton(
-                  icon: const Icon(Icons.close),
+                  icon: const Icon(Icons.close_rounded),
                   onPressed: () => Navigator.of(context).pop(),
                 ),
               ],
@@ -638,7 +638,7 @@ class _CourierSearchDialogState extends State<_CourierSearchDialog> {
               controller: _searchController,
               decoration: InputDecoration(
                 hintText: 'Search couriers...',
-                prefixIcon: const Icon(Icons.search),
+                prefixIcon: const Icon(Icons.search_rounded),
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(8),
                 ),
@@ -665,8 +665,8 @@ class _CourierSearchDialogState extends State<_CourierSearchDialog> {
                         return ListTile(
                           title: Text(courierName),
                           leading: isSelected
-                              ? const Icon(Icons.check_circle, color: Color(0xFF007AFF))
-                              : const Icon(Icons.circle_outlined, color: Colors.grey),
+                              ? const Icon(Icons.check_circle_rounded, color: Color(0xFF007AFF))
+                              : const Icon(Icons.radio_button_unchecked_rounded, color: Colors.grey),
                           onTap: () => widget.onCourierSelected(courierName),
                           tileColor: isSelected ? const Color(0xFFE6F0FF) : null,
                           shape: RoundedRectangleBorder(

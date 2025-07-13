@@ -114,7 +114,7 @@ class SignInScreen extends StatelessWidget {
                         contentPadding: EdgeInsets.symmetric(horizontal: blockW * 4, vertical: blockH * 2.2),
                         suffixIcon: IconButton(
                           icon: Icon(
-                            controller.obscurePassword.value ? Icons.visibility_off : Icons.visibility,
+                            controller.obscurePassword.value ? Icons.visibility_off_rounded : Icons.visibility_rounded,
                             color: Colors.black, // darker icon
                             size: blockW * 6,
                           ),

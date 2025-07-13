@@ -125,7 +125,7 @@ class _CODStatementScreenState extends State<CODStatementScreen> {
         surfaceTintColor: Colors.white,
         automaticallyImplyLeading: false,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new, color: Colors.black, size: 22),
+          icon: const Icon(Icons.arrow_back_ios_new_rounded, color: Colors.black, size: 22),
           onPressed: () => Navigator.of(context).pop(),
         ),
         title: const Text(
@@ -141,7 +141,7 @@ class _CODStatementScreenState extends State<CODStatementScreen> {
         actions: [
           if (_searchQuery != null && _searchQuery!.isNotEmpty)
             IconButton(
-              icon: const Icon(Icons.clear, color: Colors.grey),
+              icon: const Icon(Icons.clear_rounded, color: Colors.grey),
               onPressed: () {
                 setState(() {
                   _searchController.clear();
@@ -152,7 +152,7 @@ class _CODStatementScreenState extends State<CODStatementScreen> {
             ),
 
           IconButton(
-            icon: const Icon(Icons.calendar_today_outlined, color: Colors.black),
+            icon: const Icon(Icons.calendar_today_rounded, color: Colors.black),
             onPressed: () async {
               final picked = await showDialog<DateTimeRange>(
                 context: context,
@@ -197,7 +197,7 @@ class _CODStatementScreenState extends State<CODStatementScreen> {
                           controller: _searchController,
                           decoration: InputDecoration(
                             hintText: 'Search by any field',
-                            prefixIcon: Icon(Icons.search),
+                            prefixIcon: Icon(Icons.search_rounded),
                             border: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(12),
                             ),
@@ -261,7 +261,7 @@ class _CODStatementScreenState extends State<CODStatementScreen> {
                     ],
                   ),
                 ),
-      bottomNavigationBar: const AppBottomBar(currentTab: 2),
+              bottomNavigationBar: const AppBottomBar(selectedIndex: 2),
       floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
       floatingActionButton: MediaQuery.of(context).viewInsets.bottom == 0
           ? FloatingActionButton(
@@ -269,7 +269,7 @@ class _CODStatementScreenState extends State<CODStatementScreen> {
               backgroundColor: const Color(0xFF0A253B),
               elevation: 4,
               shape: const CircleBorder(),
-              child: const Icon(Icons.edit, color: Colors.white, size: 28),
+              child: const Icon(Icons.edit_rounded, color: Colors.white, size: 28),
             )
           : null,
     );

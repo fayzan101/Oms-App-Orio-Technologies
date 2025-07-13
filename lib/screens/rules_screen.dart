@@ -11,7 +11,7 @@ class RulesScreen extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
+          icon: const Icon(Icons.arrow_back_rounded),
           onPressed: () => Get.back(),
         ),
         title: const Text('Rules'),
@@ -46,7 +46,7 @@ class RulesScreen extends StatelessWidget {
                 child: Image.asset(
                   'assets/rules_illustration.png',
                   fit: BoxFit.contain,
-                  errorBuilder: (c, e, s) => Icon(Icons.rule, size: 120, color: Colors.grey[300]),
+                  errorBuilder: (c, e, s) => Icon(Icons.rule_rounded, size: 120, color: Colors.grey[300]),
                 ),
               ),
             ),
@@ -79,10 +79,10 @@ class RulesScreen extends StatelessWidget {
       floatingActionButton: FloatingActionButton(
         backgroundColor: const Color(0xFF0A2A3A),
         onPressed: () {},
-        child: const Icon(Icons.edit, color: Colors.white),
+        child: const Icon(Icons.edit_rounded, color: Colors.white),
       ),
       floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
-      bottomNavigationBar: const AppBottomBar(currentTab: 2),
+              bottomNavigationBar: const AppBottomBar(selectedIndex: 2),
     );
   }
 } 
