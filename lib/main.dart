@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'services/auth_service.dart';
+import 'services/rules_service.dart';
 import 'screens/splash_screen.dart';
 import 'screens/dashboard_screen.dart';
 import 'controllers/sign_in_controller.dart';
@@ -84,7 +85,8 @@ class MyApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       title: 'Orio',
       initialBinding: BindingsBuilder(() {
-        Get.put(AuthService());
+        Get.put(AuthService(), permanent: true);
+        Get.put(RulesService(), permanent: true);
         Get.put(SignInController());
         Get.put(DashboardController());
         Get.put(HelpVideoController());

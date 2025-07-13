@@ -34,7 +34,7 @@ class ReportsScreen extends StatelessWidget {
           backgroundColor: Colors.white,
           elevation: 0,
           leading: IconButton(
-            icon: const Icon(Icons.arrow_back_ios_new, color: Colors.black, size: 22),
+            icon: const Icon(Icons.arrow_back_ios_new_rounded, color: Colors.black, size: 22),
             onPressed: () => Get.offAll(() => DashboardScreen()),
           ),
           title: Text(
@@ -56,7 +56,7 @@ class ReportsScreen extends StatelessWidget {
             childAspectRatio: 1.1,
             children: [
               _ReportCard(
-                icon: Icons.assignment_outlined,
+                icon: Icons.assignment_rounded,
                 label: 'COD Statements',
                 onTap: () {
                   Navigator.of(context).push(
@@ -65,7 +65,7 @@ class ReportsScreen extends StatelessWidget {
                 },
               ),
               _ReportCard(
-                icon: Icons.show_chart_outlined,
+                icon: Icons.show_chart_rounded,
                 label: 'Ageing Report',
                 onTap: () {
                   Navigator.of(context).push(
@@ -81,7 +81,7 @@ class ReportsScreen extends StatelessWidget {
                 },
               ),
               _ReportCard(
-                icon: Icons.description_outlined,
+                icon: Icons.description_rounded,
                 label: 'Load Sheet',
                 onTap: () {
                   Navigator.of(context).push(

@@ -26,6 +26,9 @@ class _CustomDateSelectorState extends State<CustomDateSelector> {
   final _formKey = GlobalKey<FormState>();
   final DateFormat _dateFormat = DateFormat('dd-MM-yyyy');
 
+  // Splash screen color theme
+  static const Color splashColor = Color(0xFF007AFF);
+
   @override
   void initState() {
     super.initState();
@@ -90,9 +93,13 @@ class _CustomDateSelectorState extends State<CustomDateSelector> {
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text(
+                Text(
                   'Select Date Range',
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                  style: TextStyle(
+                    fontSize: 18, 
+                    fontWeight: FontWeight.bold,
+                    color: splashColor,
+                  ),
                 ),
                 const SizedBox(height: 20),
                 _dateField(
@@ -108,6 +115,19 @@ class _CustomDateSelectorState extends State<CustomDateSelector> {
                       initialDate: _startDate,
                       firstDate: DateTime(2020),
                       lastDate: DateTime.now(),
+                      builder: (context, child) {
+                        return Theme(
+                          data: Theme.of(context).copyWith(
+                            colorScheme: ColorScheme.light(
+                              primary: splashColor,
+                              onPrimary: Colors.white,
+                              surface: Colors.white,
+                              onSurface: Colors.black,
+                            ),
+                          ),
+                          child: child!,
+                        );
+                      },
                     );
                     if (picked != null) {
                       setState(() {
@@ -135,6 +155,19 @@ class _CustomDateSelectorState extends State<CustomDateSelector> {
                       initialDate: _endDate,
                       firstDate: DateTime(2020),
                       lastDate: DateTime.now(),
+                      builder: (context, child) {
+                        return Theme(
+                          data: Theme.of(context).copyWith(
+                            colorScheme: ColorScheme.light(
+                              primary: splashColor,
+                              onPrimary: Colors.white,
+                              surface: Colors.white,
+                              onSurface: Colors.black,
+                            ),
+                          ),
+                          child: child!,
+                        );
+                      },
                     );
                     if (picked != null) {
                       setState(() {
@@ -159,7 +192,22 @@ class _CustomDateSelectorState extends State<CustomDateSelector> {
                         );
                       }
                     },
-                    child: const Text('Save'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: splashColor,
+                      foregroundColor: Colors.white,
+                      elevation: 0,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                    ),
+                    child: const Text(
+                      'Save',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
                   ),
                 ),
               ],
@@ -181,11 +229,23 @@ class _CustomDateSelectorState extends State<CustomDateSelector> {
       readOnly: false,
       decoration: InputDecoration(
         labelText: label,
+        labelStyle: TextStyle(color: splashColor),
         suffixIcon: IconButton(
-          icon: const Icon(Icons.calendar_today_outlined, size: 20, color: Colors.grey),
+          icon: Icon(Icons.calendar_today_rounded, size: 20, color: splashColor),
           onPressed: onTap,
         ),
-        border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(8),
+          borderSide: BorderSide(color: splashColor.withOpacity(0.3)),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(8),
+          borderSide: BorderSide(color: splashColor, width: 2),
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(8),
+          borderSide: BorderSide(color: splashColor.withOpacity(0.3)),
+        ),
       ),
       keyboardType: TextInputType.datetime,
       validator: (value) {
@@ -219,15 +279,25 @@ class _CustomDateSelectorState extends State<CustomDateSelector> {
       focusedDay: focusedDay,
       selectedDayPredicate: (day) => isSameDay(day, selectedDay),
       onDaySelected: onDaySelected,
-      headerStyle: const HeaderStyle(
+      headerStyle: HeaderStyle(
         formatButtonVisible: false,
         titleCentered: true,
         leftChevronVisible: true,
         rightChevronVisible: true,
+        titleTextStyle: TextStyle(
+          color: splashColor,
+          fontSize: 16,
+          fontWeight: FontWeight.w600,
+        ),
+        leftChevronIcon: Icon(Icons.chevron_left_rounded, color: splashColor),
+        rightChevronIcon: Icon(Icons.chevron_right_rounded, color: splashColor),
       ),
-      calendarStyle: const CalendarStyle(
-        todayDecoration: BoxDecoration(color: Color(0xFF007AFF), shape: BoxShape.circle),
-        selectedDecoration: BoxDecoration(color: Color(0xFF0A253B), shape: BoxShape.circle),
+      calendarStyle: CalendarStyle(
+        todayDecoration: BoxDecoration(color: splashColor, shape: BoxShape.circle),
+        selectedDecoration: BoxDecoration(color: splashColor, shape: BoxShape.circle),
+        weekendTextStyle: TextStyle(color: splashColor),
+        outsideTextStyle: TextStyle(color: Colors.grey.shade400),
+        defaultTextStyle: TextStyle(color: Colors.black),
       ),
     );
   }
