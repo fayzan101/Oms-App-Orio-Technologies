@@ -3,7 +3,9 @@ import 'package:get/get.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../utils/Layout/app_bottom_bar.dart';
 import '../services/rules_service.dart';
+import '../services/auth_service.dart';
 import 'create_rule_screen.dart';
+import 'edit_rule_screen.dart';
 import '../widgets/custom_date_selector.dart';
 import '../utils/custom_snackbar.dart';
 
@@ -55,7 +57,7 @@ class _RulesScreenState extends State<RulesScreen> {
       _rulesService = Get.find<RulesService>();
     } catch (e) {
       // If service is not found, create it
-      _rulesService = Get.put(RulesService(), permanent: true);
+      _rulesService = Get.put(RulesService(Get.find<AuthService>()), permanent: true);
     }
     _loadAcnoAndFetchRules();
   }
@@ -371,7 +373,7 @@ class _RulesScreenState extends State<RulesScreen> {
                               IconButton(
                                 icon: Icon(Icons.edit_rounded, color: Color(0xFF007AFF)),
                                 onPressed: () {
-                                  Get.to(() => const CreateRuleScreen(), arguments: rule);
+                                  Get.to(() => EditRuleScreen(ruleData: rule));
                                 },
                               ),
                               IconButton(

@@ -1,3 +1,5 @@
+import 'snake_graph_model.dart';
+
 class DashboardReportingModel {
   final String acno;
   final int orders;
@@ -14,6 +16,7 @@ class DashboardReportingModel {
   final List<String> currentOutstandingGraph;
   final List<CourierPaymentData> paymentCourierPayment;
   final StatusSummary statusSummary;
+  final SnakeGraphModel? snakeGraph;
 
   DashboardReportingModel({
     required this.acno,
@@ -31,6 +34,7 @@ class DashboardReportingModel {
     required this.currentOutstandingGraph,
     required this.paymentCourierPayment,
     required this.statusSummary,
+    this.snakeGraph,
   });
 
   factory DashboardReportingModel.fromJson(Map<String, dynamic> json) {
@@ -57,6 +61,12 @@ class DashboardReportingModel {
     StatusSummary statusSummary = StatusSummary.empty();
     if (json['status_summary'] != null) {
       statusSummary = StatusSummary.fromJson(json['status_summary']);
+    }
+    
+    // Parse snake graph data
+    SnakeGraphModel? snakeGraph;
+    if (json['snake_graph'] != null) {
+      snakeGraph = SnakeGraphModel.fromJson(json['snake_graph']);
     }
     
     print('DashboardReportingModel.fromJson: Parsed values:');
@@ -86,6 +96,7 @@ class DashboardReportingModel {
       currentOutstandingGraph: List<String>.from(json['current_outstanding_graph'] ?? []),
       paymentCourierPayment: courierPaymentList,
       statusSummary: statusSummary,
+      snakeGraph: snakeGraph,
     );
   }
 
@@ -106,6 +117,7 @@ class DashboardReportingModel {
       'current_outstanding_graph': currentOutstandingGraph,
       'paymentcourierpayment': paymentCourierPayment.map((e) => e.toJson()).toList(),
       'status_summary': statusSummary.toJson(),
+      'snake_graph': snakeGraph?.toJson(),
     };
   }
 

@@ -86,7 +86,7 @@ class MyApp extends StatelessWidget {
       title: 'Orio',
       initialBinding: BindingsBuilder(() {
         Get.put(AuthService(), permanent: true);
-        Get.put(RulesService(), permanent: true);
+        Get.put(RulesService(Get.find<AuthService>()), permanent: true);
         Get.put(SignInController());
         Get.put(DashboardController());
         Get.put(HelpVideoController());

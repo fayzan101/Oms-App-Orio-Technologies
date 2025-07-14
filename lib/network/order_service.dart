@@ -20,7 +20,11 @@ class OrderService {
     required String acno,
     String startDate = '2025-01-24',
     String endDate = '2025-06-17',
-    String filterOrders = '1',
+    String filterOrders = '100',
+    String? cityId,
+    String? statusId,
+    String? storeName,
+    String? customerCourierId,
   }) async {
     final body = {
       "acno": acno,
@@ -29,6 +33,10 @@ class OrderService {
       "start_limit": startLimit,
       "end_limit": endLimit,
       "filter_orders": filterOrders,
+      if (cityId != null && cityId.isNotEmpty) "city_id": cityId,
+      if (statusId != null && statusId.isNotEmpty) "status_id": statusId,
+      if (storeName != null && storeName.isNotEmpty) "store_name": storeName,
+      if (customerCourierId != null && customerCourierId.isNotEmpty) "customer_courier_id": customerCourierId,
     };
     try {
       final response = await _dio.post(_baseUrl, data: jsonEncode(body));
@@ -161,6 +169,31 @@ class OrderService {
       }
     } catch (e) {
       throw Exception('Failed to load courier insights: $e');
+    }
+  }
+
+  static Future<Map<String, dynamic>> createOrder({
+    required List<Map<String, dynamic>> orderList,
+  }) async {
+    const String url = 'https://stagingoms.orio.digital/api/order/create';
+    try {
+      final response = await _dio.post(
+        url,
+        data: jsonEncode(orderList),
+        options: Options(
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer $_token',
+          },
+        ),
+      );
+      if (response.statusCode == 200) {
+        return response.data is String ? jsonDecode(response.data) : response.data;
+      } else {
+        throw Exception('Failed to create order');
+      }
+    } catch (e) {
+      throw Exception('Failed to create order: $e');
     }
   }
 } 

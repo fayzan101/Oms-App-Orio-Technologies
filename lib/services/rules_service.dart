@@ -2,14 +2,18 @@ import 'package:dio/dio.dart';
 import 'package:get/get.dart';
 import '../network/api_service.dart';
 import '../config/api_config.dart';
+import '../services/auth_service.dart';
 
 class RulesService extends GetxService {
   final ApiService _apiService = ApiService();
+  final AuthService _authService;
   
   // Observable variables
   final RxBool isLoading = false.obs;
   final RxList<Map<String, dynamic>> rules = <Map<String, dynamic>>[].obs;
   final RxString errorMessage = ''.obs;
+
+  RulesService(this._authService);
 
   @override
   void onInit() {
@@ -78,24 +82,61 @@ class RulesService extends GetxService {
 
   // Create a new rule
   Future<bool> createRule({
-    required String acno,
-    required Map<String, dynamic> ruleData,
+    required String title,
+    required String? statusIds,
+    required String? weightType,
+    required String weightValue,
+    required String? paymentMethodId,
+    required String? customerCitylistId,
+    required String? orderType,
+    required String orderValue,
+    required String? platformType,
+    required String platformValue,
+    required String addressKeywords,
+    required String? isContain,
+    required String? courierId,
+    required String? customerCourierId,
+    required String? pickupId,
+    required String serviceCode,
   }) async {
     try {
       isLoading.value = true;
       errorMessage.value = '';
 
+      // Get current user's acno
+      final acno = _authService.getCurrentAcno();
+      if (acno == null) {
+        errorMessage.value = 'User not logged in';
+        return false;
+      }
+
       print('RulesService: Creating rule for acno: $acno');
-      print('RulesService: Rule data: $ruleData');
       
-      // Add acno to the rule data
+      // Prepare request data matching the API requirements
       final requestData = {
         'acno': acno,
-        ...ruleData,
+        'rule_title': title,
+        'status_ids': statusIds != null ? [statusIds] : [],
+        'weight_type': weightType ?? '>=',
+        'weight_value': int.tryParse(weightValue) ?? 1,
+        'paymentmethod_id': int.tryParse(paymentMethodId ?? '1') ?? 1,
+        'customer_citylist_id': int.tryParse(customerCitylistId ?? '27') ?? 27,
+        'order_type': orderType ?? '>=',
+        'order_value': int.tryParse(orderValue) ?? 4999,
+        'platform_value': int.tryParse(platformValue) ?? 7,
+        'platform_type': platformType ?? 'OMS',
+        'address_keywords': int.tryParse(addressKeywords) ?? 3,
+        'is_contain': isContain ?? '0',
+        'courier_id': int.tryParse(courierId ?? '1') ?? 1,
+        'customer_courier_id': int.tryParse(customerCourierId ?? '55') ?? 55,
+        'pickup_id': int.tryParse(pickupId ?? '1') ?? 1,
+        'service_code': serviceCode,
       };
 
-      // Make API call to create rule endpoint
-      final response = await _apiService.post('rules/create', data: requestData);
+      print('RulesService: Rule data: $requestData');
+
+      // Make API call to rules/store endpoint
+      final response = await _apiService.post('rules/store', data: requestData);
       
       print('RulesService: Create rule response status: ${response.statusCode}');
       print('RulesService: Create rule response data: ${response.data}');
@@ -135,27 +176,47 @@ class RulesService extends GetxService {
 
   // Update an existing rule
   Future<bool> updateRule({
-    required String acno,
-    required String ruleId,
-    required Map<String, dynamic> ruleData,
+    required int ruleId,
+    required String ruleTitle,
+    required int courierId,
+    required int customerCourierId,
+    required int pickupId,
+    required String serviceCode,
+    required int status,
   }) async {
     try {
       isLoading.value = true;
       errorMessage.value = '';
 
-      print('RulesService: Updating rule $ruleId for acno: $acno');
+      // Get current user's acno
+      final acno = _authService.getCurrentAcno();
+      if (acno == null) {
+        errorMessage.value = 'User not logged in';
+        return false;
+      }
+
+      print('RulesService: Updating rule for acno: $acno');
       
-      // Add acno and ruleId to the rule data
+      // Prepare request data matching the API requirements
       final requestData = {
+        'id': ruleId,
         'acno': acno,
-        'rule_id': ruleId,
-        ...ruleData,
+        'rule_title': ruleTitle,
+        'courier_id': courierId,
+        'customer_courier_id': customerCourierId,
+        'pickup_id': pickupId,
+        'service_code': serviceCode,
+        'status': status,
+        'requestType': 'updateRule',
       };
 
-      // Make API call to update rule endpoint
+      print('RulesService: Update rule data: $requestData');
+
+      // Make API call to rules/update endpoint
       final response = await _apiService.post('rules/update', data: requestData);
       
       print('RulesService: Update rule response status: ${response.statusCode}');
+      print('RulesService: Update rule response data: ${response.data}');
 
       if (response.statusCode == 200) {
         final data = response.data;
@@ -167,11 +228,13 @@ class RulesService extends GetxService {
           return true;
         } else {
           errorMessage.value = data['message'] ?? 'Failed to update rule';
+          print('RulesService: Update rule failed - ${errorMessage.value}');
           return false;
         }
       } else {
         final data = response.data;
         errorMessage.value = data['message'] ?? 'Failed to update rule';
+        print('RulesService: Update rule API error - ${errorMessage.value}');
         return false;
       }
       
@@ -253,5 +316,59 @@ class RulesService extends GetxService {
   // Clear rules list
   void clearRules() {
     rules.value = [];
+  }
+
+  // Get keywords for address keywords dropdown
+  Future<List<Map<String, dynamic>>> getKeywords() async {
+    try {
+      isLoading.value = true;
+      errorMessage.value = '';
+
+      // Get current user's acno
+      final acno = _authService.getCurrentAcno();
+      if (acno == null) {
+        errorMessage.value = 'User not logged in';
+        print('RulesService: No acno found - user not logged in');
+        return [];
+      }
+
+      print('RulesService: Fetching keywords for acno: $acno');
+      
+      // Prepare request data
+      final requestData = {
+        'acno': acno,
+      };
+
+      // Make API call to rules/showkeywords endpoint
+      final response = await _apiService.post('rules/showkeywords', data: requestData);
+      
+      if (response.statusCode == 200) {
+        final data = response.data;
+        
+        // Handle the API response structure
+        List<Map<String, dynamic>> keywords = [];
+        
+        if (data['status'] == 1 && data['payload'] != null && data['payload'] is List) {
+          final payloadList = data['payload'] as List;
+          keywords = payloadList.map((item) => item as Map<String, dynamic>).toList();
+        }
+        
+        return keywords;
+      } else {
+        final data = response.data;
+        errorMessage.value = data['message'] ?? 'Failed to load keywords';
+        print('RulesService: Keywords API error - ${errorMessage.value}');
+        return [];
+      }
+      
+    } on DioException catch (e) {
+      errorMessage.value = e.message ?? 'Network error occurred';
+      return [];
+    } catch (e) {
+      errorMessage.value = 'An unexpected error occurred';
+      return [];
+    } finally {
+      isLoading.value = false;
+    }
   }
 } 

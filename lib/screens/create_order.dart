@@ -5,6 +5,11 @@ import 'menu.dart' as menu;
 import 'report.dart' as report;
 import 'package:flutter/services.dart';
 import 'add_product_screen.dart';
+import '../services/statement_service.dart';
+import '../services/auth_service.dart';
+import 'dart:async';
+import '../network/order_service.dart';
+import '../utils/custom_snackbar.dart';
 
 class OrderItem {
   final String name;
@@ -26,6 +31,39 @@ class _CreateOrderScreenState extends State<CreateOrderScreen> {
   final List<OrderItem> _orders = [];
   final Set<int> _expandedOrders = {};
   bool _isDialogOpen = false;
+  String selectedCountry = 'Pakistan';
+  String? selectedCity;
+  List<String> cityList = [];
+  String selectedPaymentType = 'COD';
+  final List<String> paymentTypes = ['COD', 'JazzCash', 'EasyPaisa', 'CC'];
+  bool _isLoadingCities = false;
+  final AuthService _authService = Get.find<AuthService>();
+  bool _isSaving = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchCities();
+  }
+
+  Future<void> _fetchCities() async {
+    setState(() { _isLoadingCities = true; });
+    try {
+      final acno = _authService.getCurrentAcno();
+      if (acno == null || acno.isEmpty) {
+        setState(() { _isLoadingCities = false; });
+        return;
+      }
+      final cities = await StatementService().fetchCityList(acno);
+      setState(() {
+        cityList = cities.map((c) => c['name']?.toString() ?? '').where((c) => c.isNotEmpty).toList();
+        if (cityList.isNotEmpty) selectedCity = cityList.first;
+        _isLoadingCities = false;
+      });
+    } catch (e) {
+      setState(() { _isLoadingCities = false; });
+    }
+  }
 
   void _addOrder(OrderItem item) {
     setState(() {
@@ -333,12 +371,60 @@ class _CreateOrderScreenState extends State<CreateOrderScreen> {
     );
   }
 
+  Future<void> _submitOrder() async {
+    if (_orders.isEmpty) {
+      customSnackBar('Error', 'Please add at least one product');
+      return;
+    }
+    if (selectedCity == null || selectedCity!.isEmpty) {
+      customSnackBar('Error', 'Please select a city');
+      return;
+    }
+    setState(() { _isSaving = true; });
+    try {
+      final acno = _authService.getCurrentAcno();
+      if (acno == null || acno.isEmpty) {
+        customSnackBar('Error', 'User not logged in');
+        setState(() { _isSaving = false; });
+        return;
+      }
+      // Build order data (simplified, expand as needed)
+      final orderList = [
+        {
+          'acno': acno,
+          'city': selectedCity,
+          'country': selectedCountry,
+          'payment_type': selectedPaymentType,
+          'products': _orders.map((o) => {
+            'name': o.name,
+            'sku': o.sku,
+            'ref_code': o.refCode,
+            'qty': o.qty,
+            'price': o.price,
+          }).toList(),
+        },
+      ];
+      final response = await OrderService.createOrder(orderList: orderList);
+      if (response['status'] == 1 || response['success'] == true) {
+        customSnackBar('Success', 'Order created successfully!');
+        // Optionally navigate to order list screen here
+      } else {
+        customSnackBar('Error', response['message'] ?? 'Failed to create order');
+      }
+    } catch (e) {
+      customSnackBar('Error', 'Failed to create order: ${e.toString()}');
+    } finally {
+      setState(() { _isSaving = false; });
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     SystemChrome.setEnabledSystemUIMode(SystemUiMode.manual, overlays: [SystemUiOverlay.top, SystemUiOverlay.bottom]);
 
     return Scaffold(
       backgroundColor: Colors.white,
+      resizeToAvoidBottomInset: false,
       appBar: AppBar(
         leading: IconButton(
           icon: const Icon(Icons.arrow_back_ios_new, color: Colors.black, size: 22),
@@ -548,17 +634,88 @@ class _CreateOrderScreenState extends State<CreateOrderScreen> {
                      children: [
                        _OrderField(hint: 'Full Name'),
                        _OrderField(hint: 'Email'),
-                       _OrderField(hint: 'Phone'),
+                       _OrderField(hint: 'Phone No', keyboardType: TextInputType.number),
                        _OrderField(hint: 'Order Reference Code'),
                        _OrderField(hint: 'Address'),
                        _OrderField(hint: 'Landmark'),
-                       _OrderDropdownField(hint: 'Destination Country', items: const ['USA', 'Canada', 'UK'], value: 'USA', onChanged: (val) {}),
-                       _OrderDropdownField(hint: 'Destination City', items: const ['New York', 'Los Angeles', 'Chicago'], value: 'New York', onChanged: (val) {}),
-                       _OrderField(hint: 'Latitude'),
-                       _OrderField(hint: 'Longitude'),
-                       _OrderField(hint: 'Weight'),
+                       // Country (fixed)
+                       Padding(
+                         padding: const EdgeInsets.symmetric(vertical: 8),
+                         child: TextField(
+                           enabled: false,
+                           controller: TextEditingController(text: selectedCountry),
+                           decoration: InputDecoration(
+                             labelText: 'Country',
+                             filled: true,
+                             fillColor: const Color(0xFFF5F5F7),
+                             border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide.none),
+                             isDense: true,
+                             contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                           ),
+                           style: const TextStyle(fontSize: 16, color: Colors.black),
+                         ),
+                       ),
+                       // City (from API)
+                       Padding(
+                         padding: const EdgeInsets.symmetric(vertical: 8),
+                         child: _isLoadingCities
+                             ? const Center(child: CircularProgressIndicator())
+                             : GestureDetector(
+                                 onTap: () async {
+                                   final selected = await showDialog<String>(
+                                     context: context,
+                                     builder: (context) => _CitySearchDialog(
+                                       cities: cityList,
+                                       initialCity: selectedCity,
+                                     ),
+                                   );
+                                   if (selected != null) {
+                                     setState(() {
+                                       selectedCity = selected;
+                                     });
+                                   }
+                                 },
+                                 child: AbsorbPointer(
+                                   child: TextFormField(
+                                     controller: TextEditingController(text: selectedCity ?? ''),
+                                     decoration: InputDecoration(
+                                       labelText: 'City',
+                                       filled: true,
+                                       fillColor: const Color(0xFFF5F5F7),
+                                       border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide.none),
+                                       isDense: true,
+                                       contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                                       suffixIcon: const Icon(Icons.keyboard_arrow_down_rounded, color: Color(0xFF222222)),
+                                     ),
+                                     style: const TextStyle(fontSize: 16, color: Colors.black),
+                                     readOnly: true,
+                                   ),
+                                 ),
+                               ),
+                       ),
+                       _OrderField(hint: 'Latitude', keyboardType: TextInputType.number),
+                       _OrderField(hint: 'Longitude', keyboardType: TextInputType.number),
+                       _OrderField(hint: 'Weight', keyboardType: TextInputType.number),
                        _OrderField(hint: 'Shipping Charges'),
-                       _OrderDropdownField(hint: 'Payment Type', items: const ['Cash', 'Bank Transfer', 'Online Payment'], value: 'Cash', onChanged: (val) {}),
+                       // Payment Type (fixed options)
+                       Padding(
+                         padding: const EdgeInsets.symmetric(vertical: 8),
+                         child: DropdownButtonFormField<String>(
+                           value: selectedPaymentType,
+                           items: paymentTypes.map((type) => DropdownMenuItem(value: type, child: Text(type))).toList(),
+                           onChanged: (val) => setState(() => selectedPaymentType = val ?? 'COD'),
+                           decoration: InputDecoration(
+                             labelText: 'Payment Type',
+                             filled: true,
+                             fillColor: const Color(0xFFF5F5F7),
+                             border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide.none),
+                             isDense: true,
+                             contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                           ),
+                           style: const TextStyle(fontSize: 16, color: Colors.black),
+                           icon: const Icon(Icons.keyboard_arrow_down_rounded, color: Color(0xFF222222)),
+                         ),
+                       ),
                        _OrderField(hint: 'Remarks'),
                      ],
                    ),
@@ -570,7 +727,7 @@ class _CreateOrderScreenState extends State<CreateOrderScreen> {
                       width: double.infinity,
                       height: 48,
                       child: ElevatedButton(
-                        onPressed: () {},
+                        onPressed: _isSaving ? null : _submitOrder,
                         style: ElevatedButton.styleFrom(
                           backgroundColor: Color(0xFF007AFF),
                           shape: RoundedRectangleBorder(
@@ -578,15 +735,21 @@ class _CreateOrderScreenState extends State<CreateOrderScreen> {
                           ),
                           elevation: 0,
                         ),
-                        child: const Text(
-                          'Save',
-                          style: TextStyle(
-                            fontFamily: 'SF Pro Display',
-                            fontWeight: FontWeight.w600,
-                            fontSize: 16,
-                            color: Colors.white,
-                          ),
-                        ),
+                        child: _isSaving
+                            ? const SizedBox(
+                                width: 24,
+                                height: 24,
+                                child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                              )
+                            : const Text(
+                                'Save',
+                                style: TextStyle(
+                                  fontFamily: 'SF Pro Display',
+                                  fontWeight: FontWeight.w600,
+                                  fontSize: 16,
+                                  color: Colors.white,
+                                ),
+                              ),
                       ),
                     ),
                   ),
@@ -598,6 +761,14 @@ class _CreateOrderScreenState extends State<CreateOrderScreen> {
           ),
         ],
       ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () {},
+        backgroundColor: const Color(0xFF0A253B),
+        elevation: 4,
+        shape: const CircleBorder(),
+        child: const Icon(Icons.edit_rounded, color: Colors.white, size: 28),
+      ),
+      floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
       bottomNavigationBar: _isDialogOpen ? null : dash.CustomBottomNavBar(
         selectedIndex: 3,
         onHomeTap: () {
@@ -610,14 +781,6 @@ class _CreateOrderScreenState extends State<CreateOrderScreen> {
           Get.offAll(() => report.ReportsScreen());
         },
       ),
-      floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
-      floatingActionButton: FloatingActionButton(
-        onPressed: () {},
-        backgroundColor: const Color(0xFF0A253B),
-        elevation: 4,
-        shape: const CircleBorder(),
-        child: const Icon(Icons.edit_rounded, color: Colors.white, size: 28),
-      ),
     );
   }
 }
@@ -625,7 +788,8 @@ class _CreateOrderScreenState extends State<CreateOrderScreen> {
 class _OrderField extends StatelessWidget {
   final String hint;
   final TextEditingController? controller;
-  const _OrderField({required this.hint, this.controller});
+  final TextInputType? keyboardType;
+  const _OrderField({required this.hint, this.controller, this.keyboardType});
 
   @override
   Widget build(BuildContext context) {
@@ -633,6 +797,7 @@ class _OrderField extends StatelessWidget {
       margin: const EdgeInsets.only(bottom: 14),
       child: TextField(
         controller: controller,
+        keyboardType: keyboardType,
         decoration: InputDecoration(
           hintText: hint,
           hintStyle: const TextStyle(
@@ -715,6 +880,89 @@ class _OrderDetailRow extends StatelessWidget {
           const SizedBox(width: 8),
           Expanded(child: Text(value, style: const TextStyle(fontFamily: 'SF Pro Display', fontSize: 14))),
         ],
+      ),
+    );
+  }
+}
+
+class _CitySearchDialog extends StatefulWidget {
+  final List<String> cities;
+  final String? initialCity;
+  const _CitySearchDialog({Key? key, required this.cities, this.initialCity}) : super(key: key);
+
+  @override
+  State<_CitySearchDialog> createState() => _CitySearchDialogState();
+}
+
+class _CitySearchDialogState extends State<_CitySearchDialog> {
+  late List<String> filteredCities;
+  late TextEditingController searchController;
+  String? selected;
+
+  @override
+  void initState() {
+    super.initState();
+    filteredCities = widget.cities;
+    searchController = TextEditingController();
+    selected = widget.initialCity;
+    searchController.addListener(_onSearchChanged);
+  }
+
+  @override
+  void dispose() {
+    searchController.dispose();
+    super.dispose();
+  }
+
+  void _onSearchChanged() {
+    setState(() {
+      final query = searchController.text.toLowerCase();
+      filteredCities = widget.cities.where((c) => c.toLowerCase().contains(query)).toList();
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Dialog(
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      child: Container(
+        width: 320,
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Text('Select City', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
+            const SizedBox(height: 12),
+            TextField(
+              controller: searchController,
+              decoration: InputDecoration(
+                hintText: 'Search city...',
+                prefixIcon: Icon(Icons.search_rounded),
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+                contentPadding: EdgeInsets.symmetric(vertical: 0, horizontal: 12),
+              ),
+            ),
+            const SizedBox(height: 12),
+            SizedBox(
+              height: 250,
+              child: filteredCities.isEmpty
+                  ? const Center(child: Text('No cities found.'))
+                  : ListView.builder(
+                      itemCount: filteredCities.length,
+                      itemBuilder: (context, i) {
+                        final city = filteredCities[i];
+                        return ListTile(
+                          title: Text(city),
+                          selected: city == selected,
+                          onTap: () {
+                            Navigator.of(context).pop(city);
+                          },
+                        );
+                      },
+                    ),
+            ),
+          ],
+        ),
       ),
     );
   }

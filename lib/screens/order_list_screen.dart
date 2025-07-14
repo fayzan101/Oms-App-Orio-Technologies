@@ -13,9 +13,13 @@ import '../utils/Layout/app_bottom_bar.dart';
 import 'calendar_screen.dart';
 import '../widgets/custom_date_selector.dart';
 import '../services/auth_service.dart';
+import '../utils/custom_snackbar.dart';
+import 'package:dio/dio.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class OrderListScreen extends StatefulWidget {
-  const OrderListScreen({Key? key}) : super(key: key);
+  final String? snackbarMessage;
+  const OrderListScreen({Key? key, this.snackbarMessage}) : super(key: key);
 
   @override
   State<OrderListScreen> createState() => _OrderListScreenState();
@@ -47,17 +51,29 @@ class _OrderListScreenState extends State<OrderListScreen> {
   final TextEditingController _searchController = TextEditingController();
   DateTime _startDate = DateTime.now().subtract(const Duration(days: 30));
   DateTime _endDate = DateTime.now();
+  bool _datesLoaded = false;
+  String? _selectedOrderStatus = null; // 'Booked', 'Unbooked', or null for All
 
   @override
   void initState() {
     super.initState();
-    _loadUserDataAndFetchData();
+    _loadSavedDateRange();
     _scrollController.addListener(() {
       if (mounted && _scrollController.position.pixels >= _scrollController.position.maxScrollExtent - 200 && !isLoading && hasMore) {
         fetchOrders();
       }
     });
     _searchController.addListener(_onSearchChanged);
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (widget.snackbarMessage != null && widget.snackbarMessage!.isNotEmpty) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        customSnackBar('Success', widget.snackbarMessage!);
+      });
+    }
   }
 
   Future<void> _loadUserDataAndFetchData() async {
@@ -67,6 +83,26 @@ class _OrderListScreenState extends State<OrderListScreen> {
     }
     await fetchReportSummary();
     await fetchOrders(reset: true);
+  }
+
+  Future<void> _loadSavedDateRange() async {
+    final prefs = await SharedPreferences.getInstance();
+    final startStr = prefs.getString('order_list_start_date');
+    final endStr = prefs.getString('order_list_end_date');
+    if (startStr != null && endStr != null) {
+      setState(() {
+        _startDate = DateTime.parse(startStr);
+        _endDate = DateTime.parse(endStr);
+      });
+    }
+    setState(() { _datesLoaded = true; });
+    _loadUserDataAndFetchData();
+  }
+
+  Future<void> _saveDateRange(DateTime start, DateTime end) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString('order_list_start_date', start.toIso8601String());
+    await prefs.setString('order_list_end_date', end.toIso8601String());
   }
 
   @override
@@ -84,13 +120,24 @@ class _OrderListScreenState extends State<OrderListScreen> {
   }
 
   void _applySearch() {
+    List<dynamic> tempOrders = orders;
     if (_searchQuery != null && _searchQuery!.isNotEmpty) {
-      _filteredOrders = orders.where((order) {
+      tempOrders = tempOrders.where((order) {
         return order.values.any((v) => v != null && v.toString().toLowerCase().contains(_searchQuery!.toLowerCase()));
       }).toList();
-    } else {
-      _filteredOrders = orders;
     }
+    if (_selectedOrderStatus != null) {
+      tempOrders = tempOrders.where((order) {
+        final status = order['status']?.toString().toLowerCase();
+        if (_selectedOrderStatus == 'Booked') {
+          return status == 'booked';
+        } else if (_selectedOrderStatus == 'Unbooked') {
+          return status != 'booked';
+        }
+        return true;
+      }).toList();
+    }
+    _filteredOrders = tempOrders;
   }
 
   Future<void> fetchReportSummary() async {
@@ -154,6 +201,39 @@ class _OrderListScreenState extends State<OrderListScreen> {
       // Optionally show error
     } finally {
       setState(() => isLoading = false);
+    }
+  }
+
+  Future<void> _deleteOrder(String orderId) async {
+    try {
+      final acno = _authService.getCurrentAcno();
+      if (acno == null) {
+        customSnackBar('Error', 'User not logged in');
+        return;
+      }
+      final dio = Dio();
+      final response = await dio.post(
+        'https://stagingoms.orio.digital/api/order/update',
+        data: {
+          "acno": acno,
+          "orders": [orderId],
+          "status": "inactive",
+        },
+        options: Options(
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer QoVDWMtOU9sUzi543rtAVcaeAiEoDH/lQMmuxj4JbjO54gmraIr8QwAloW2F8KEM4PEU9zibMkdCp5RMU3LFqg==',
+          },
+        ),
+      );
+      if (response.statusCode == 200 && (response.data['status'] == 1 || response.data['success'] == true)) {
+        customSnackBar('Success', 'Order deleted successfully!');
+        await fetchOrders(reset: true);
+      } else {
+        customSnackBar('Error', response.data['message'] ?? 'Failed to delete order');
+      }
+    } catch (e) {
+      customSnackBar('Error', 'Failed to delete order:  e.toString()}');
     }
   }
 
@@ -352,6 +432,11 @@ class _OrderListScreenState extends State<OrderListScreen> {
 
   @override
   Widget build(BuildContext context) {
+    if (!_datesLoaded) {
+      return const Scaffold(
+        body: Center(child: CircularProgressIndicator()),
+      );
+    }
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
@@ -415,6 +500,7 @@ class _OrderListScreenState extends State<OrderListScreen> {
                   _startDate = picked.start;
                   _endDate = picked.end;
                 });
+               await _saveDateRange(_startDate, _endDate);
                 await fetchReportSummary();
                 await fetchOrders(reset: true);
               }
@@ -442,7 +528,30 @@ class _OrderListScreenState extends State<OrderListScreen> {
                 ),
               ),
             ),
-            // --- End Search Bar ---
+            // --- Order Status Dropdown ---
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 4),
+              child: DropdownButtonFormField<String>(
+                value: _selectedOrderStatus,
+                decoration: InputDecoration(
+                  labelText: 'Order Status',
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                  contentPadding: EdgeInsets.symmetric(vertical: 0, horizontal: 12),
+                ),
+                items: [
+                  DropdownMenuItem(value: null, child: Text('All')),
+                  DropdownMenuItem(value: 'Booked', child: Text('Booked')),
+                  DropdownMenuItem(value: 'Unbooked', child: Text('Unbooked')),
+                ],
+                onChanged: (value) {
+                  setState(() {
+                    _selectedOrderStatus = value;
+                    _applySearch();
+                  });
+                },
+              ),
+            ),
+            // --- End Order Status Dropdown ---
             // Summary Card
             Container(
               width: double.infinity,
@@ -572,17 +681,18 @@ class _OrderListScreenState extends State<OrderListScreen> {
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  Text('Consignee:  ${order['consignee_name'] ?? ''}'),
-                                  Text('Address:  ${order['consignee_address'] ?? ''}'),
+                                  Text('Name:  ${order['consignee_name'] ?? ''}'),
+                                  Text('Contact:  ${order['consignee_contact'] ?? ''}'),
+                                  Text('City:  ${order['city_name'] ?? ''}'),
+                                  Text('Web Order ID:  ${order['web_order_id'] ?? order['order_ref'] ?? ''}'),
+                                  Text('Store:  ${order['store_name'] ?? ''}'),
+                                  Text('Payment Type:  ${order['payment_type'] ?? ''}'),
+                                  Text('COD Amount:  ${order['cod_amount'] ?? order['order_amount'] ?? ''}'),
+                                  Text('Courier:  ${order['courier_name'] ?? ''}'),
+                                  Text('Account:  ${order['account_no'] ?? ''}'),
+                                  Text('CN:  ${order['cn'] ?? ''}'),
+                                  Text('Tags:  ${order['tags'] ?? ''}'),
                                   Text('Status:  ${order['status'] ?? ''}'),
-                                  Text('Amount:  ${order['order_amount'] ?? ''}'),
-                                  Text('Consignee Email:  ${order['consignee_email'] ?? ''}'),
-                                  Text('Consignee Contact:  ${order['consignee_contact'] ?? ''}'),
-                                  Text('Order Ref:  ${order['order_ref'] ?? ''}'),
-                                  Text('Store Name:  ${order['store_name'] ?? ''}'),
-                                  Text('Courier Name:  ${order['courier_name'] ?? ''}'),
-                                  Text('Remarks:  ${order['remarks'] ?? ''}'),
-                                  // Add more fields as needed
                                   const SizedBox(height: 16),
                                   Row(
                                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -593,12 +703,16 @@ class _OrderListScreenState extends State<OrderListScreen> {
                                         crossAxisAlignment: CrossAxisAlignment.start,
                                         children: [
                                           GestureDetector(
-                                            onTap: () {
-                                              _showDeleteOrderDialog(context, () {
-                                                setState(() {
-                                                  orders.removeAt(i);
-                                                });
-                                              });
+                                            onTap: () async {
+                                              final confirmed = await showModalBottomSheet<bool>(
+                                                context: context,
+                                                isScrollControlled: true,
+                                                backgroundColor: Colors.transparent,
+                                                builder: (context) => _DeleteConfirmationBottomSheet(),
+                                              );
+                                              if (confirmed == true) {
+                                                await _deleteOrder(order['id'].toString());
+                                              }
                                             },
                                             child: Row(
                                               children: const [
@@ -763,6 +877,85 @@ class _BulkTrackingBottomSheet extends StatelessWidget {
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _DeleteConfirmationBottomSheet extends StatelessWidget {
+  const _DeleteConfirmationBottomSheet({Key? key}) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: EdgeInsets.only(
+        left: 0,
+        right: 0,
+        bottom: MediaQuery.of(context).viewInsets.bottom,
+      ),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.vertical(top: Radius.circular(32)),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            Container(
+              decoration: BoxDecoration(
+                color: const Color(0xFFE6F0FF),
+                shape: BoxShape.circle,
+              ),
+              padding: const EdgeInsets.all(32),
+              child: const Icon(Icons.delete_rounded, color: Color(0xFF007AFF), size: 64),
+            ),
+            const SizedBox(height: 24),
+            const Text(
+              'Are you Sure',
+              style: TextStyle(fontWeight: FontWeight.w700, fontSize: 22, color: Colors.black),
+            ),
+            const SizedBox(height: 8),
+            const Text(
+              'You want to delete this order',
+              style: TextStyle(fontWeight: FontWeight.w400, fontSize: 15, color: Color(0xFF8E8E93)),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 28),
+            Row(
+              children: [
+                Expanded(
+                  child: ElevatedButton(
+                    onPressed: () => Navigator.of(context).pop(false),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFFF3F4F6),
+                      foregroundColor: const Color(0xFF111827),
+                      elevation: 0,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                    ),
+                    child: const Text('Cancel', style: TextStyle(fontWeight: FontWeight.w500, fontSize: 15)),
+                  ),
+                ),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: ElevatedButton(
+                    onPressed: () => Navigator.of(context).pop(true),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF007AFF),
+                      elevation: 0,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                    ),
+                    child: const Text('Delete', style: TextStyle(fontWeight: FontWeight.w500, fontSize: 15, color: Colors.white)),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
       ),
     );
   }

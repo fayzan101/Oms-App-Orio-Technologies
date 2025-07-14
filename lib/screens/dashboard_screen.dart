@@ -15,6 +15,7 @@ import 'search_screen.dart';
 
 import '../widgets/courier_logo_widget.dart';
 import '../widgets/custom_date_selector.dart';
+import '../widgets/snake_graph_widget.dart';
 import '../models/courier_model.dart';
 
 class DashboardScreen extends StatefulWidget {
@@ -988,6 +989,47 @@ class _DashboardScreenState extends State<DashboardScreen> {
                       ],
                     ),
                   ),
+                  SizedBox(height: 24),
+                  
+                  // Weekly Report Heading
+                  const Text(
+                    'Weekly Report',
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.black,
+                    ),
+                  ),
+                  SizedBox(height: 12),
+                  // Snake Graph Section
+                  Obx(() {
+                    final snakeGraphData = controller.dashboardData.value?.snakeGraph;
+                    
+                    if (snakeGraphData == null) {
+                      return Container(
+                        height: 300,
+                        padding: const EdgeInsets.all(20),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFF8F9FA),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: const Center(
+                          child: Text(
+                            'Weekly order status data not available',
+                            style: TextStyle(
+                              color: Colors.grey,
+                              fontSize: 14,
+                            ),
+                          ),
+                        ),
+                      );
+                    }
+                    
+                    return SnakeGraphWidget(
+                      snakeGraphData: snakeGraphData,
+                      height: 300,
+                    );
+                  }),
                 ],
               ),
             ),

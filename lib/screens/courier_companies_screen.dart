@@ -7,6 +7,8 @@ import 'add_courier_company_screen.dart'; // Added import for AddCourierCompanyS
 import '../utils/Layout/app_bottom_bar.dart';
 import '../utils/custom_snackbar.dart';
 import 'search_screen.dart';
+import '../widgets/courier_logo_widget.dart';
+import 'dart:convert';
 
 class CourierCompaniesScreen extends StatefulWidget {
   CourierCompaniesScreen({Key? key}) : super(key: key);
@@ -174,17 +176,22 @@ class _CourierCompaniesScreenState extends State<CourierCompaniesScreen> {
                                         _infoRow('S.No', (index + 1).toString().padLeft(2, '0')),
                                         _infoRow('Account Title', company.accountTitle),
                                         _infoRow('Account No', company.courierAcno),
-                                        Row(
-                                          children: [
-                                            const Text('Courier', style: TextStyle(fontWeight: FontWeight.w500)),
-                                            const SizedBox(width: 16),
-                                            CircleAvatar(
-                                              radius: 18,
-                                              child: Text(company.courierName.isNotEmpty ? company.courierName[0] : '?'),
-                                            ),
-                                            const SizedBox(width: 8),
-                                            Text(company.courierName),
-                                          ],
+                                        // Show the label 'Courier' and the logo under the account number, both left-aligned, with spacing
+                                        Padding(
+                                          padding: const EdgeInsets.only(top: 4, bottom: 8),
+                                          child: Row(
+                                            mainAxisSize: MainAxisSize.min,
+                                            children: [
+                                              Padding(
+                                                padding: const EdgeInsets.only(left: 0),
+                                                child: const Text('Courier', style: TextStyle(fontWeight: FontWeight.w500)),
+                                              ),
+                                              Padding(
+                                                padding: const EdgeInsets.only(left: 60),
+                                                child: _courierLogoOnly(company.courierName),
+                                              ),
+                                            ],
+                                          ),
                                         ),
                                         _infoRow('Default', company.isDefault == '1' ? 'Y' : 'N'),
                                         _infoRow('Activate', company.status.capitalizeFirst ?? ''),
@@ -452,6 +459,21 @@ class _CourierCompaniesScreenState extends State<CourierCompaniesScreen> {
           ),
         );
       },
+    );
+  }
+
+  Widget _courierLogoOnly(String courierName) {
+    final encodedName = Uri.encodeComponent(courierName.trim());
+    final logoUrl = 'https://oms.getorio.com/assets/img/shipping-icons/$encodedName.svg';
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 2), // slight adjustment for baseline
+      child: CourierLogoWidget(
+        logoUrl: logoUrl,
+        width: 48,
+        height: 24,
+        fit: BoxFit.contain,
+        // fallbackWidget: Icon(Icons.local_shipping, color: Colors.grey[400]), // Optionally remove for debugging
+      ),
     );
   }
 } 

@@ -212,7 +212,7 @@ class StatementService {
     required int platformId,
     int? customerPlatformId,
   }) async {
-    final url = Uri.parse('https://oms.getorio.com/api/product/suggestproduct');
+    final url = Uri.parse('https://stagingoms.orio.digital/api/product/suggestproduct');
     print('Fetching product suggestions for acno: $acno, platform_id: $platformId');
     print('Product suggestions URL: $url');
     

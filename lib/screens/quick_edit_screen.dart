@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'order_list_screen.dart';
 import '../utils/Layout/app_bottom_bar.dart';
+import 'package:dio/dio.dart';
+import '../utils/custom_snackbar.dart';
 
 class QuickEditScreen extends StatefulWidget {
   const QuickEditScreen({Key? key}) : super(key: key);
@@ -18,11 +20,59 @@ class _QuickEditScreenState extends State<QuickEditScreen> {
   final TextEditingController weightController = TextEditingController(text: '2.50');
   final TextEditingController tagController = TextEditingController(text: 'Order Tag');
   String selectedCity = 'Karachi';
+  bool _isLoading = false;
+
+  Future<void> _submitQuickEdit() async {
+    setState(() { _isLoading = true; });
+    try {
+      // TODO: Replace with actual dynamic acno and id retrieval
+      final acno = 'OR-00009'; // Replace with dynamic value
+      final id = 25184; // Replace with dynamic value
+      final dio = Dio();
+      final response = await dio.post(
+        'https://oms.getorio.com/api/order/quick_edit',
+        data: {
+          "acno": acno,
+          "id": id,
+          "consignee_name": nameController.text.trim(),
+          "consignee_email": emailController.text.trim(),
+          "consignee_no": contactController.text.trim(),
+          "consignee_address": addressController.text.trim(),
+          "shipping_charges": 0, // You may want to make this dynamic
+          "destination_city_id": 655, // You may want to make this dynamic
+          "weight": double.tryParse(weightController.text.trim()) ?? 1,
+        },
+        options: Options(
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer QoVDWMtOU9sUzi543rtAVcaeAiEoDH/lQMmuxj4JbjO54gmraIr8QwAloW2F8KEM4PEU9zibMkdCp5RMU3LFqg==',
+          },
+        ),
+      );
+      if (response.statusCode == 200 && (response.data['status'] == 1 || response.data['success'] == true)) {
+        // Navigate to OrderListScreen and show snackbar there
+        Navigator.of(context).pushReplacement(
+          MaterialPageRoute(
+            builder: (_) => OrderListScreen(
+              snackbarMessage: 'Consignment detail updated',
+            ),
+          ),
+        );
+      } else {
+        customSnackBar('Error', response.data['message'] ?? 'Failed to update consignment');
+      }
+    } catch (e) {
+      customSnackBar('Error', 'Failed to update consignment: ${e.toString()}');
+    } finally {
+      setState(() { _isLoading = false; });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
+      resizeToAvoidBottomInset: false,
       appBar: AppBar(
         backgroundColor: Colors.white,
         elevation: 0,
@@ -78,21 +128,23 @@ class _QuickEditScreenState extends State<QuickEditScreen> {
               width: double.infinity,
               height: 48,
               child: ElevatedButton(
-                onPressed: () {
-                  showModalBottomSheet(
-                    context: context,
-                    isScrollControlled: true,
-                    backgroundColor: Colors.transparent,
-                    builder: (context) => const _QuickEditSuccessBottomSheet(),
-                  );
-                },
+                onPressed: _isLoading ? null : _submitQuickEdit,
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color(0xFF007AFF),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(8),
                   ),
                 ),
-                child: const Text('Updated', style: TextStyle(fontSize: 18, color: Colors.white)),
+                child: _isLoading
+                    ? const SizedBox(
+                        height: 20,
+                        width: 20,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                        ),
+                      )
+                    : const Text('Update', style: TextStyle(fontSize: 18, color: Colors.white)),
               ),
             ),
           ],
