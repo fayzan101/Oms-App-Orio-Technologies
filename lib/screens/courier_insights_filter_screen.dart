@@ -3,6 +3,7 @@ import 'package:get/get.dart';
 import '../services/courier_service.dart';
 import '../services/statement_service.dart';
 import '../services/auth_service.dart';
+import 'package:dio/dio.dart';
 
 class CourierInsightsFilterScreen extends StatefulWidget {
   final Function(Map<String, dynamic> filters) onApply;
@@ -22,11 +23,15 @@ class _CourierInsightsFilterScreenState extends State<CourierInsightsFilterScree
 
   List<String> statusOptions = ['Booked', 'In Transit', 'Delivered', 'Returned', 'Failed']; // Example static
   List<String> courierOptions = [];
+  List<String> statusApiOptions = [];
+  bool isLoadingStatuses = false;
+  String? statusError;
+  bool isLoadingCouriers = false;
+  String? courierError;
   List<String> cityOptions = [];
-  List<String> paymentMethodOptions = ['COD', 'Prepaid']; // Example static
+  List<String> paymentMethodOptions = ['COD', 'CC'];
   List<String> paymentStatusOptions = ['Paid', 'Unpaid', 'Partial']; // Example static
 
-  bool isLoadingCouriers = false;
   bool isLoadingCities = false;
   
   // Validation state
@@ -37,6 +42,8 @@ class _CourierInsightsFilterScreenState extends State<CourierInsightsFilterScree
   void initState() {
     super.initState();
     _loadUserDataAndFetchData();
+    _fetchStatuses();
+    _fetchCouriers();
   }
 
   Future<void> _loadUserDataAndFetchData() async {
@@ -78,6 +85,66 @@ class _CourierInsightsFilterScreenState extends State<CourierInsightsFilterScree
     });
   }
 
+  Future<void> _fetchStatuses() async {
+    setState(() {
+      isLoadingStatuses = true;
+      statusError = null;
+    });
+    try {
+      final response = await Dio().post(
+        'https://oms.getorio.com/api/common/status',
+        data: {"status_type": "Customer Service"},
+        options: Options(headers: {'Content-Type': 'application/json'}),
+      );
+      final List<dynamic> data = response.data is List
+          ? response.data
+          : (response.data['data'] ?? []);
+      setState(() {
+        statusApiOptions = data.map((e) => e['name'].toString()).toList();
+        isLoadingStatuses = false;
+      });
+    } catch (e) {
+      setState(() {
+        statusError = 'Failed to load statuses';
+        isLoadingStatuses = false;
+      });
+    }
+  }
+
+  Future<void> _fetchCouriers() async {
+    setState(() {
+      isLoadingCouriers = true;
+      courierError = null;
+    });
+    try {
+      final acno = _authService.getCurrentAcno();
+      if (acno == null) {
+        setState(() {
+          courierError = 'User not logged in';
+          isLoadingCouriers = false;
+        });
+        return;
+      }
+      final response = await Dio().post(
+        'https://oms.getorio.com/api/courier/index',
+        data: {"acno": acno},
+        options: Options(headers: {'Content-Type': 'application/json'}),
+      );
+      final List<dynamic> data = response.data is List
+          ? response.data
+          : (response.data['data'] ?? []);
+      setState(() {
+        courierOptions = data.map((e) => e['courier_name'].toString()).toList();
+        isLoadingCouriers = false;
+      });
+    } catch (e) {
+      setState(() {
+        courierError = 'Failed to load couriers';
+        isLoadingCouriers = false;
+      });
+    }
+  }
+
   void _showSearchDialog({
     required String title,
     required List<String> options,
@@ -100,6 +167,7 @@ class _CourierInsightsFilterScreenState extends State<CourierInsightsFilterScree
 
   @override
   Widget build(BuildContext context) {
+    final isLoadingAll = isLoadingStatuses || isLoadingCouriers || isLoadingCities;
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
@@ -114,130 +182,130 @@ class _CourierInsightsFilterScreenState extends State<CourierInsightsFilterScree
         ),
         title: const Text('Filter', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 18, color: Colors.black)),
       ),
-      body: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16),
-        child: Column(
-          children: [
-            const SizedBox(height: 24),
-            _searchableField(
-              label: 'Select Status',
-              value: selectedStatus,
-              isLoading: false,
-              isError: showValidationErrors && selectedStatus == null,
-              onTap: () => _showSearchDialog(
-                title: 'Select Status',
-                options: statusOptions,
-                selectedValue: selectedStatus,
-                onSelected: (val) => setState(() => selectedStatus = val),
-              ),
-            ),
-            const SizedBox(height: 16),
-            _searchableField(
-              label: 'Select Courier',
-              value: selectedCourier,
-              isLoading: isLoadingCouriers,
-              isError: showValidationErrors && selectedCourier == null,
-              onTap: () => _showSearchDialog(
-                title: 'Select Courier',
-                options: courierOptions,
-                selectedValue: selectedCourier,
-                onSelected: (val) => setState(() => selectedCourier = val),
-              ),
-            ),
-            const SizedBox(height: 16),
-            _searchableField(
-              label: 'Select Destination City',
-              value: selectedCity,
-              isLoading: isLoadingCities,
-              isError: showValidationErrors && selectedCity == null,
-              onTap: () => _showSearchDialog(
-                title: 'Select Destination City',
-                options: cityOptions,
-                selectedValue: selectedCity,
-                onSelected: (val) => setState(() => selectedCity = val),
-              ),
-            ),
-            const SizedBox(height: 16),
-            _searchableField(
-              label: 'Select Payment Method',
-              value: selectedPaymentMethod,
-              isLoading: false,
-              isError: showValidationErrors && selectedPaymentMethod == null,
-              onTap: () => _showSearchDialog(
-                title: 'Select Payment Method',
-                options: paymentMethodOptions,
-                selectedValue: selectedPaymentMethod,
-                onSelected: (val) => setState(() => selectedPaymentMethod = val),
-              ),
-            ),
-            const SizedBox(height: 16),
-            _searchableField(
-              label: 'Select Payment Status',
-              value: selectedPaymentStatus,
-              isLoading: false,
-              isError: showValidationErrors && selectedPaymentStatus == null,
-              onTap: () => _showSearchDialog(
-                title: 'Select Payment Status',
-                options: paymentStatusOptions,
-                selectedValue: selectedPaymentStatus,
-                onSelected: (val) => setState(() => selectedPaymentStatus = val),
-              ),
-            ),
-            const SizedBox(height: 32),
-            SizedBox(
-              width: double.infinity,
-              height: 48,
-              child: ElevatedButton(
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF007AFF),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8),
+      body: isLoadingAll
+          ? const Center(child: CircularProgressIndicator())
+          : Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: Column(
+                children: [
+                  const SizedBox(height: 24),
+                  _searchableField(
+                    label: 'Select Status',
+                    value: selectedStatus,
+                    isLoading: false,
+                    isError: showValidationErrors && selectedStatus == null,
+                    onTap: () => _showSearchDialog(
+                      title: 'Select Status',
+                      options: statusApiOptions,
+                      selectedValue: selectedStatus,
+                      onSelected: (val) => setState(() => selectedStatus = val),
+                    ),
                   ),
-                ),
-                onPressed: () {
-                  // Check if all fields are selected
-                  if (selectedStatus == null || selectedCourier == null || selectedCity == null || selectedPaymentMethod == null || selectedPaymentStatus == null) {
-                    setState(() {
-                      showValidationErrors = true;
-                    });
-                    return;
-                  }
-                  
-                  // Reset validation errors
-                  setState(() {
-                    showValidationErrors = false;
-                  });
-                  
-                  // Apply filters
-                  widget.onApply({
-                    'status': selectedStatus,
-                    'courier': selectedCourier,
-                    'city': selectedCity,
-                    'paymentMethod': selectedPaymentMethod,
-                    'paymentStatus': selectedPaymentStatus,
-                  });
-                  Navigator.of(context).pop();
-                },
-                child: const Text('Apply Filters', style: TextStyle(fontSize: 18, color: Colors.white)),
+                  const SizedBox(height: 16),
+                  _searchableField(
+                    label: 'Select Courier',
+                    value: selectedCourier,
+                    isLoading: false,
+                    isError: showValidationErrors && selectedCourier == null,
+                    onTap: () => _showSearchDialog(
+                      title: 'Select Courier',
+                      options: courierOptions,
+                      selectedValue: selectedCourier,
+                      onSelected: (val) => setState(() => selectedCourier = val),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  _searchableField(
+                    label: 'Select Destination City',
+                    value: selectedCity,
+                    isLoading: false,
+                    isError: showValidationErrors && selectedCity == null,
+                    onTap: () => _showSearchDialog(
+                      title: 'Select Destination City',
+                      options: cityOptions,
+                      selectedValue: selectedCity,
+                      onSelected: (val) => setState(() => selectedCity = val),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  _searchableField(
+                    label: 'Select Payment Method',
+                    value: selectedPaymentMethod,
+                    isLoading: false,
+                    isError: showValidationErrors && selectedPaymentMethod == null,
+                    onTap: () => _showSearchDialog(
+                      title: 'Select Payment Method',
+                      options: paymentMethodOptions,
+                      selectedValue: selectedPaymentMethod,
+                      onSelected: (val) => setState(() => selectedPaymentMethod = val),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  _searchableField(
+                    label: 'Select Payment Status',
+                    value: selectedPaymentStatus,
+                    isLoading: false,
+                    isError: showValidationErrors && selectedPaymentStatus == null,
+                    onTap: () => _showSearchDialog(
+                      title: 'Select Payment Status',
+                      options: paymentStatusOptions,
+                      selectedValue: selectedPaymentStatus,
+                      onSelected: (val) => setState(() => selectedPaymentStatus = val),
+                    ),
+                  ),
+                  const SizedBox(height: 32),
+                  SizedBox(
+                    width: double.infinity,
+                    height: 48,
+                    child: ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFF007AFF),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                      ),
+                      onPressed: () {
+                        // Check if all fields are selected
+                        if (selectedStatus == null || selectedCourier == null || selectedCity == null || selectedPaymentMethod == null || selectedPaymentStatus == null) {
+                          setState(() {
+                            showValidationErrors = true;
+                          });
+                          return;
+                        }
+                        // Reset validation errors
+                        setState(() {
+                          showValidationErrors = false;
+                        });
+                        // Apply filters
+                        widget.onApply({
+                          'status': selectedStatus,
+                          'courier': selectedCourier,
+                          'city': selectedCity,
+                          'paymentMethod': selectedPaymentMethod,
+                          'paymentStatus': selectedPaymentStatus,
+                        });
+                        Navigator.of(context).pop();
+                      },
+                      child: const Text('Apply Filters', style: TextStyle(fontSize: 18, color: Colors.white)),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  GestureDetector(
+                    onTap: () {
+                      setState(() {
+                        selectedStatus = null;
+                        selectedCourier = null;
+                        selectedCity = null;
+                        selectedPaymentMethod = null;
+                        selectedPaymentStatus = null;
+                      });
+                      widget.onReset();
+                    },
+                    child: const Text('Reset Filter', style: TextStyle(color: Colors.red, fontWeight: FontWeight.w600, fontSize: 16)),
+                  ),
+                ],
               ),
             ),
-            const SizedBox(height: 16),
-            GestureDetector(
-              onTap: () {
-                setState(() {
-                  selectedStatus = null;
-                  selectedCourier = null;
-                  selectedCity = null;
-                  selectedPaymentMethod = null;
-                  selectedPaymentStatus = null;
-                });
-                widget.onReset();
-              },
-              child: const Text('Reset Filter', style: TextStyle(color: Colors.red, fontWeight: FontWeight.w600, fontSize: 16)),
-            ),
-          ],
-        ),
-      ),
     );
   }
 
@@ -250,9 +318,9 @@ class _CourierInsightsFilterScreenState extends State<CourierInsightsFilterScree
   }) {
     return Container(
       decoration: BoxDecoration(
-        border: Border.all(color: isError ? Colors.red : Colors.grey.shade300),
-        borderRadius: BorderRadius.circular(10),
-        color: isError ? const Color(0xFFFFEBEE) : const Color(0xFFF7F8FA),
+        border: Border.all(color: isError ? Colors.red : const Color(0xFFE5E7EB)),
+        borderRadius: BorderRadius.circular(12),
+        color: isError ? const Color(0xFFFFEBEE) : const Color(0xFFF5F5F7),
       ),
       child: isLoading
           ? const Padding(

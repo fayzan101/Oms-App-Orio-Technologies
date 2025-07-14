@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../services/statement_service.dart';
 import '../services/auth_service.dart';
+import 'package:dio/dio.dart';
 
 class FilterScreen extends StatefulWidget {
   const FilterScreen({Key? key}) : super(key: key);
@@ -15,11 +16,17 @@ class _FilterScreenState extends State<FilterScreen> {
   String? selectedPlatform;
   String? selectedCourier;
   String? selectedCity;
+  String? selectedStatus;
 
-  final List<String> orders = ['Order 1', 'Order 2', 'Order 3'];
+  final List<String> orders = ['Booked', 'Unbooked'];
   List<String> platforms = [];
-  final List<String> couriers = ['Courier 1', 'Courier 2', 'Courier 3'];
+  List<String> couriers = [];
+  bool _isLoadingCouriers = false;
+  String? _courierError;
   List<String> cities = [];
+  List<String> statuses = [];
+  bool _isLoadingStatuses = false;
+  String? _statusError;
 
   bool _isLoadingPlatforms = false;
   bool _isLoadingCities = false;
@@ -33,6 +40,7 @@ class _FilterScreenState extends State<FilterScreen> {
       selectedPlatform = null;
       selectedCourier = null;
       selectedCity = null;
+      selectedStatus = 'All';
     });
   }
 
@@ -40,6 +48,8 @@ class _FilterScreenState extends State<FilterScreen> {
   void initState() {
     super.initState();
     _loadUserDataAndFetchData();
+    _fetchStatuses();
+    _fetchCouriers();
   }
 
   Future<void> _loadUserDataAndFetchData() async {
@@ -118,8 +128,67 @@ class _FilterScreenState extends State<FilterScreen> {
     }
   }
 
+  Future<void> _fetchStatuses() async {
+    setState(() {
+      _isLoadingStatuses = true;
+      _statusError = null;
+    });
+    try {
+      final response = await Dio().post(
+        'https://oms.getorio.com/api/common/status',
+        data: {"status_type": "Customer Service"},
+        options: Options(headers: {'Content-Type': 'application/json'}),
+      );
+      final List<dynamic> data = response.data;
+      setState(() {
+        statuses = data.map((e) => e['name'].toString()).toList();
+        _isLoadingStatuses = false;
+      });
+    } catch (e) {
+      setState(() {
+        _statusError = 'Failed to load statuses';
+        _isLoadingStatuses = false;
+      });
+    }
+  }
+
+  Future<void> _fetchCouriers() async {
+    setState(() {
+      _isLoadingCouriers = true;
+      _courierError = null;
+    });
+    try {
+      final acno = _authService.getCurrentAcno();
+      if (acno == null) {
+        setState(() {
+          _courierError = 'User not logged in';
+          _isLoadingCouriers = false;
+        });
+        return;
+      }
+      final response = await Dio().post(
+        'https://oms.getorio.com/api/courier/index',
+        data: {"acno": acno},
+        options: Options(headers: {'Content-Type': 'application/json'}),
+      );
+      final List<dynamic> data = response.data is List
+          ? response.data
+          : (response.data['data'] ?? []);
+      setState(() {
+        couriers = data.map((e) => e['courier_name'].toString()).toList();
+        _isLoadingCouriers = false;
+      });
+    } catch (e) {
+      setState(() {
+        _courierError = 'Failed to load couriers';
+        _isLoadingCouriers = false;
+      });
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
+    final isLoadingAll = _isLoadingStatuses || _isLoadingCouriers || _isLoadingPlatforms || _isLoadingCities;
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
@@ -140,95 +209,103 @@ class _FilterScreenState extends State<FilterScreen> {
         ),
         centerTitle: false,
       ),
-      body: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-        child: Column(
-          children: [
-            _FilterDropdown(
-              hint: 'Select Orders',
-              value: selectedOrder,
-              items: orders,
-              onChanged: (val) => setState(() => selectedOrder = val),
-            ),
-            _isLoadingPlatforms
-                ? const Padding(
-                    padding: EdgeInsets.symmetric(vertical: 16),
-                    child: Center(child: CircularProgressIndicator()),
-                  )
-                : _platformError != null
-                    ? Padding(
-                        padding: const EdgeInsets.symmetric(vertical: 16),
-                        child: Text(_platformError!, style: const TextStyle(color: Colors.red)),
-                      )
-                    : _FilterDropdown(
-                        hint: 'Select Platforms',
-                        value: selectedPlatform,
-                        items: platforms,
-                        onChanged: (val) => setState(() => selectedPlatform = val),
-                      ),
-            _FilterDropdown(
-              hint: 'Select Courier',
-              value: selectedCourier,
-              items: couriers,
-              onChanged: (val) => setState(() => selectedCourier = val),
-            ),
-            _isLoadingCities
-                ? const Padding(
-                    padding: EdgeInsets.symmetric(vertical: 16),
-                    child: Center(child: CircularProgressIndicator()),
-                  )
-                : _cityError != null
-                    ? Padding(
-                        padding: const EdgeInsets.symmetric(vertical: 16),
-                        child: Text(_cityError!, style: const TextStyle(color: Colors.red)),
-                      )
-                    : _FilterDropdown(
-                        hint: 'Select Cities',
-                        value: selectedCity,
-                        items: cities,
-                        onChanged: (val) => setState(() => selectedCity = val),
-                      ),
-            const SizedBox(height: 24),
-            SizedBox(
-              width: double.infinity,
-              height: 48,
-              child: ElevatedButton(
-                onPressed: () {},
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Color(0xFF007AFF),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(10),
+      body: isLoadingAll
+          ? const Center(child: CircularProgressIndicator())
+          : Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+              child: Column(
+                children: [
+                  _FilterDropdown(
+                    hint: 'Select Orders',
+                    value: selectedOrder,
+                    items: orders,
+                    onChanged: (val) => setState(() => selectedOrder = val),
                   ),
-                  elevation: 0,
-                ),
-                child: const Text(
-                  'Apply Filters',
-                  style: TextStyle(
-                    fontFamily: 'SF Pro Display',
-                    fontWeight: FontWeight.w600,
-                    fontSize: 16,
-                    color: Colors.white,
+                  _statusError != null
+                      ? Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 16),
+                          child: Text(_statusError!, style: const TextStyle(color: Colors.red)),
+                        )
+                      : _FilterDropdown(
+                          hint: 'Select Status',
+                          value: selectedStatus,
+                          items: statuses,
+                          onChanged: (val) => setState(() => selectedStatus = val),
+                        ),
+                  _platformError != null
+                      ? Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 16),
+                          child: Text(_platformError!, style: const TextStyle(color: Colors.red)),
+                        )
+                      : _FilterDropdown(
+                          hint: 'Select Platforms',
+                          value: selectedPlatform,
+                          items: platforms,
+                          onChanged: (val) => setState(() => selectedPlatform = val),
+                        ),
+                  _courierError != null
+                      ? Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 16),
+                          child: Text(_courierError!, style: const TextStyle(color: Colors.red)),
+                        )
+                      : _FilterDropdown(
+                          hint: 'Select Courier',
+                          value: selectedCourier,
+                          items: couriers,
+                          onChanged: (val) => setState(() => selectedCourier = val),
+                        ),
+                  _cityError != null
+                      ? Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 16),
+                          child: Text(_cityError!, style: const TextStyle(color: Colors.red)),
+                        )
+                      : _FilterDropdown(
+                          hint: 'Select Cities',
+                          value: selectedCity,
+                          items: cities,
+                          onChanged: (val) => setState(() => selectedCity = val),
+                        ),
+                  const SizedBox(height: 24),
+                  SizedBox(
+                    width: double.infinity,
+                    height: 48,
+                    child: ElevatedButton(
+                      onPressed: () {},
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Color(0xFF007AFF),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        elevation: 0,
+                      ),
+                      child: const Text(
+                        'Apply Filters',
+                        style: TextStyle(
+                          fontFamily: 'SF Pro Display',
+                          fontWeight: FontWeight.w600,
+                          fontSize: 16,
+                          color: Colors.white,
+                        ),
+                      ),
+                    ),
                   ),
-                ),
+                  const SizedBox(height: 16),
+                  GestureDetector(
+                    onTap: resetFilters,
+                    child: const Text(
+                      'Reset Filter',
+                      style: TextStyle(
+                        fontFamily: 'SF Pro Display',
+                        fontWeight: FontWeight.w500,
+                        fontSize: 16,
+                        color: Colors.red,
+                        decoration: TextDecoration.underline,
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ),
-            const SizedBox(height: 16),
-            GestureDetector(
-              onTap: resetFilters,
-              child: const Text(
-                'Reset Filter',
-                style: TextStyle(
-                  fontFamily: 'SF Pro Display',
-                  fontWeight: FontWeight.w500,
-                  fontSize: 16,
-                  color: Colors.red,
-                  decoration: TextDecoration.underline,
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
     );
   }
 }

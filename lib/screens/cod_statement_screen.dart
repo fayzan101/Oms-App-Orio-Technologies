@@ -4,6 +4,7 @@ import 'search_screen.dart';
 import '../utils/Layout/app_bottom_bar.dart';
 import '../widgets/custom_date_selector.dart';
 import '../services/auth_service.dart';
+import 'filter_screen.dart';
 
 class CODStatement {
   final String refNo;
@@ -191,7 +192,24 @@ class _CODStatementScreenState extends State<CODStatementScreen> {
                 });
               },
             ),
-
+          IconButton(
+            icon: const Icon(Icons.filter_list_rounded, color: Colors.black),
+            onPressed: () async {
+              final result = await showModalBottomSheet<Map<String, dynamic>>(
+                context: context,
+                isScrollControlled: true,
+                backgroundColor: Colors.transparent,
+                builder: (context) => FractionallySizedBox(
+                  heightFactor: 0.95,
+                  child: FilterScreen(),
+                ),
+              );
+              if (result != null) {
+                // TODO: Use the selected filters to fetch COD statements
+                print('Selected filters: ' + result.toString());
+              }
+            },
+          ),
           IconButton(
             icon: const Icon(Icons.calendar_today_rounded, color: Colors.black),
             onPressed: () async {

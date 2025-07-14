@@ -52,7 +52,7 @@ class _OrderListScreenState extends State<OrderListScreen> {
   DateTime _startDate = DateTime.now().subtract(const Duration(days: 30));
   DateTime _endDate = DateTime.now();
   bool _datesLoaded = false;
-  String? _selectedOrderStatus = null; // 'Booked', 'Unbooked', or null for All
+  String? _selectedOrderStatus; // 'Booked', 'Unbooked', or null for All
 
   @override
   void initState() {
@@ -528,29 +528,9 @@ class _OrderListScreenState extends State<OrderListScreen> {
                 ),
               ),
             ),
+            // --- End Search Bar ---
             // --- Order Status Dropdown ---
-            Padding(
-              padding: const EdgeInsets.symmetric(vertical: 4),
-              child: DropdownButtonFormField<String>(
-                value: _selectedOrderStatus,
-                decoration: InputDecoration(
-                  labelText: 'Order Status',
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                  contentPadding: EdgeInsets.symmetric(vertical: 0, horizontal: 12),
-                ),
-                items: [
-                  DropdownMenuItem(value: null, child: Text('All')),
-                  DropdownMenuItem(value: 'Booked', child: Text('Booked')),
-                  DropdownMenuItem(value: 'Unbooked', child: Text('Unbooked')),
-                ],
-                onChanged: (value) {
-                  setState(() {
-                    _selectedOrderStatus = value;
-                    _applySearch();
-                  });
-                },
-              ),
-            ),
+            // (Removed Order Status Dropdown as per user request)
             // --- End Order Status Dropdown ---
             // Summary Card
             Container(
