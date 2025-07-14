@@ -245,6 +245,42 @@ class AuthService extends GetxService {
     return prefs.getString('api_key') ?? '';
   }
 
+  // Utility methods for getting current user data for API calls
+  String? getCurrentAcno() {
+    return currentUser.value?.acno;
+  }
+
+  int? getCurrentUserId() {
+    final userId = currentUser.value?.userId;
+    return userId != null ? int.tryParse(userId) : null;
+  }
+
+  int? getCurrentCustomerId() {
+    final customerId = currentUser.value?.customerId;
+    return customerId != null ? int.tryParse(customerId) : null;
+  }
+
+  // Get current user data as a map for API calls
+  Map<String, dynamic>? getCurrentUserData() {
+    final user = currentUser.value;
+    if (user == null) return null;
+    
+    return {
+      'acno': user.acno,
+      'userid': int.tryParse(user.userId) ?? 0,
+      'customer_id': int.tryParse(user.customerId) ?? 0,
+    };
+  }
+
+  // Check if user is logged in and has valid data
+  bool hasValidUserData() {
+    final user = currentUser.value;
+    return user != null && 
+           user.acno.isNotEmpty && 
+           user.userId.isNotEmpty && 
+           user.customerId.isNotEmpty;
+  }
+
   // Clear Remember Me data
   Future<void> clearRememberMe() async {
     try {

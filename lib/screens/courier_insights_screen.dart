@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 import '../network/order_service.dart';
+import '../services/auth_service.dart';
 import 'filter_screen.dart';
 import 'dashboard_screen.dart' as dash;
 import 'menu.dart' as menu;
 import 'report.dart' as report;
 import 'search_screen.dart';
-import 'package:get/get.dart';
 import 'calendar_screen.dart';
 import '../widgets/custom_date_selector.dart';
 import 'courier_insights_filter_screen.dart';
@@ -29,6 +30,7 @@ class _CourierInsightsScreenState extends State<CourierInsightsScreen> {
   String? _searchQuery;
   List<Map<String, dynamic>> _filteredReports = [];
   final TextEditingController _searchController = TextEditingController();
+  final AuthService _authService = Get.find<AuthService>();
   
   // Filter state
   String? filterStatus;
@@ -40,8 +42,16 @@ class _CourierInsightsScreenState extends State<CourierInsightsScreen> {
   @override
   void initState() {
     super.initState();
-    fetchCourierInsights();
+    _loadUserDataAndFetchInsights();
     _searchController.addListener(_onSearchChanged);
+  }
+
+  Future<void> _loadUserDataAndFetchInsights() async {
+    // Load user data if not already loaded
+    if (_authService.currentUser.value == null) {
+      await _authService.loadUserData();
+    }
+    await fetchCourierInsights();
   }
 
   @override
@@ -61,11 +71,18 @@ class _CourierInsightsScreenState extends State<CourierInsightsScreen> {
     setState(() {
       isLoading = true;
     });
+    
+    final acno = _authService.getCurrentAcno();
+    if (acno == null) {
+      setState(() => isLoading = false);
+      return;
+    }
+    
     final startDateStr = _startDate.toIso8601String().split('T')[0];
     final endDateStr = _endDate.toIso8601String().split('T')[0];
     try {
       final data = await OrderService.fetchCourierInsights(
-        acno: 'OR-00009',
+        acno: acno,
         startLimit: 1,
         endLimit: 50000,
         startDate: startDateStr,

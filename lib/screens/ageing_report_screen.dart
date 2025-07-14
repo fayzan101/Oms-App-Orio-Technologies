@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 import '../network/order_service.dart';
+import '../services/auth_service.dart';
 import 'filter_screen.dart';
 import 'dashboard_screen.dart' as dash;
 import 'menu.dart' as menu;
 import 'report.dart' as report;
 import 'search_screen.dart';
-import 'package:get/get.dart';
 import 'calendar_screen.dart';
 import '../widgets/custom_date_selector.dart';
 import 'ageing_report_filter_screen.dart';
@@ -32,11 +33,11 @@ class _AgeingReportScreenState extends State<AgeingReportScreen> {
   String? _searchQuery;
   List<Map<String, dynamic>> _filteredOrders = [];
   final TextEditingController _searchController = TextEditingController();
+  final AuthService _authService = Get.find<AuthService>();
 
   // Date range state
   DateTime startDate = DateTime.now().subtract(const Duration(days: 30));
   DateTime endDate = DateTime.now();
-  final String acno = 'OR-00009'; // TODO: Replace with user/session value if available
 
   // Filter state
   String? filterAgeing;
@@ -47,8 +48,16 @@ class _AgeingReportScreenState extends State<AgeingReportScreen> {
   @override
   void initState() {
     super.initState();
-    fetchAllData();
+    _loadUserDataAndFetchData();
     _searchController.addListener(_onSearchChanged);
+  }
+
+  Future<void> _loadUserDataAndFetchData() async {
+    // Load user data if not already loaded
+    if (_authService.currentUser.value == null) {
+      await _authService.loadUserData();
+    }
+    await fetchAllData();
   }
 
   @override
@@ -73,6 +82,9 @@ class _AgeingReportScreenState extends State<AgeingReportScreen> {
 
   Future<void> fetchSummary() async {
     try {
+      final acno = _authService.getCurrentAcno();
+      if (acno == null) return;
+
       final summary = await OrderService.fetchReportSummary(
         acno: acno,
         startDate: _formatDate(startDate),
@@ -93,6 +105,12 @@ class _AgeingReportScreenState extends State<AgeingReportScreen> {
   Future<void> fetchAgeingReport() async {
     setState(() => isLoading = true);
     try {
+      final acno = _authService.getCurrentAcno();
+      if (acno == null) {
+        setState(() => isLoading = false);
+        return;
+      }
+
       // First, fetch data without server-side filters to get all data for client-side filtering
       final data = await OrderService.fetchAgeingReport(
         acno: acno,
@@ -177,7 +195,7 @@ class _AgeingReportScreenState extends State<AgeingReportScreen> {
     return " ${date.year.toString().padLeft(4, '0')}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}";
   }
 
-  void _openDateSelector() async {
+  Future<void> _openDateSelector() async {
     final picked = await showDialog<DateTimeRange>(
       context: context,
       barrierDismissible: true,

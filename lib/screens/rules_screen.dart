@@ -5,6 +5,7 @@ import '../utils/Layout/app_bottom_bar.dart';
 import '../services/rules_service.dart';
 import 'create_rule_screen.dart';
 import '../widgets/custom_date_selector.dart';
+import '../utils/custom_snackbar.dart';
 
 class RulesScreen extends StatefulWidget {
   const RulesScreen({Key? key}) : super(key: key);
@@ -227,9 +228,9 @@ class _RulesScreenState extends State<RulesScreen> {
                   fontSize: 18,
                   fontWeight: FontWeight.w600,
                   color: Colors.grey,
-                ),
               ),
-              const SizedBox(height: 8),
+            ),
+            const SizedBox(height: 8),
               Text(
                 _rulesService.errorMessage.value,
                 style: TextStyle(
@@ -281,9 +282,9 @@ class _RulesScreenState extends State<RulesScreen> {
                   fontSize: 14,
                   color: Colors.grey[500],
                 ),
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 24),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 24),
               ElevatedButton(
                 onPressed: () {
                   Get.to(() => const CreateRuleScreen());
@@ -319,7 +320,7 @@ class _RulesScreenState extends State<RulesScreen> {
                 ),
               ),
               Text(
-                '${_startDate.toIso8601String().split('T')[0]} to ${_endDate.toIso8601String().split('T')[0]}',
+                _getDateRangeText(),
                 style: const TextStyle(
                   fontFamily: 'SF Pro Display',
                   fontWeight: FontWeight.w400,
@@ -407,11 +408,11 @@ class _RulesScreenState extends State<RulesScreen> {
                                 if (rule['is_contain'] != null)
                                   _infoRow('Is Contain', rule['is_contain']),
                               ],
-                            ),
-                          ),
-                      ],
-                    ),
-                  ),
+              ),
+            ),
+          ],
+        ),
+      ),
                 );
               },
             ),
@@ -455,45 +456,125 @@ class _RulesScreenState extends State<RulesScreen> {
     );
   }
 
+  String _getDateRangeText() {
+    final now = DateTime.now();
+    final difference = now.difference(_startDate).inDays;
+    
+    if (difference == 0) {
+      return 'Today';
+    } else if (difference == 1) {
+      return 'Last 1 day';
+    } else if (difference <= 7) {
+      return 'Last $difference days';
+    } else if (difference <= 30) {
+      final weeks = (difference / 7).round();
+      return 'Last $weeks week${weeks > 1 ? 's' : ''}';
+    } else if (difference <= 365) {
+      final months = (difference / 30).round();
+      return 'Last $months month${months > 1 ? 's' : ''}';
+    } else {
+      final years = (difference / 365).round();
+      return 'Last $years year${years > 1 ? 's' : ''}';
+    }
+  }
+
   void _showDeleteConfirmation(Map<String, dynamic> rule) {
-    Get.dialog(
-      AlertDialog(
-        title: Text('Delete Rule'),
-        content: Text('Are you sure you want to delete "${rule['rule_name'] ?? 'this rule'}"?'),
-        actions: [
-          TextButton(
-            onPressed: () => Get.back(),
-            child: Text('Cancel'),
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) {
+        return Container(
+          width: double.infinity,
+          padding: EdgeInsets.only(
+            left: 0,
+            right: 0,
+            bottom: MediaQuery.of(context).viewInsets.bottom,
           ),
-          TextButton(
-            onPressed: () async {
-              Get.back();
-              if (_acno != null && rule['id'] != null) {
-                final success = await _rulesService.deleteRule(
-                  acno: _acno!,
-                  ruleId: rule['id'].toString(),
-                );
-                if (success) {
-                  Get.snackbar(
-                    'Success',
-                    'Rule deleted successfully',
-                    backgroundColor: Colors.green,
-                    colorText: Colors.white,
-                  );
-                } else {
-                  Get.snackbar(
-                    'Error',
-                    _rulesService.errorMessage.value,
-                    backgroundColor: Colors.red,
-                    colorText: Colors.white,
-                  );
-                }
-              }
-            },
-            child: Text('Delete', style: TextStyle(color: Colors.red)),
+          decoration: const BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.vertical(top: Radius.circular(32)),
           ),
-        ],
-      ),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  decoration: const BoxDecoration(
+                    color: Color(0xFFE6F0FF),
+                    shape: BoxShape.circle,
+                  ),
+                  padding: const EdgeInsets.all(32),
+                  child: const Icon(Icons.delete_rounded, color: Color(0xFF007AFF), size: 64),
+                ),
+                const SizedBox(height: 24),
+                const Text(
+                  'Are you Sure',
+                  style: TextStyle(fontWeight: FontWeight.w700, fontSize: 22, color: Colors.black),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  'You want to delete "${rule['rule_name'] ?? 'this rule'}"',
+                  style: const TextStyle(fontWeight: FontWeight.w400, fontSize: 15, color: Color(0xFF8E8E93)),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 28),
+                Row(
+                  children: [
+                    Expanded(
+                      child: ElevatedButton(
+                        onPressed: () => Navigator.of(context).pop(),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFFF2F2F7),
+                          elevation: 0,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          padding: const EdgeInsets.symmetric(vertical: 14),
+                        ),
+                        child: const Text('No', style: TextStyle(fontWeight: FontWeight.w500, fontSize: 15, color: Colors.black)),
+                      ),
+                    ),
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: ElevatedButton(
+                        onPressed: () async {
+                          Navigator.of(context).pop();
+                          if (_acno != null && rule['id'] != null) {
+                            // Show processing snackbar
+                            customSnackBar('Processing', 'Deleting rule...');
+                            
+                            final success = await _rulesService.deleteRule(
+                              acno: _acno!,
+                              ruleId: rule['id'].toString(),
+                            );
+                            
+                            if (success) {
+                              customSnackBar('Success', 'Rule deleted successfully');
+                            } else {
+                              customSnackBar('Error', _rulesService.errorMessage.value);
+                            }
+                          }
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFF007AFF),
+                          elevation: 0,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          padding: const EdgeInsets.symmetric(vertical: 14),
+                        ),
+                        child: const Text('Yes', style: TextStyle(fontWeight: FontWeight.w500, fontSize: 15, color: Colors.white)),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        );
+      },
     );
   }
 } 

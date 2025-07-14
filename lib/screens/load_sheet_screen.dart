@@ -299,7 +299,7 @@ class _LoadSheetScreenState extends State<LoadSheetScreen> {
                   ),
                 ),
                 Text(
-                  '${_startDate.toIso8601String().split('T')[0]} to ${_endDate.toIso8601String().split('T')[0]}',
+                  _getDateRangeText(),
                   style: const TextStyle(
                     fontFamily: 'SF Pro Display',
                     fontWeight: FontWeight.w400,
@@ -396,6 +396,28 @@ class _LoadSheetScreenState extends State<LoadSheetScreen> {
       return '${date.day}-${date.month}-${date.year}';
     } catch (e) {
       return dateString;
+    }
+  }
+
+  String _getDateRangeText() {
+    final now = DateTime.now();
+    final difference = now.difference(_startDate).inDays;
+    
+    if (difference == 0) {
+      return 'Today';
+    } else if (difference == 1) {
+      return 'Last 1 day';
+    } else if (difference <= 7) {
+      return 'Last $difference days';
+    } else if (difference <= 30) {
+      final weeks = (difference / 7).round();
+      return 'Last $weeks week${weeks > 1 ? 's' : ''}';
+    } else if (difference <= 365) {
+      final months = (difference / 30).round();
+      return 'Last $months month${months > 1 ? 's' : ''}';
+    } else {
+      final years = (difference / 365).round();
+      return 'Last $years year${years > 1 ? 's' : ''}';
     }
   }
 

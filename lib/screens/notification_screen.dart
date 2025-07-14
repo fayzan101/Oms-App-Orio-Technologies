@@ -48,7 +48,7 @@ class _NotificationScreenState extends State<NotificationScreen> {
     }
   }
 
-  void _fetchNotifications(String acno) async {
+  Future<void> _fetchNotifications(String acno) async {
     setState(() {
       _loading = true;
       _error = null;

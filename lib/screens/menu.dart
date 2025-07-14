@@ -26,11 +26,20 @@ class _MenuScreenState extends State<MenuScreen> {
   Map<String, dynamic>? profileData;
   bool isLoading = true;
   String? error;
+  final AuthService _authService = Get.find<AuthService>();
 
   @override
   void initState() {
     super.initState();
-    fetchProfile();
+    _loadUserDataAndFetchProfile();
+  }
+
+  Future<void> _loadUserDataAndFetchProfile() async {
+    // Load user data if not already loaded
+    if (_authService.currentUser.value == null) {
+      await _authService.loadUserData();
+    }
+    await fetchProfile();
   }
 
   Future<void> fetchProfile() async {
@@ -39,14 +48,20 @@ class _MenuScreenState extends State<MenuScreen> {
       error = null;
     });
     try {
+      // Get current user data from AuthService
+      final userData = _authService.getCurrentUserData();
+      if (userData == null) {
+        setState(() {
+          error = 'User not logged in.';
+          isLoading = false;
+        });
+        return;
+      }
+
       final dio = Dio();
       final response = await dio.post(
         'https://oms.getorio.com/api/profile',
-        data: {
-          "acno": "OR-00009",
-          "userid": 38,
-          "customer_id": 38
-        },
+        data: userData,
       );
       if (response.data['status'] == 1 && response.data['payload'] is List && response.data['payload'].isNotEmpty) {
         setState(() {
@@ -332,7 +347,7 @@ class _MenuScreenState extends State<MenuScreen> {
   }
 }
 
-void showLogoutBottomSheet(BuildContext context) async {
+Future<void> showLogoutBottomSheet(BuildContext context) async {
   final state = context.findAncestorStateOfType<_MenuScreenState>();
   state?.setState(() => state._isDialogOpen = true);
   final result = await showModalBottomSheet<bool>(

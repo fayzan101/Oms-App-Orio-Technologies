@@ -3,6 +3,7 @@ import 'package:get/get.dart';
 import 'search_screen.dart';
 import '../utils/Layout/app_bottom_bar.dart';
 import '../widgets/custom_date_selector.dart';
+import '../services/auth_service.dart';
 
 class CODStatement {
   final String refNo;
@@ -49,12 +50,21 @@ class _CODStatementScreenState extends State<CODStatementScreen> {
   String? _searchQuery;
   List<CODStatement> _filteredStatements = [];
   final TextEditingController _searchController = TextEditingController();
+  final AuthService _authService = Get.find<AuthService>();
 
   @override
   void initState() {
     super.initState();
-    fetchStatements();
+    _loadUserDataAndFetchStatements();
     _searchController.addListener(_onSearchChanged);
+  }
+
+  Future<void> _loadUserDataAndFetchStatements() async {
+    // Load user data if not already loaded
+    if (_authService.currentUser.value == null) {
+      await _authService.loadUserData();
+    }
+    await fetchStatements();
   }
 
   @override
@@ -76,10 +86,19 @@ class _CODStatementScreenState extends State<CODStatementScreen> {
       error = null;
     });
     try {
+      final acno = _authService.getCurrentAcno();
+      if (acno == null) {
+        setState(() {
+          error = 'User not logged in';
+          isLoading = false;
+        });
+        return;
+      }
+
       final response = await GetConnect().post(
         'https://oms.getorio.com/api/statement/index',
         {
-          'acno': 'OR-00009',
+          'acno': acno,
           'start_date': _startDate.toIso8601String().split('T')[0],
           'end_date': _endDate.toIso8601String().split('T')[0],
         },
@@ -110,6 +129,28 @@ class _CODStatementScreenState extends State<CODStatementScreen> {
       }).toList();
     } else {
       _filteredStatements = statements;
+    }
+  }
+
+  String _getDateRangeText() {
+    final now = DateTime.now();
+    final difference = now.difference(_startDate).inDays;
+    
+    if (difference == 0) {
+      return 'Today';
+    } else if (difference == 1) {
+      return 'Last 1 day';
+    } else if (difference <= 7) {
+      return 'Last $difference days';
+    } else if (difference <= 30) {
+      final weeks = (difference / 7).round();
+      return 'Last $weeks week${weeks > 1 ? 's' : ''}';
+    } else if (difference <= 365) {
+      final months = (difference / 30).round();
+      return 'Last $months month${months > 1 ? 's' : ''}';
+    } else {
+      final years = (difference / 365).round();
+      return 'Last $years year${years > 1 ? 's' : ''}';
     }
   }
 
@@ -213,7 +254,7 @@ class _CODStatementScreenState extends State<CODStatementScreen> {
                           borderRadius: BorderRadius.circular(20),
                         ),
                         child: Text(
-                          '${_startDate.toIso8601String().split('T')[0]} to ${_endDate.toIso8601String().split('T')[0]}',
+                          _getDateRangeText(),
                           style: const TextStyle(
                             color: Color(0xFF007AFF),
                             fontSize: 12,

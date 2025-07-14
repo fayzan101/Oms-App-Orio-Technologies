@@ -200,39 +200,44 @@ class RulesService extends GetxService {
       print('RulesService: Deleting rule $ruleId for acno: $acno');
       
       final requestData = {
+        'id': int.tryParse(ruleId) ?? 0,
         'acno': acno,
-        'rule_id': ruleId,
       };
 
-      // Make API call to delete rule endpoint
-      final response = await _apiService.post('rules/delete', data: requestData);
+      // Make API call to destroy rule endpoint
+      final response = await _apiService.post('rules/destroy', data: requestData);
       
-      print('RulesService: Delete rule response status: ${response.statusCode}');
+      print('RulesService: Destroy rule response status: ${response.statusCode}');
+      print('RulesService: Destroy rule response data: ${response.data}');
 
       if (response.statusCode == 200) {
         final data = response.data;
         
         if (data['status'] == 1) {
-          print('RulesService: Rule deleted successfully');
+          print('RulesService: Rule destroyed successfully');
           // Refresh the rules list
           await getRules(acno: acno);
           return true;
         } else {
-          errorMessage.value = data['message'] ?? 'Failed to delete rule';
+          errorMessage.value = data['message'] ?? 'Failed to destroy rule';
           return false;
         }
       } else {
         final data = response.data;
-        errorMessage.value = data['message'] ?? 'Failed to delete rule';
+        errorMessage.value = data['message'] ?? 'Failed to destroy rule';
         return false;
       }
       
     } on DioException catch (e) {
-      print('RulesService: Delete rule DioException: ${e.message}');
+      print('RulesService: Destroy rule DioException: ${e.message}');
+      if (e.response != null) {
+        print('RulesService: Response status: ${e.response!.statusCode}');
+        print('RulesService: Response data: ${e.response!.data}');
+      }
       errorMessage.value = e.message ?? 'Network error occurred';
       return false;
     } catch (e) {
-      print('RulesService: Delete rule unexpected error: $e');
+      print('RulesService: Destroy rule unexpected error: $e');
       errorMessage.value = 'An unexpected error occurred';
       return false;
     } finally {

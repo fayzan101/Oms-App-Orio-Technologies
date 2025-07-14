@@ -237,8 +237,16 @@ class _ProfileScreenState extends State<ProfileScreen> {
   @override
   void initState() {
     super.initState();
-    fetchProfile();
+    _loadUserDataAndFetchProfile();
     _fetchBanks();
+  }
+
+  Future<void> _loadUserDataAndFetchProfile() async {
+    // Load user data if not already loaded
+    if (_authService.currentUser.value == null) {
+      await _authService.loadUserData();
+    }
+    await fetchProfile();
   }
 
   @override
@@ -259,14 +267,20 @@ class _ProfileScreenState extends State<ProfileScreen> {
       error = null;
     });
     try {
+      // Get current user data from AuthService
+      final userData = _authService.getCurrentUserData();
+      if (userData == null) {
+        setState(() {
+          error = 'User not logged in.';
+          isLoading = false;
+        });
+        return;
+      }
+
       final dio = Dio();
       final response = await dio.post(
         'https://oms.getorio.com/api/profile',
-        data: {
-          "acno": "OR-00009",
-          "userid": 38,
-          "customer_id": 38
-        },
+        data: userData,
       );
       if (response.data['status'] == 1 && response.data['payload'] is List && response.data['payload'].isNotEmpty) {
         setState(() {
@@ -342,9 +356,15 @@ class _ProfileScreenState extends State<ProfileScreen> {
     });
 
     try {
+      final currentUser = _authService.currentUser.value;
+      if (currentUser == null) {
+        customSnackBar('Error', 'User not logged in.');
+        return;
+      }
+
       final profile = CustomerProfile(
-        customerId: '38',
-        acno: 'OR-00009',
+        customerId: currentUser.customerId,
+        acno: currentUser.acno,
         email: emailController.text.trim(),
         firstName: firstNameController.text.trim(),
         lastName: lastNameController.text.trim(),

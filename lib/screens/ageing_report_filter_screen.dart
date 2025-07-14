@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 import '../network/order_service.dart';
 // Import other services as needed for platforms, couriers, cities
 import '../services/courier_service.dart';
 import '../services/statement_service.dart';
+import '../services/auth_service.dart';
 
 class AgeingReportFilterScreen extends StatefulWidget {
   final Function(Map<String, dynamic> filters) onApply;
@@ -30,11 +32,20 @@ class _AgeingReportFilterScreenState extends State<AgeingReportFilterScreen> {
   
   // Validation state
   bool showValidationErrors = false;
+  final AuthService _authService = Get.find<AuthService>();
 
   @override
   void initState() {
     super.initState();
-    fetchDropdownData();
+    _loadUserDataAndFetchData();
+  }
+
+  Future<void> _loadUserDataAndFetchData() async {
+    // Load user data if not already loaded
+    if (_authService.currentUser.value == null) {
+      await _authService.loadUserData();
+    }
+    await fetchDropdownData();
   }
 
   Future<void> fetchDropdownData() async {
@@ -43,16 +54,27 @@ class _AgeingReportFilterScreenState extends State<AgeingReportFilterScreen> {
       isLoadingCouriers = true;
       isLoadingCities = true;
     });
+    
+    final acno = _authService.getCurrentAcno();
+    if (acno == null) {
+      setState(() {
+        isLoadingPlatforms = false;
+        isLoadingCouriers = false;
+        isLoadingCities = false;
+      });
+      return;
+    }
+    
     // Fetch platforms (replace with actual API call if available)
     platformOptions = ['Shopify', 'WooCommerce', 'Daraz']; // Example static
     // Fetch couriers
     try {
-      final couriers = await CourierService().getCouriers('OR-00009');
+      final couriers = await CourierService().getCouriers(acno);
       courierOptions = couriers.map((c) => (c['name'] ?? c['courier_name'] ?? '').toString()).where((s) => s.isNotEmpty).toList();
     } catch (_) {}
     // Fetch cities
     try {
-      final cities = await StatementService().fetchCityList('OR-00009');
+      final cities = await StatementService().fetchCityList(acno);
       cityOptions = cities.map((c) => (c['name'] ?? c['city_name'] ?? '').toString()).where((s) => s.isNotEmpty).toList();
     } catch (_) {}
     setState(() {

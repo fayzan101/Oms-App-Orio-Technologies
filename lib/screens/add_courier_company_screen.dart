@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../models/courier_account.dart';
 import '../services/courier_service.dart';
+import '../services/auth_service.dart';
 import '../utils/Layout/app_bottom_bar.dart';
 import '../utils/custom_snackbar.dart';
 import 'courier_companies_screen.dart';
@@ -32,16 +33,31 @@ class _AddCourierCompanyScreenState extends State<AddCourierCompanyScreen> {
   List<Map<String, dynamic>> couriers = [];
   final List<String> statuses = ['Active', 'Inactive'];
   final CourierService _courierService = CourierService();
+  final AuthService _authService = Get.find<AuthService>();
 
   @override
   void initState() {
     super.initState();
-    _loadCouriers();
+    _loadUserDataAndFetchCouriers();
+  }
+
+  Future<void> _loadUserDataAndFetchCouriers() async {
+    // Load user data if not already loaded
+    if (_authService.currentUser.value == null) {
+      await _authService.loadUserData();
+    }
+    await _loadCouriers();
   }
 
   Future<void> _loadCouriers() async {
     try {
-      final couriersData = await _courierService.getCouriers('OR-00009');
+      final acno = _authService.getCurrentAcno();
+      if (acno == null) {
+        customSnackBar('Error', 'User not logged in');
+        return;
+      }
+
+      final couriersData = await _courierService.getCouriers(acno);
       setState(() {
         couriers = couriersData;
         isLoadingCouriers = false;
@@ -320,7 +336,7 @@ class _AddCourierCompanyScreenState extends State<AddCourierCompanyScreen> {
       // Call the update API
       final success = await _courierService.updateCourier(
         acno: widget.courierAccount!.acno,
-        userId: 38, // This should come from user session/context
+        userId: _authService.getCurrentUserId() ?? 0,
         id: widget.courierAccount!.id,
         courierId: courierId,
         accountTitle: accountTitleController.text,
@@ -380,8 +396,8 @@ class _AddCourierCompanyScreenState extends State<AddCourierCompanyScreen> {
       
       // Call the store API
       final success = await _courierService.storeCourier(
-        acno: 'OR-00009', // This should come from user session/context
-        userId: 38, // This should come from user session/context
+        acno: _authService.getCurrentAcno() ?? '',
+        userId: _authService.getCurrentUserId() ?? 0,
         courierId: courierId,
         accountTitle: accountTitleController.text,
         accountNo: accountNoController.text,

@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 import '../services/courier_service.dart';
 import '../services/statement_service.dart';
+import '../services/auth_service.dart';
 
 class CourierInsightsFilterScreen extends StatefulWidget {
   final Function(Map<String, dynamic> filters) onApply;
@@ -29,11 +31,20 @@ class _CourierInsightsFilterScreenState extends State<CourierInsightsFilterScree
   
   // Validation state
   bool showValidationErrors = false;
+  final AuthService _authService = Get.find<AuthService>();
 
   @override
   void initState() {
     super.initState();
-    fetchDropdownData();
+    _loadUserDataAndFetchData();
+  }
+
+  Future<void> _loadUserDataAndFetchData() async {
+    // Load user data if not already loaded
+    if (_authService.currentUser.value == null) {
+      await _authService.loadUserData();
+    }
+    await fetchDropdownData();
   }
 
   Future<void> fetchDropdownData() async {
@@ -41,14 +52,24 @@ class _CourierInsightsFilterScreenState extends State<CourierInsightsFilterScree
       isLoadingCouriers = true;
       isLoadingCities = true;
     });
+    
+    final acno = _authService.getCurrentAcno();
+    if (acno == null) {
+      setState(() {
+        isLoadingCouriers = false;
+        isLoadingCities = false;
+      });
+      return;
+    }
+    
     // Fetch couriers
     try {
-      final couriers = await CourierService().getCouriers('OR-00009');
+      final couriers = await CourierService().getCouriers(acno);
       courierOptions = couriers.map((c) => (c['name'] ?? c['courier_name'] ?? '').toString()).where((s) => s.isNotEmpty).toList();
     } catch (_) {}
     // Fetch cities
     try {
-      final cities = await StatementService().fetchCityList('OR-00009');
+      final cities = await StatementService().fetchCityList(acno);
       cityOptions = cities.map((c) => (c['name'] ?? c['city_name'] ?? '').toString()).where((s) => s.isNotEmpty).toList();
     } catch (_) {}
     setState(() {

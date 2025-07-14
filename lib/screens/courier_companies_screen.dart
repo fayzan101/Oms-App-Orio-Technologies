@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../models/courier_account.dart';
 import '../services/courier_service.dart';
+import '../services/auth_service.dart';
 import 'add_courier_company_screen.dart'; // Added import for AddCourierCompanyScreen
 import '../utils/Layout/app_bottom_bar.dart';
 import '../utils/custom_snackbar.dart';
@@ -17,6 +18,7 @@ class CourierCompaniesScreen extends StatefulWidget {
 class _CourierCompaniesScreenState extends State<CourierCompaniesScreen> {
   final CourierService _courierService = CourierService();
   final TextEditingController _searchController = TextEditingController();
+  final AuthService _authService = Get.find<AuthService>();
   List<CourierAccount> _allCompanies = [];
   List<CourierAccount> _filteredCompanies = [];
   bool _loading = true;
@@ -25,7 +27,7 @@ class _CourierCompaniesScreenState extends State<CourierCompaniesScreen> {
   @override
   void initState() {
     super.initState();
-    _fetchCompanies();
+    _loadUserDataAndFetchCompanies();
     _searchController.addListener(_onSearchChanged);
   }
 
@@ -35,13 +37,30 @@ class _CourierCompaniesScreenState extends State<CourierCompaniesScreen> {
     super.dispose();
   }
 
-  void _fetchCompanies() async {
+  Future<void> _loadUserDataAndFetchCompanies() async {
+    // Load user data if not already loaded
+    if (_authService.currentUser.value == null) {
+      await _authService.loadUserData();
+    }
+    await _fetchCompanies();
+  }
+
+  Future<void> _fetchCompanies() async {
     setState(() {
       _loading = true;
       _error = null;
     });
     try {
-      final companies = await _courierService.getCourierAccounts('OR-00009');
+      final acno = _authService.getCurrentAcno();
+      if (acno == null) {
+        setState(() {
+          _error = 'User not logged in';
+          _loading = false;
+        });
+        return;
+      }
+
+      final companies = await _courierService.getCourierAccounts(acno);
       setState(() {
         _allCompanies = companies;
         _filteredCompanies = companies;

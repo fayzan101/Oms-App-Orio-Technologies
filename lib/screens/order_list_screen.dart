@@ -12,6 +12,7 @@ import 'quick_edit_screen.dart';
 import '../utils/Layout/app_bottom_bar.dart';
 import 'calendar_screen.dart';
 import '../widgets/custom_date_selector.dart';
+import '../services/auth_service.dart';
 
 class OrderListScreen extends StatefulWidget {
   const OrderListScreen({Key? key}) : super(key: key);
@@ -28,6 +29,7 @@ class _OrderListScreenState extends State<OrderListScreen> {
   bool hasMore = true;
   final ScrollController _scrollController = ScrollController();
   final Set<int> expanded = {};
+  final AuthService _authService = Get.find<AuthService>();
 
   // Selection state
   bool selectAll = false;
@@ -49,14 +51,22 @@ class _OrderListScreenState extends State<OrderListScreen> {
   @override
   void initState() {
     super.initState();
-    fetchReportSummary();
-    fetchOrders(reset: true);
+    _loadUserDataAndFetchData();
     _scrollController.addListener(() {
       if (mounted && _scrollController.position.pixels >= _scrollController.position.maxScrollExtent - 200 && !isLoading && hasMore) {
         fetchOrders();
       }
     });
     _searchController.addListener(_onSearchChanged);
+  }
+
+  Future<void> _loadUserDataAndFetchData() async {
+    // Load user data if not already loaded
+    if (_authService.currentUser.value == null) {
+      await _authService.loadUserData();
+    }
+    await fetchReportSummary();
+    await fetchOrders(reset: true);
   }
 
   @override
@@ -85,8 +95,14 @@ class _OrderListScreenState extends State<OrderListScreen> {
 
   Future<void> fetchReportSummary() async {
     try {
+      final acno = _authService.getCurrentAcno();
+      if (acno == null) {
+        // Handle error - user not logged in
+        return;
+      }
+
       final summary = await OrderService.fetchReportSummary(
-        acno: 'OR-00009',
+        acno: acno,
         startDate: _startDate.toIso8601String().split('T')[0],
         endDate: _endDate.toIso8601String().split('T')[0],
       );
@@ -112,9 +128,17 @@ class _OrderListScreenState extends State<OrderListScreen> {
     }
     setState(() => isLoading = true);
     try {
+      final acno = _authService.getCurrentAcno();
+      if (acno == null) {
+        // Handle error - user not logged in
+        setState(() => isLoading = false);
+        return;
+      }
+
       final data = await OrderService.fetchOrders(
         startLimit: startLimit,
         endLimit: endLimit,
+        acno: acno,
         startDate: _startDate.toIso8601String().split('T')[0],
         endDate: _endDate.toIso8601String().split('T')[0],
       );

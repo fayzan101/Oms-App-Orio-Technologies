@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 import '../services/statement_service.dart';
+import '../services/auth_service.dart';
 
 class FilterScreen extends StatefulWidget {
   const FilterScreen({Key? key}) : super(key: key);
@@ -23,6 +25,7 @@ class _FilterScreenState extends State<FilterScreen> {
   bool _isLoadingCities = false;
   String? _platformError;
   String? _cityError;
+  final AuthService _authService = Get.find<AuthService>();
 
   void resetFilters() {
     setState(() {
@@ -36,8 +39,16 @@ class _FilterScreenState extends State<FilterScreen> {
   @override
   void initState() {
     super.initState();
-    _fetchPlatforms();
-    _fetchCities();
+    _loadUserDataAndFetchData();
+  }
+
+  Future<void> _loadUserDataAndFetchData() async {
+    // Load user data if not already loaded
+    if (_authService.currentUser.value == null) {
+      await _authService.loadUserData();
+    }
+    await _fetchPlatforms();
+    await _fetchCities();
   }
 
   Future<void> _fetchPlatforms() async {
@@ -46,8 +57,17 @@ class _FilterScreenState extends State<FilterScreen> {
       _platformError = null;
     });
     try {
+      final acno = _authService.getCurrentAcno();
+      if (acno == null) {
+        setState(() {
+          _platformError = 'User not logged in';
+          _isLoadingPlatforms = false;
+        });
+        return;
+      }
+
       final service = StatementService();
-      final shops = await service.fetchShopNames('OR-00009');
+      final shops = await service.fetchShopNames(acno);
       setState(() {
         platforms = shops.map((e) => e['platform_name']?.toString() ?? '').where((e) => e.isNotEmpty).toList();
         _isLoadingPlatforms = false;
@@ -66,8 +86,17 @@ class _FilterScreenState extends State<FilterScreen> {
       _cityError = null;
     });
     try {
+      final acno = _authService.getCurrentAcno();
+      if (acno == null) {
+        setState(() {
+          _cityError = 'User not logged in';
+          _isLoadingCities = false;
+        });
+        return;
+      }
+
       final service = StatementService();
-      final cityData = await service.fetchCityList('OR-00009');
+      final cityData = await service.fetchCityList(acno);
       print('Filter screen received city data: $cityData');
       print('City data length: ${cityData.length}');
       

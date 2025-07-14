@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 import 'dashboard_screen.dart' as dash;
 import 'report.dart' as report;
 import 'menu.dart' as menu;
 import 'package:flutter/services.dart'; // Added for SystemChrome
 import 'create_order.dart';
 import '../services/statement_service.dart';
+import '../services/auth_service.dart';
 
 class AddProductScreen extends StatefulWidget {
   final int? platformId;
@@ -36,11 +38,20 @@ class _AddProductScreenState extends State<AddProductScreen> {
   bool _isLoadingPlatforms = false;
   String? _productError;
   String? _platformError;
+  final AuthService _authService = Get.find<AuthService>();
 
   @override
   void initState() {
     super.initState();
-    _fetchPlatforms();
+    _loadUserDataAndFetchPlatforms();
+  }
+
+  Future<void> _loadUserDataAndFetchPlatforms() async {
+    // Load user data if not already loaded
+    if (_authService.currentUser.value == null) {
+      await _authService.loadUserData();
+    }
+    await _fetchPlatforms();
   }
 
   Future<void> _fetchPlatforms() async {
@@ -49,8 +60,17 @@ class _AddProductScreenState extends State<AddProductScreen> {
       _platformError = null;
     });
     try {
+      final acno = _authService.getCurrentAcno();
+      if (acno == null) {
+        setState(() {
+          _platformError = 'User not logged in';
+          _isLoadingPlatforms = false;
+        });
+        return;
+      }
+
       final service = StatementService();
-      final platformData = await service.fetchShopNames('OR-00009');
+      final platformData = await service.fetchShopNames(acno);
       print('Add product screen received platform data: $platformData');
       print('Platform data length: ${platformData.length}');
       
@@ -97,7 +117,7 @@ class _AddProductScreenState extends State<AddProductScreen> {
       }
       
       final productData = await service.fetchProductSuggestions(
-        acno: 'OR-00009',
+        acno: _authService.getCurrentAcno() ?? '',
         platformId: platformId,
         customerPlatformId: customerPlatformId,
       );
@@ -123,7 +143,7 @@ class _AddProductScreenState extends State<AddProductScreen> {
     }
   }
 
-  void _showPlatformPicker() async {
+  Future<void> _showPlatformPicker() async {
     if (_isLoadingPlatforms) {
       showDialog(
         context: context,
@@ -257,7 +277,7 @@ class _AddProductScreenState extends State<AddProductScreen> {
     }
   }
 
-  void _showProductPicker() async {
+  Future<void> _showProductPicker() async {
     if (_isLoadingProducts) {
       // Show loading dialog
       showDialog(
