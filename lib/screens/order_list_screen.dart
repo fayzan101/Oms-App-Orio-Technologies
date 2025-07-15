@@ -29,7 +29,8 @@ class OrderListScreen extends StatefulWidget {
 class _OrderListScreenState extends State<OrderListScreen> {
   List<dynamic> orders = [];
   int startLimit = 1;
-  int endLimit = 20;
+  int endLimit = 15;
+  final int pageSize = 15;
   bool isLoading = false;
   bool hasMore = true;
   final ScrollController _scrollController = ScrollController();
@@ -209,19 +210,18 @@ class _OrderListScreenState extends State<OrderListScreen> {
       setState(() {
         orders = [];
         startLimit = 1;
-        endLimit = 20;
+        endLimit = pageSize;
         hasMore = true;
       });
     }
+    if (!hasMore) return;
     setState(() => isLoading = true);
     try {
       final acno = _authService.getCurrentAcno();
       if (acno == null) {
-        // Handle error - user not logged in
         setState(() => isLoading = false);
         return;
       }
-
       final data = await OrderService.fetchOrders(
         startLimit: startLimit,
         endLimit: endLimit,
@@ -233,8 +233,8 @@ class _OrderListScreenState extends State<OrderListScreen> {
       setState(() {
         orders.addAll(newOrders);
         startLimit = endLimit + 1;
-        endLimit += 20;
-        hasMore = newOrders.isNotEmpty;
+        endLimit += pageSize;
+        hasMore = newOrders.length == pageSize;
         _applySearch();
       });
     } catch (e) {

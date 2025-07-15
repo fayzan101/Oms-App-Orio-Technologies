@@ -52,6 +52,7 @@ class _CODStatementScreenState extends State<CODStatementScreen> {
   List<CODStatement> _filteredStatements = [];
   final TextEditingController _searchController = TextEditingController();
   final AuthService _authService = Get.find<AuthService>();
+  Map<String, dynamic>? _activeFilters; // <-- Add this line
 
   @override
   void initState() {
@@ -120,17 +121,62 @@ class _CODStatementScreenState extends State<CODStatementScreen> {
   }
 
   void _applySearch() {
+    List<CODStatement> tempStatements = statements;
+    // Apply text search filter
     if (_searchQuery != null && _searchQuery!.isNotEmpty) {
-      _filteredStatements = statements.where((s) {
+      tempStatements = tempStatements.where((s) {
         return s.refNo.toLowerCase().contains(_searchQuery!.toLowerCase()) ||
                s.date.toLowerCase().contains(_searchQuery!.toLowerCase()) ||
                s.accountNo.toLowerCase().contains(_searchQuery!.toLowerCase()) ||
                s.codAmount.toLowerCase().contains(_searchQuery!.toLowerCase()) ||
                s.courier.toLowerCase().contains(_searchQuery!.toLowerCase());
       }).toList();
-    } else {
-      _filteredStatements = statements;
     }
+    // Apply filter screen filters
+    if (_activeFilters != null) {
+      tempStatements = tempStatements.where((s) {
+        // Booked/Unbooked
+        if (_activeFilters!['order'] != null) {
+          final status = s.codAmount.toLowerCase(); // Replace with correct field if needed
+          if (_activeFilters!['order'] == 'Booked') {
+            if (status != 'booked') return false;
+          } else if (_activeFilters!['order'] == 'Unbooked') {
+            if (status == 'booked') return false;
+          }
+        }
+        // Multi-select: Status
+        if (_activeFilters!['status'] != null && (_activeFilters!['status'] as List).isNotEmpty) {
+          final status = s.codAmount; // Replace with correct field if needed
+          if (!(_activeFilters!['status'] as List).contains(status)) {
+            return false;
+          }
+        }
+        // Multi-select: Platform
+        if (_activeFilters!['platform'] != null && (_activeFilters!['platform'] as List).isNotEmpty) {
+          final platform = s.accountNo;
+          if (!(_activeFilters!['platform'] as List).contains(platform)) {
+            return false;
+          }
+        }
+        // Multi-select: Courier
+        if (_activeFilters!['courier'] != null && (_activeFilters!['courier'] as List).isNotEmpty) {
+          final courier = s.courier;
+          if (!(_activeFilters!['courier'] as List).contains(courier)) {
+            return false;
+          }
+        }
+        // Multi-select: City
+        if (_activeFilters!['city'] != null && (_activeFilters!['city'] as List).isNotEmpty) {
+          // CODStatement does not have city, add if available
+          // final city = s.city;
+          // if (!(_activeFilters!['city'] as List).contains(city)) {
+          //   return false;
+          // }
+        }
+        return true;
+      }).toList();
+    }
+    _filteredStatements = tempStatements;
   }
 
   String _getDateRangeText() {
@@ -205,8 +251,10 @@ class _CODStatementScreenState extends State<CODStatementScreen> {
                 ),
               );
               if (result != null) {
-                // TODO: Use the selected filters to fetch COD statements
-                print('Selected filters: ' + result.toString());
+                setState(() {
+                  _activeFilters = result;
+                });
+                _applySearch();
               }
             },
           ),

@@ -31,11 +31,10 @@ class _CourierInsightsScreenState extends State<CourierInsightsScreen> {
   List<Map<String, dynamic>> _filteredReports = [];
   final TextEditingController _searchController = TextEditingController();
   final AuthService _authService = Get.find<AuthService>();
-  
-  // Filter state
-  String? filterStatus;
-  String? filterCourier;
-  String? filterCity;
+  // Multi-select filter state
+  List<String> filterStatuses = [];
+  List<String> filterCouriers = [];
+  List<String> filterCities = [];
   String? filterPaymentMethod;
   String? filterPaymentStatus;
 
@@ -87,44 +86,39 @@ class _CourierInsightsScreenState extends State<CourierInsightsScreen> {
         endLimit: 50000,
         startDate: startDateStr,
         endDate: endDateStr,
-        // Add filter parameters if your API supports them
-        // filterStatus: filterStatus,
-        // filterCourier: filterCourier,
-        // filterCity: filterCity,
-        // filterPaymentMethod: filterPaymentMethod,
-        // filterPaymentStatus: filterPaymentStatus,
       );
       
       // Apply client-side filtering if API doesn't support server-side filtering
       List<Map<String, dynamic>> filteredData = data;
       
-      if (filterStatus != null) {
-        filteredData = filteredData.where((report) => 
-          report['status_name']?.toString().toLowerCase() == filterStatus!.toLowerCase()
+      // Multi-select: Status
+      if (filterStatuses.isNotEmpty) {
+        filteredData = filteredData.where((report) =>
+          filterStatuses.contains(report['status_name']?.toString() ?? '')
         ).toList();
       }
-      
-      if (filterCourier != null) {
-        filteredData = filteredData.where((report) => 
-          report['courier_name']?.toString().toLowerCase() == filterCourier!.toLowerCase()
+      // Multi-select: Courier
+      if (filterCouriers.isNotEmpty) {
+        filteredData = filteredData.where((report) =>
+          filterCouriers.contains(report['courier_name']?.toString() ?? '')
         ).toList();
       }
-      
-      if (filterCity != null) {
-        filteredData = filteredData.where((report) => 
-          report['origin_city']?.toString().toLowerCase() == filterCity!.toLowerCase() ||
-          report['destination_city']?.toString().toLowerCase() == filterCity!.toLowerCase()
+      // Multi-select: City
+      if (filterCities.isNotEmpty) {
+        filteredData = filteredData.where((report) =>
+          filterCities.contains(report['origin_city']?.toString() ?? '') ||
+          filterCities.contains(report['destination_city']?.toString() ?? '')
         ).toList();
       }
-      
+      // Single-select: Payment Method
       if (filterPaymentMethod != null) {
-        filteredData = filteredData.where((report) => 
+        filteredData = filteredData.where((report) =>
           report['payment_type']?.toString().toLowerCase() == filterPaymentMethod!.toLowerCase()
         ).toList();
       }
-      
+      // Single-select: Payment Status
       if (filterPaymentStatus != null) {
-        filteredData = filteredData.where((report) => 
+        filteredData = filteredData.where((report) =>
           (filterPaymentStatus!.toLowerCase() == 'paid' && report['payment_status'] == '1') ||
           (filterPaymentStatus!.toLowerCase() == 'unpaid' && report['payment_status'] == '0') ||
           (filterPaymentStatus!.toLowerCase() == 'partial' && report['payment_status'] == '2')
@@ -299,29 +293,25 @@ class _CourierInsightsScreenState extends State<CourierInsightsScreen> {
                   MaterialPageRoute(
                     builder: (_) => CourierInsightsFilterScreen(
                       onApply: (filters) {
-                        // Apply filters logic
                         setState(() {
-                          filterStatus = filters['status'];
-                          filterCourier = filters['courier'];
-                          filterCity = filters['city'];
+                          filterStatuses = List<String>.from(filters['status'] ?? []);
+                          filterCouriers = List<String>.from(filters['courier'] ?? []);
+                          filterCities = List<String>.from(filters['city'] ?? []);
                           filterPaymentMethod = filters['paymentMethod'];
                           filterPaymentStatus = filters['paymentStatus'];
                         });
                         fetchCourierInsights();
-                        // Show custom snackbar
                         customSnackBar('Success', 'Filters applied successfully');
                       },
                       onReset: () {
-                        // Reset filters logic
                         setState(() {
-                          filterStatus = null;
-                          filterCourier = null;
-                          filterCity = null;
+                          filterStatuses = [];
+                          filterCouriers = [];
+                          filterCities = [];
                           filterPaymentMethod = null;
                           filterPaymentStatus = null;
                         });
                         fetchCourierInsights();
-                        // Show custom snackbar
                         customSnackBar('Success', 'Filters reset successfully');
                       },
                     ),

@@ -315,7 +315,7 @@ class _CourierInsightsFilterScreenState extends State<CourierInsightsFilterScree
                 ],
               ),
               child: DropdownButtonFormField<String>(
-                value: selectedPaymentMethod,
+              value: selectedPaymentMethod,
                 items: paymentMethodOptions.map((e) => DropdownMenuItem(value: e, child: Text(e, style: GoogleFonts.poppins(fontSize: 15, color: Colors.black)))).toList(),
                 onChanged: (val) => setState(() => selectedPaymentMethod = val),
                 decoration: InputDecoration(
@@ -357,7 +357,7 @@ class _CourierInsightsFilterScreenState extends State<CourierInsightsFilterScree
                 ],
               ),
               child: DropdownButtonFormField<String>(
-                value: selectedPaymentStatus,
+              value: selectedPaymentStatus,
                 items: paymentStatusOptions.map((e) => DropdownMenuItem(value: e, child: Text(e, style: GoogleFonts.poppins(fontSize: 15, color: Colors.black)))).toList(),
                 onChanged: (val) => setState(() => selectedPaymentStatus = val),
                 decoration: InputDecoration(

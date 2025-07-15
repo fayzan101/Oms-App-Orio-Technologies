@@ -13,6 +13,7 @@ import '../models/load_sheet_detail_model.dart';
 import '../utils/custom_snackbar.dart';
 import 'calendar_screen.dart';
 import '../widgets/custom_date_selector.dart';
+import '../widgets/courier_logo_widget.dart';
 
 class LoadSheetScreen extends StatefulWidget {
   const LoadSheetScreen({Key? key}) : super(key: key);
@@ -355,7 +356,15 @@ class _LoadSheetScreenState extends State<LoadSheetScreen> {
                           ]),
                           TableRow(children: [
                             Text('Courier', style: _labelStyle),
-                            Text(sheet.courierName, style: _valueStyle),
+                            Align(
+                              alignment: Alignment.centerLeft,
+                              child: CourierLogoWidget(
+                                logoUrl: 'https://oms.getorio.com/assets/img/shipping-icons/${Uri.encodeComponent(sheet.courierName.trim())}.svg',
+                                width: 64,
+                                height: 32,
+                                fit: BoxFit.contain,
+                              ),
+                            ),
                           ]),
                           if (sheet.consignmentNo != null && sheet.consignmentNo!.isNotEmpty)
                             TableRow(children: [
