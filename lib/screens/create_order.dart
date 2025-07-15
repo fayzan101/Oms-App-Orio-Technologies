@@ -10,6 +10,7 @@ import '../services/auth_service.dart';
 import 'dart:async';
 import '../network/order_service.dart';
 import '../utils/custom_snackbar.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 class OrderItem {
   final String name;
@@ -795,34 +796,45 @@ class _OrderField extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       margin: const EdgeInsets.only(bottom: 14),
+      decoration: BoxDecoration(
+        boxShadow: [
+          BoxShadow(
+            color: Colors.grey.withOpacity(0.08),
+            blurRadius: 8,
+            offset: Offset(0, 2),
+          ),
+        ],
+      ),
       child: TextField(
         controller: controller,
         keyboardType: keyboardType,
-        decoration: InputDecoration(
-          hintText: hint,
-          hintStyle: const TextStyle(
-            fontFamily: 'SF Pro Display',
-            fontWeight: FontWeight.w400,
-            fontSize: 15,
-            color: Color(0xFF6B6B6B),
-          ),
-          filled: true,
-          fillColor: Color(0xFFF5F5F7),
-          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 18),
-          border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(10),
-            borderSide: BorderSide.none,
-          ),
-          disabledBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(10),
-            borderSide: BorderSide.none,
-          ),
-        ),
-        style: const TextStyle(
-          fontFamily: 'SF Pro Display',
-          fontWeight: FontWeight.w400,
+        style: GoogleFonts.poppins(
           fontSize: 15,
           color: Colors.black,
+          fontWeight: FontWeight.w400,
+        ),
+        decoration: InputDecoration(
+          labelText: hint,
+          labelStyle: GoogleFonts.poppins(
+            fontSize: 14,
+            color: Colors.grey[700],
+            fontWeight: FontWeight.w500,
+          ),
+          filled: true,
+          fillColor: Colors.white,
+          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(14),
+            borderSide: BorderSide(color: Colors.grey[300]!, width: 1),
+          ),
+          enabledBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(14),
+            borderSide: BorderSide(color: Colors.grey[300]!, width: 1),
+          ),
+          focusedBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(14),
+            borderSide: BorderSide(color: Colors.blue[300]!, width: 1.5),
+          ),
         ),
       ),
     );

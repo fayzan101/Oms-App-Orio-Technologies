@@ -1177,8 +1177,8 @@ class PaymentCard extends StatelessWidget {
                     child: CourierLogoWidget(
                       logoUrl: logoUrl,
                       pngUrl: pngUrl,
-                      width: 64,
-                      height: 40,
+                      width: 96,
+                      height: 60,
                     ),
                   ),
             ],

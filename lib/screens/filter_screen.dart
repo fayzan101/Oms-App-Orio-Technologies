@@ -3,6 +3,8 @@ import 'package:get/get.dart';
 import '../services/statement_service.dart';
 import '../services/auth_service.dart';
 import 'package:dio/dio.dart';
+import 'package:multi_select_flutter/multi_select_flutter.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 class FilterScreen extends StatefulWidget {
   const FilterScreen({Key? key}) : super(key: key);
@@ -13,10 +15,10 @@ class FilterScreen extends StatefulWidget {
 
 class _FilterScreenState extends State<FilterScreen> {
   String? selectedOrder;
-  String? selectedPlatform;
-  String? selectedCourier;
-  String? selectedCity;
-  String? selectedStatus;
+  List<String> selectedPlatforms = [];
+  List<String> selectedCouriers = [];
+  List<String> selectedCities = [];
+  List<String> selectedStatuses = [];
 
   final List<String> orders = ['Booked', 'Unbooked'];
   List<String> platforms = [];
@@ -37,10 +39,10 @@ class _FilterScreenState extends State<FilterScreen> {
   void resetFilters() {
     setState(() {
       selectedOrder = null;
-      selectedPlatform = null;
-      selectedCourier = null;
-      selectedCity = null;
-      selectedStatus = 'All';
+      selectedPlatforms = [];
+      selectedCouriers = [];
+      selectedCities = [];
+      selectedStatuses = [];
     });
   }
 
@@ -226,51 +228,197 @@ class _FilterScreenState extends State<FilterScreen> {
                           padding: const EdgeInsets.symmetric(vertical: 16),
                           child: Text(_statusError!, style: const TextStyle(color: Colors.red)),
                         )
-                      : _FilterDropdown(
-                          hint: 'Select Status',
-                          value: selectedStatus,
-                          items: statuses,
-                          onChanged: (val) => setState(() => selectedStatus = val),
+                      : Container(
+                          margin: const EdgeInsets.only(bottom: 16),
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(14),
+                            border: Border.all(color: Colors.grey[300]!, width: 1),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.grey.withOpacity(0.08),
+                                blurRadius: 8,
+                                offset: Offset(0, 2),
+                              ),
+                            ],
+                          ),
+                          child: MultiSelectDialogField<String>(
+                            items: statuses.map((e) => MultiSelectItem(e, e)).toList(),
+                            title: const Text('Select Status'),
+                            buttonText: Text('Select Status', style: GoogleFonts.poppins(fontSize: 15, color: Colors.black)),
+                            buttonIcon: const Icon(Icons.keyboard_arrow_down_rounded, color: Color(0xFF222222)),
+                            decoration: const BoxDecoration(
+                              color: Colors.transparent,
+                              border: Border.fromBorderSide(BorderSide.none),
+                            ),
+                            initialValue: selectedStatuses,
+                            onConfirm: (values) {
+                              setState(() {
+                                selectedStatuses = List<String>.from(values);
+                              });
+                            },
+                            chipDisplay: MultiSelectChipDisplay(
+                              chipColor: Colors.grey[200],
+                              textStyle: const TextStyle(color: Colors.black),
+                              onTap: (value) {
+                                setState(() {
+                                  selectedStatuses.remove(value);
+                                });
+                              },
+                            ),
+                          ),
                         ),
                   _platformError != null
                       ? Padding(
                           padding: const EdgeInsets.symmetric(vertical: 16),
                           child: Text(_platformError!, style: const TextStyle(color: Colors.red)),
                         )
-                      : _FilterDropdown(
-                          hint: 'Select Platforms',
-                          value: selectedPlatform,
-                          items: platforms,
-                          onChanged: (val) => setState(() => selectedPlatform = val),
+                      : Container(
+                          margin: const EdgeInsets.only(bottom: 16),
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(14),
+                            border: Border.all(color: Colors.grey[300]!, width: 1),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.grey.withOpacity(0.08),
+                                blurRadius: 8,
+                                offset: Offset(0, 2),
+                              ),
+                            ],
+                          ),
+                          child: MultiSelectDialogField<String>(
+                            items: platforms.map((e) => MultiSelectItem(e, e)).toList(),
+                            title: const Text('Select Platforms'),
+                            buttonText: Text('Select Platforms', style: GoogleFonts.poppins(fontSize: 15, color: Colors.black)),
+                            buttonIcon: const Icon(Icons.keyboard_arrow_down_rounded, color: Color(0xFF222222)),
+                            decoration: const BoxDecoration(
+                              color: Colors.transparent,
+                              border: Border.fromBorderSide(BorderSide.none),
+                            ),
+                            initialValue: selectedPlatforms,
+                            onConfirm: (values) {
+                              setState(() {
+                                selectedPlatforms = List<String>.from(values);
+                              });
+                            },
+                            chipDisplay: MultiSelectChipDisplay(
+                              chipColor: Colors.grey[200],
+                              textStyle: const TextStyle(color: Colors.black),
+                              onTap: (value) {
+                                setState(() {
+                                  selectedPlatforms.remove(value);
+                                });
+                              },
+                            ),
+                          ),
                         ),
                   _courierError != null
                       ? Padding(
                           padding: const EdgeInsets.symmetric(vertical: 16),
                           child: Text(_courierError!, style: const TextStyle(color: Colors.red)),
                         )
-                      : _FilterDropdown(
-                          hint: 'Select Courier',
-                          value: selectedCourier,
-                          items: couriers,
-                          onChanged: (val) => setState(() => selectedCourier = val),
+                      : Container(
+                          margin: const EdgeInsets.only(bottom: 16),
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(14),
+                            border: Border.all(color: Colors.grey[300]!, width: 1),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.grey.withOpacity(0.08),
+                                blurRadius: 8,
+                                offset: Offset(0, 2),
+                              ),
+                            ],
+                          ),
+                          child: MultiSelectDialogField<String>(
+                            items: couriers.map((e) => MultiSelectItem(e, e)).toList(),
+                            title: const Text('Select Courier'),
+                            buttonText: Text('Select Courier', style: GoogleFonts.poppins(fontSize: 15, color: Colors.black)),
+                            buttonIcon: const Icon(Icons.keyboard_arrow_down_rounded, color: Color(0xFF222222)),
+                            decoration: const BoxDecoration(
+                              color: Colors.transparent,
+                              border: Border.fromBorderSide(BorderSide.none),
+                            ),
+                            initialValue: selectedCouriers,
+                            onConfirm: (values) {
+                              setState(() {
+                                selectedCouriers = List<String>.from(values);
+                              });
+                            },
+                            chipDisplay: MultiSelectChipDisplay(
+                              chipColor: Colors.grey[200],
+                              textStyle: const TextStyle(color: Colors.black),
+                              onTap: (value) {
+                                setState(() {
+                                  selectedCouriers.remove(value);
+                                });
+                              },
+                            ),
+                          ),
                         ),
                   _cityError != null
                       ? Padding(
                           padding: const EdgeInsets.symmetric(vertical: 16),
                           child: Text(_cityError!, style: const TextStyle(color: Colors.red)),
                         )
-                      : _FilterDropdown(
-                          hint: 'Select Cities',
-                          value: selectedCity,
-                          items: cities,
-                          onChanged: (val) => setState(() => selectedCity = val),
+                      : Container(
+                          margin: const EdgeInsets.only(bottom: 16),
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(14),
+                            border: Border.all(color: Colors.grey[300]!, width: 1),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.grey.withOpacity(0.08),
+                                blurRadius: 8,
+                                offset: Offset(0, 2),
+                              ),
+                            ],
+                          ),
+                          child: MultiSelectDialogField<String>(
+                            items: cities.map((e) => MultiSelectItem(e, e)).toList(),
+                            title: const Text('Select Cities'),
+                            buttonText: Text('Select Cities', style: GoogleFonts.poppins(fontSize: 15, color: Colors.black)),
+                            buttonIcon: const Icon(Icons.keyboard_arrow_down_rounded, color: Color(0xFF222222)),
+                            decoration: const BoxDecoration(
+                              color: Colors.transparent,
+                              border: Border.fromBorderSide(BorderSide.none),
+                            ),
+                            initialValue: selectedCities,
+                            onConfirm: (values) {
+                              setState(() {
+                                selectedCities = List<String>.from(values);
+                              });
+                            },
+                            chipDisplay: MultiSelectChipDisplay(
+                              chipColor: Colors.grey[200],
+                              textStyle: const TextStyle(color: Colors.black),
+                              onTap: (value) {
+                                setState(() {
+                                  selectedCities.remove(value);
+                                });
+                              },
+                            ),
+                          ),
                         ),
                   const SizedBox(height: 24),
                   SizedBox(
                     width: double.infinity,
                     height: 48,
                     child: ElevatedButton(
-                      onPressed: () {},
+                      onPressed: () {
+                        // Return selected filters to the calling screen
+                        final filters = {
+                          'order': selectedOrder,
+                          'status': selectedStatuses,
+                          'platform': selectedPlatforms,
+                          'courier': selectedCouriers,
+                          'city': selectedCities,
+                        };
+                        Navigator.of(context).pop(filters);
+                      },
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Color(0xFF007AFF),
                         shape: RoundedRectangleBorder(
@@ -319,31 +467,43 @@ class _FilterDropdown extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    print('_FilterDropdown build - hint: $hint, items: $items, items length: ${items.length}');
-    
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
+      decoration: BoxDecoration(
+        boxShadow: [
+          BoxShadow(
+            color: Colors.grey.withOpacity(0.08),
+            blurRadius: 8,
+            offset: Offset(0, 2),
+          ),
+        ],
+      ),
       child: DropdownButtonFormField<String>(
         value: value,
-        items: items.map((e) => DropdownMenuItem(value: e, child: Text(e))).toList(),
+        items: items.map((e) => DropdownMenuItem(value: e, child: Text(e, style: GoogleFonts.poppins(fontSize: 15, color: Colors.black))))
+            .toList(),
         onChanged: items.isNotEmpty ? onChanged : null,
         decoration: InputDecoration(
           hintText: items.isNotEmpty ? hint : 'No items available',
-          hintStyle: const TextStyle(
-            fontFamily: 'SF Pro Display',
-            fontWeight: FontWeight.w400,
-            fontSize: 15,
-            color: Color(0xFF6B6B6B),
-          ),
+          hintStyle: GoogleFonts.poppins(fontSize: 15, color: Color(0xFF6B6B6B)),
           filled: true,
-          fillColor: Color(0xFFF5F5F7),
-          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 18),
+          fillColor: Colors.white,
+          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
           border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(10),
-            borderSide: BorderSide.none,
+            borderRadius: BorderRadius.circular(14),
+            borderSide: BorderSide(color: Colors.grey[300]!, width: 1),
+          ),
+          enabledBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(14),
+            borderSide: BorderSide(color: Colors.grey[300]!, width: 1),
+          ),
+          focusedBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(14),
+            borderSide: BorderSide(color: Colors.blue[300]!, width: 1.5),
           ),
         ),
         icon: const Icon(Icons.keyboard_arrow_down_rounded, color: Color(0xFF222222)),
+        style: GoogleFonts.poppins(fontSize: 15, color: Colors.black),
       ),
     );
   }

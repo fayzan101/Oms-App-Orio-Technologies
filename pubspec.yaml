@@ -18,7 +18,11 @@ dependencies:
   flutter_svg: ^2.0.7
   fl_chart: ^0.63.0
   table_calendar: ^3.2.0
-  material_symbols_icons: ^4.2668.0  # <-- Added dependency
+  material_symbols_icons: ^4.2668.0 
+  multi_select_flutter: ^4.0.0 
+  syncfusion_flutter_datepicker: ^23.1.36
+  # <-- Added dependency
+  # <-- Added dependency
 
 dev_dependencies:
   flutter_test:

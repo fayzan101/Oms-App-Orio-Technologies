@@ -4,6 +4,8 @@ import '../services/courier_service.dart';
 import '../services/statement_service.dart';
 import '../services/auth_service.dart';
 import 'package:dio/dio.dart';
+import 'package:multi_select_flutter/multi_select_flutter.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 class CourierInsightsFilterScreen extends StatefulWidget {
   final Function(Map<String, dynamic> filters) onApply;
@@ -15,9 +17,9 @@ class CourierInsightsFilterScreen extends StatefulWidget {
 }
 
 class _CourierInsightsFilterScreenState extends State<CourierInsightsFilterScreen> {
-  String? selectedStatus;
-  String? selectedCourier;
-  String? selectedCity;
+  List<String> selectedStatuses = [];
+  List<String> selectedCouriers = [];
+  List<String> selectedCities = [];
   String? selectedPaymentMethod;
   String? selectedPaymentStatus;
 
@@ -185,127 +187,255 @@ class _CourierInsightsFilterScreenState extends State<CourierInsightsFilterScree
       body: isLoadingAll
           ? const Center(child: CircularProgressIndicator())
           : Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: Column(
-                children: [
-                  const SizedBox(height: 24),
-                  _searchableField(
-                    label: 'Select Status',
-                    value: selectedStatus,
-                    isLoading: false,
-                    isError: showValidationErrors && selectedStatus == null,
-                    onTap: () => _showSearchDialog(
-                      title: 'Select Status',
-                      options: statusApiOptions,
-                      selectedValue: selectedStatus,
-                      onSelected: (val) => setState(() => selectedStatus = val),
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  _searchableField(
-                    label: 'Select Courier',
-                    value: selectedCourier,
-                    isLoading: false,
-                    isError: showValidationErrors && selectedCourier == null,
-                    onTap: () => _showSearchDialog(
-                      title: 'Select Courier',
-                      options: courierOptions,
-                      selectedValue: selectedCourier,
-                      onSelected: (val) => setState(() => selectedCourier = val),
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  _searchableField(
-                    label: 'Select Destination City',
-                    value: selectedCity,
-                    isLoading: false,
-                    isError: showValidationErrors && selectedCity == null,
-                    onTap: () => _showSearchDialog(
-                      title: 'Select Destination City',
-                      options: cityOptions,
-                      selectedValue: selectedCity,
-                      onSelected: (val) => setState(() => selectedCity = val),
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  _searchableField(
-                    label: 'Select Payment Method',
-                    value: selectedPaymentMethod,
-                    isLoading: false,
-                    isError: showValidationErrors && selectedPaymentMethod == null,
-                    onTap: () => _showSearchDialog(
-                      title: 'Select Payment Method',
-                      options: paymentMethodOptions,
-                      selectedValue: selectedPaymentMethod,
-                      onSelected: (val) => setState(() => selectedPaymentMethod = val),
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  _searchableField(
-                    label: 'Select Payment Status',
-                    value: selectedPaymentStatus,
-                    isLoading: false,
-                    isError: showValidationErrors && selectedPaymentStatus == null,
-                    onTap: () => _showSearchDialog(
-                      title: 'Select Payment Status',
-                      options: paymentStatusOptions,
-                      selectedValue: selectedPaymentStatus,
-                      onSelected: (val) => setState(() => selectedPaymentStatus = val),
-                    ),
-                  ),
-                  const SizedBox(height: 32),
-                  SizedBox(
-                    width: double.infinity,
-                    height: 48,
-                    child: ElevatedButton(
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFF007AFF),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                      ),
-                      onPressed: () {
-                        // Check if all fields are selected
-                        if (selectedStatus == null || selectedCourier == null || selectedCity == null || selectedPaymentMethod == null || selectedPaymentStatus == null) {
-                          setState(() {
-                            showValidationErrors = true;
-                          });
-                          return;
-                        }
-                        // Reset validation errors
-                        setState(() {
-                          showValidationErrors = false;
-                        });
-                        // Apply filters
-                        widget.onApply({
-                          'status': selectedStatus,
-                          'courier': selectedCourier,
-                          'city': selectedCity,
-                          'paymentMethod': selectedPaymentMethod,
-                          'paymentStatus': selectedPaymentStatus,
-                        });
-                        Navigator.of(context).pop();
-                      },
-                      child: const Text('Apply Filters', style: TextStyle(fontSize: 18, color: Colors.white)),
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  GestureDetector(
-                    onTap: () {
-                      setState(() {
-                        selectedStatus = null;
-                        selectedCourier = null;
-                        selectedCity = null;
-                        selectedPaymentMethod = null;
-                        selectedPaymentStatus = null;
-                      });
-                      widget.onReset();
-                    },
-                    child: const Text('Reset Filter', style: TextStyle(color: Colors.red, fontWeight: FontWeight.w600, fontSize: 16)),
+        padding: const EdgeInsets.symmetric(horizontal: 16),
+        child: Column(
+          children: [
+            const SizedBox(height: 24),
+            // Status (multi-select)
+            Container(
+              margin: const EdgeInsets.only(bottom: 16),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(14),
+                border: Border.all(color: Colors.grey[300]!, width: 1),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.grey.withOpacity(0.08),
+                    blurRadius: 8,
+                    offset: Offset(0, 2),
                   ),
                 ],
               ),
+              child: MultiSelectDialogField<String>(
+                items: statusApiOptions.map((e) => MultiSelectItem(e, e)).toList(),
+                title: const Text('Select Status'),
+                buttonText: Text('Select Status', style: GoogleFonts.poppins(fontSize: 15, color: Colors.black)),
+                buttonIcon: const Icon(Icons.keyboard_arrow_down_rounded, color: Color(0xFF222222)),
+                decoration: const BoxDecoration(
+                  color: Colors.transparent,
+                  border: Border.fromBorderSide(BorderSide.none),
+                ),
+                initialValue: selectedStatuses,
+                onConfirm: (values) {
+                  setState(() {
+                    selectedStatuses = List<String>.from(values);
+                  });
+                },
+                chipDisplay: MultiSelectChipDisplay(
+                  chipColor: Colors.grey[200],
+                  textStyle: const TextStyle(color: Colors.black),
+                ),
+              ),
             ),
+            // Courier (multi-select)
+            Container(
+              margin: const EdgeInsets.only(bottom: 16),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(14),
+                border: Border.all(color: Colors.grey[300]!, width: 1),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.grey.withOpacity(0.08),
+                    blurRadius: 8,
+                    offset: Offset(0, 2),
+                  ),
+                ],
+              ),
+              child: MultiSelectDialogField<String>(
+                items: courierOptions.map((e) => MultiSelectItem(e, e)).toList(),
+                title: const Text('Select Courier'),
+                buttonText: Text('Select Courier', style: GoogleFonts.poppins(fontSize: 15, color: Colors.black)),
+                buttonIcon: const Icon(Icons.keyboard_arrow_down_rounded, color: Color(0xFF222222)),
+                decoration: const BoxDecoration(
+                  color: Colors.transparent,
+                  border: Border.fromBorderSide(BorderSide.none),
+                ),
+                initialValue: selectedCouriers,
+                onConfirm: (values) {
+                  setState(() {
+                    selectedCouriers = List<String>.from(values);
+                  });
+                },
+                chipDisplay: MultiSelectChipDisplay(
+                  chipColor: Colors.grey[200],
+                  textStyle: const TextStyle(color: Colors.black),
+                ),
+              ),
+            ),
+            // City (multi-select)
+            Container(
+              margin: const EdgeInsets.only(bottom: 16),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(14),
+                border: Border.all(color: Colors.grey[300]!, width: 1),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.grey.withOpacity(0.08),
+                    blurRadius: 8,
+                    offset: Offset(0, 2),
+                  ),
+                ],
+              ),
+              child: MultiSelectDialogField<String>(
+                items: cityOptions.map((e) => MultiSelectItem(e, e)).toList(),
+                title: const Text('Select Destination City'),
+                buttonText: Text('Select Destination City', style: GoogleFonts.poppins(fontSize: 15, color: Colors.black)),
+                buttonIcon: const Icon(Icons.keyboard_arrow_down_rounded, color: Color(0xFF222222)),
+                decoration: const BoxDecoration(
+                  color: Colors.transparent,
+                  border: Border.fromBorderSide(BorderSide.none),
+                ),
+                initialValue: selectedCities,
+                onConfirm: (values) {
+                  setState(() {
+                    selectedCities = List<String>.from(values);
+                  });
+                },
+                chipDisplay: MultiSelectChipDisplay(
+                  chipColor: Colors.grey[200],
+                  textStyle: const TextStyle(color: Colors.black),
+                ),
+              ),
+            ),
+            // Payment Method (single-select)
+            Container(
+              margin: const EdgeInsets.only(bottom: 16),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(14),
+                border: Border.all(color: Colors.grey[300]!, width: 1),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.grey.withOpacity(0.08),
+                    blurRadius: 8,
+                    offset: Offset(0, 2),
+                  ),
+                ],
+              ),
+              child: DropdownButtonFormField<String>(
+                value: selectedPaymentMethod,
+                items: paymentMethodOptions.map((e) => DropdownMenuItem(value: e, child: Text(e, style: GoogleFonts.poppins(fontSize: 15, color: Colors.black)))).toList(),
+                onChanged: (val) => setState(() => selectedPaymentMethod = val),
+                decoration: InputDecoration(
+                  hintText: 'Select Payment Method',
+                  hintStyle: GoogleFonts.poppins(fontSize: 15, color: Color(0xFF6B6B6B)),
+                  filled: true,
+                  fillColor: Colors.white,
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(14),
+                    borderSide: BorderSide(color: Colors.grey[300]!, width: 1),
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(14),
+                    borderSide: BorderSide(color: Colors.grey[300]!, width: 1),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(14),
+                    borderSide: BorderSide(color: Colors.blue[300]!, width: 1.5),
+                  ),
+                ),
+                icon: const Icon(Icons.keyboard_arrow_down_rounded, color: Color(0xFF222222)),
+                style: GoogleFonts.poppins(fontSize: 15, color: Colors.black),
+              ),
+            ),
+            // Payment Status (single-select)
+            Container(
+              margin: const EdgeInsets.only(bottom: 16),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(14),
+                border: Border.all(color: Colors.grey[300]!, width: 1),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.grey.withOpacity(0.08),
+                    blurRadius: 8,
+                    offset: Offset(0, 2),
+                  ),
+                ],
+              ),
+              child: DropdownButtonFormField<String>(
+                value: selectedPaymentStatus,
+                items: paymentStatusOptions.map((e) => DropdownMenuItem(value: e, child: Text(e, style: GoogleFonts.poppins(fontSize: 15, color: Colors.black)))).toList(),
+                onChanged: (val) => setState(() => selectedPaymentStatus = val),
+                decoration: InputDecoration(
+                  hintText: 'Select Payment Status',
+                  hintStyle: GoogleFonts.poppins(fontSize: 15, color: Color(0xFF6B6B6B)),
+                  filled: true,
+                  fillColor: Colors.white,
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(14),
+                    borderSide: BorderSide(color: Colors.grey[300]!, width: 1),
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(14),
+                    borderSide: BorderSide(color: Colors.grey[300]!, width: 1),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(14),
+                    borderSide: BorderSide(color: Colors.blue[300]!, width: 1.5),
+                  ),
+                ),
+                icon: const Icon(Icons.keyboard_arrow_down_rounded, color: Color(0xFF222222)),
+                style: GoogleFonts.poppins(fontSize: 15, color: Colors.black),
+              ),
+            ),
+            const SizedBox(height: 32),
+            SizedBox(
+              width: double.infinity,
+              height: 48,
+              child: ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF007AFF),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                ),
+                onPressed: () {
+                  // Check if all fields are selected
+                  if (selectedStatuses.isEmpty || selectedCouriers.isEmpty || selectedCities.isEmpty || selectedPaymentMethod == null || selectedPaymentStatus == null) {
+                    setState(() {
+                      showValidationErrors = true;
+                    });
+                    return;
+                  }
+                  // Reset validation errors
+                  setState(() {
+                    showValidationErrors = false;
+                  });
+                  // Apply filters
+                  widget.onApply({
+                    'status': selectedStatuses,
+                    'courier': selectedCouriers,
+                    'city': selectedCities,
+                    'paymentMethod': selectedPaymentMethod,
+                    'paymentStatus': selectedPaymentStatus,
+                  });
+                  Navigator.of(context).pop();
+                },
+                child: const Text('Apply Filters', style: TextStyle(fontSize: 18, color: Colors.white)),
+              ),
+            ),
+            const SizedBox(height: 16),
+            GestureDetector(
+              onTap: () {
+                setState(() {
+                  selectedStatuses = [];
+                  selectedCouriers = [];
+                  selectedCities = [];
+                  selectedPaymentMethod = null;
+                  selectedPaymentStatus = null;
+                });
+                widget.onReset();
+              },
+              child: const Text('Reset Filter', style: TextStyle(color: Colors.red, fontWeight: FontWeight.w600, fontSize: 16)),
+            ),
+          ],
+        ),
+      ),
     );
   }
 

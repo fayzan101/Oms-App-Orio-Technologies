@@ -16,6 +16,7 @@ import '../services/auth_service.dart';
 import '../utils/custom_snackbar.dart';
 import 'package:dio/dio.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import '../widgets/courier_logo_widget.dart';
 
 class OrderListScreen extends StatefulWidget {
   final String? snackbarMessage;
@@ -52,6 +53,8 @@ class _OrderListScreenState extends State<OrderListScreen> {
   DateTime _startDate = DateTime.now().subtract(const Duration(days: 30));
   DateTime _endDate = DateTime.now();
   bool _datesLoaded = false;
+  // Filter state
+  Map<String, dynamic>? _activeFilters;
   String? _selectedOrderStatus; // 'Booked', 'Unbooked', or null for All
 
   @override
@@ -121,18 +124,55 @@ class _OrderListScreenState extends State<OrderListScreen> {
 
   void _applySearch() {
     List<dynamic> tempOrders = orders;
+    // Apply text search filter
     if (_searchQuery != null && _searchQuery!.isNotEmpty) {
       tempOrders = tempOrders.where((order) {
         return order.values.any((v) => v != null && v.toString().toLowerCase().contains(_searchQuery!.toLowerCase()));
       }).toList();
     }
-    if (_selectedOrderStatus != null) {
+    // Apply filter screen filters
+    if (_activeFilters != null) {
       tempOrders = tempOrders.where((order) {
-        final status = order['status']?.toString().toLowerCase();
-        if (_selectedOrderStatus == 'Booked') {
-          return status == 'booked';
-        } else if (_selectedOrderStatus == 'Unbooked') {
-          return status != 'booked';
+        // Filter by order status (Booked/Unbooked)
+        if (_activeFilters!['order'] != null) {
+          final orderStatus = order['status']?.toString() ?? '';
+          if (_activeFilters!['order'] == 'Booked') {
+            if (orderStatus.toLowerCase() != 'booked') {
+              return false;
+            }
+          } else if (_activeFilters!['order'] == 'Unbooked') {
+            if (orderStatus.toLowerCase() == 'booked') {
+              return false;
+            }
+          }
+        }
+        // Multi-select: Status
+        if (_activeFilters!['status'] != null && (_activeFilters!['status'] as List).isNotEmpty) {
+          final status = order['status']?.toString() ?? '';
+          if (!(_activeFilters!['status'] as List).contains(status)) {
+            return false;
+          }
+        }
+        // Multi-select: Platform
+        if (_activeFilters!['platform'] != null && (_activeFilters!['platform'] as List).isNotEmpty) {
+          final store = order['store_name']?.toString() ?? '';
+          if (!(_activeFilters!['platform'] as List).contains(store)) {
+            return false;
+          }
+        }
+        // Multi-select: Courier
+        if (_activeFilters!['courier'] != null && (_activeFilters!['courier'] as List).isNotEmpty) {
+          final courier = order['courier_name']?.toString() ?? '';
+          if (!(_activeFilters!['courier'] as List).contains(courier)) {
+            return false;
+          }
+        }
+        // Multi-select: City
+        if (_activeFilters!['city'] != null && (_activeFilters!['city'] as List).isNotEmpty) {
+          final city = order['city_name']?.toString() ?? '';
+          if (!(_activeFilters!['city'] as List).contains(city)) {
+            return false;
+          }
         }
         return true;
       }).toList();
@@ -430,6 +470,12 @@ class _OrderListScreenState extends State<OrderListScreen> {
     );
   }
 
+  String _getCourierLogoUrl(String courierName) {
+    if (courierName.isEmpty) return '';
+    final encodedName = Uri.encodeComponent(courierName.trim());
+    return 'https://oms.getorio.com/assets/img/shipping-icons/$encodedName.svg';
+  }
+
   @override
   Widget build(BuildContext context) {
     if (!_datesLoaded) {
@@ -473,8 +519,14 @@ class _OrderListScreenState extends State<OrderListScreen> {
             ),
           IconButton(
             icon: const Icon(Icons.filter_list_rounded, color: Colors.black),
-            onPressed: () {
-              Get.to(() => const FilterScreen());
+            onPressed: () async {
+              final result = await Get.to<Map<String, dynamic>>(() => const FilterScreen());
+              if (result != null) {
+                setState(() {
+                  _activeFilters = result;
+                });
+                _applySearch();
+              }
             },
           ),
           IconButton(
@@ -602,10 +654,10 @@ class _OrderListScreenState extends State<OrderListScreen> {
             Expanded(
               child: ListView.separated(
                 controller: _scrollController,
-                itemCount: (_searchQuery != null && _searchQuery!.isNotEmpty ? _filteredOrders.length : orders.length) + (isLoading ? 1 : 0),
+                itemCount: ((_searchQuery != null && _searchQuery!.isNotEmpty) || _activeFilters != null ? _filteredOrders.length : orders.length) + (isLoading ? 1 : 0),
                 separatorBuilder: (context, i) => const SizedBox(height: 10),
                 itemBuilder: (context, i) {
-                  final list = (_searchQuery != null && _searchQuery!.isNotEmpty ? _filteredOrders : orders);
+                  final list = ((_searchQuery != null && _searchQuery!.isNotEmpty) || _activeFilters != null ? _filteredOrders : orders);
                   if (i >= list.length) {
                     return Center(child: Padding(
                       padding: EdgeInsets.symmetric(vertical: 16),
@@ -668,9 +720,23 @@ class _OrderListScreenState extends State<OrderListScreen> {
                                   Text('Store:  ${order['store_name'] ?? ''}'),
                                   Text('Payment Type:  ${order['payment_type'] ?? ''}'),
                                   Text('COD Amount:  ${order['cod_amount'] ?? order['order_amount'] ?? ''}'),
-                                  Text('Courier:  ${order['courier_name'] ?? ''}'),
-                                  Text('Account:  ${order['account_no'] ?? ''}'),
-                                  Text('CN:  ${order['cn'] ?? ''}'),
+                                  Row(
+                                    children: [
+                                      const Text('Courier:', style: TextStyle(fontWeight: FontWeight.w600)),
+                                      const SizedBox(width: 8),
+                                      Padding(
+                                        padding: const EdgeInsets.only(bottom: 2),
+                                        child: CourierLogoWidget(
+                                          logoUrl: _getCourierLogoUrl(order['courier_name'] ?? ''),
+                                          width: 48,
+                                          height: 24,
+                                          fit: BoxFit.contain,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                  Text('Account:  ${order['account_title'] ?? ''}'),
+                                  Text('CN:  ${order['consigment_no'] ?? ''}'),
                                   Text('Tags:  ${order['tags'] ?? ''}'),
                                   Text('Status:  ${order['status'] ?? ''}'),
                                   const SizedBox(height: 16),
