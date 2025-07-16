@@ -88,41 +88,71 @@ class _CourierInsightsScreenState extends State<CourierInsightsScreen> {
         endDate: endDateStr,
       );
       
-      // Apply client-side filtering if API doesn't support server-side filtering
-      List<Map<String, dynamic>> filteredData = data;
+      // Apply client-side filtering
+      List<Map<String, dynamic>> filteredData = List<Map<String, dynamic>>.from(data);
       
-      // Multi-select: Status
+      // Multi-select: Status - only filter if statuses are selected
       if (filterStatuses.isNotEmpty) {
-        filteredData = filteredData.where((report) =>
-          filterStatuses.contains(report['status_name']?.toString() ?? '')
-        ).toList();
+        filteredData = filteredData.where((report) {
+          final reportStatus = report['status_name']?.toString() ?? '';
+          return filterStatuses.any((status) => 
+            reportStatus.toLowerCase().contains(status.toLowerCase()) ||
+            status.toLowerCase().contains(reportStatus.toLowerCase())
+          );
+        }).toList();
       }
-      // Multi-select: Courier
+      
+      // Multi-select: Courier - only filter if couriers are selected
       if (filterCouriers.isNotEmpty) {
-        filteredData = filteredData.where((report) =>
-          filterCouriers.contains(report['courier_name']?.toString() ?? '')
-        ).toList();
+        filteredData = filteredData.where((report) {
+          final reportCourier = report['courier_name']?.toString() ?? '';
+          return filterCouriers.any((courier) => 
+            reportCourier.toLowerCase().contains(courier.toLowerCase()) ||
+            courier.toLowerCase().contains(reportCourier.toLowerCase())
+          );
+        }).toList();
       }
-      // Multi-select: City
+      
+      // Multi-select: City - only filter if cities are selected
       if (filterCities.isNotEmpty) {
-        filteredData = filteredData.where((report) =>
-          filterCities.contains(report['origin_city']?.toString() ?? '') ||
-          filterCities.contains(report['destination_city']?.toString() ?? '')
-        ).toList();
+        filteredData = filteredData.where((report) {
+          final originCity = report['origin_city']?.toString() ?? '';
+          final destinationCity = report['destination_city']?.toString() ?? '';
+          return filterCities.any((city) => 
+            originCity.toLowerCase().contains(city.toLowerCase()) ||
+            destinationCity.toLowerCase().contains(city.toLowerCase()) ||
+            city.toLowerCase().contains(originCity.toLowerCase()) ||
+            city.toLowerCase().contains(destinationCity.toLowerCase())
+          );
+        }).toList();
       }
-      // Single-select: Payment Method
-      if (filterPaymentMethod != null) {
-        filteredData = filteredData.where((report) =>
-          report['payment_type']?.toString().toLowerCase() == filterPaymentMethod!.toLowerCase()
-        ).toList();
+      
+      // Single-select: Payment Method - only filter if payment method is selected
+      if (filterPaymentMethod != null && filterPaymentMethod!.isNotEmpty) {
+        filteredData = filteredData.where((report) {
+          final reportPaymentMethod = report['payment_type']?.toString() ?? '';
+          return reportPaymentMethod.toLowerCase().contains(filterPaymentMethod!.toLowerCase()) ||
+                 filterPaymentMethod!.toLowerCase().contains(reportPaymentMethod.toLowerCase());
+        }).toList();
       }
-      // Single-select: Payment Status
-      if (filterPaymentStatus != null) {
-        filteredData = filteredData.where((report) =>
-          (filterPaymentStatus!.toLowerCase() == 'paid' && report['payment_status'] == '1') ||
-          (filterPaymentStatus!.toLowerCase() == 'unpaid' && report['payment_status'] == '0') ||
-          (filterPaymentStatus!.toLowerCase() == 'partial' && report['payment_status'] == '2')
-        ).toList();
+      
+      // Single-select: Payment Status - only filter if payment status is selected
+      if (filterPaymentStatus != null && filterPaymentStatus!.isNotEmpty) {
+        filteredData = filteredData.where((report) {
+          final paymentStatus = report['payment_status']?.toString() ?? '';
+          final reportPaymentStatus = report['payment_status']?.toString() ?? '';
+          
+          switch (filterPaymentStatus!.toLowerCase()) {
+            case 'paid':
+              return reportPaymentStatus == '1';
+            case 'unpaid':
+              return reportPaymentStatus == '0';
+            case 'partial':
+              return reportPaymentStatus == '2';
+            default:
+              return true;
+          }
+        }).toList();
       }
       
       setState(() {
@@ -132,6 +162,11 @@ class _CourierInsightsScreenState extends State<CourierInsightsScreen> {
       });
     } catch (e) {
       // Optionally show error
+      setState(() {
+        reports = [];
+        totalReports = 0;
+        _applySearch();
+      });
     } finally {
       setState(() => isLoading = false);
     }
@@ -145,6 +180,34 @@ class _CourierInsightsScreenState extends State<CourierInsightsScreen> {
     } else {
       _filteredReports = reports;
     }
+  }
+
+  bool _hasActiveFilters() {
+    return filterStatuses.isNotEmpty || 
+           filterCouriers.isNotEmpty || 
+           filterCities.isNotEmpty || 
+           (filterPaymentMethod != null && filterPaymentMethod!.isNotEmpty) ||
+           (filterPaymentStatus != null && filterPaymentStatus!.isNotEmpty);
+  }
+
+  String _getFilterSummary() {
+    final summary = <String>[];
+    if (filterStatuses.isNotEmpty) {
+      summary.add('Status: ${filterStatuses.join(', ')}');
+    }
+    if (filterCouriers.isNotEmpty) {
+      summary.add('Courier: ${filterCouriers.join(', ')}');
+    }
+    if (filterCities.isNotEmpty) {
+      summary.add('City: ${filterCities.join(', ')}');
+    }
+    if (filterPaymentMethod != null && filterPaymentMethod!.isNotEmpty) {
+      summary.add('Payment Method: ${filterPaymentMethod}');
+    }
+    if (filterPaymentStatus != null && filterPaymentStatus!.isNotEmpty) {
+      summary.add('Payment Status: ${filterPaymentStatus}');
+    }
+    return summary.join(' | ');
   }
 
   void _showTrackingDialog(BuildContext context, Map<String, dynamic> report) {
@@ -286,38 +349,58 @@ class _CourierInsightsScreenState extends State<CourierInsightsScreen> {
             ),
           Padding(
             padding: const EdgeInsets.only(right: 8.0),
-            child: IconButton(
-              icon: const Icon(Icons.filter_list_rounded, color: Colors.black),
-              onPressed: () async {
-                await Navigator.of(context).push(
-                  MaterialPageRoute(
-                    builder: (_) => CourierInsightsFilterScreen(
-                      onApply: (filters) {
-                        setState(() {
-                          filterStatuses = List<String>.from(filters['status'] ?? []);
-                          filterCouriers = List<String>.from(filters['courier'] ?? []);
-                          filterCities = List<String>.from(filters['city'] ?? []);
-                          filterPaymentMethod = filters['paymentMethod'];
-                          filterPaymentStatus = filters['paymentStatus'];
-                        });
-                        fetchCourierInsights();
-                        customSnackBar('Success', 'Filters applied successfully');
-                      },
-                      onReset: () {
-                        setState(() {
-                          filterStatuses = [];
-                          filterCouriers = [];
-                          filterCities = [];
-                          filterPaymentMethod = null;
-                          filterPaymentStatus = null;
-                        });
-                        fetchCourierInsights();
-                        customSnackBar('Success', 'Filters reset successfully');
-                      },
+            child: Stack(
+              children: [
+                IconButton(
+                  icon: Icon(
+                    Icons.filter_list_rounded, 
+                    color: _hasActiveFilters() ? Colors.blue : Colors.black
+                  ),
+                  onPressed: () async {
+                    await Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (_) => CourierInsightsFilterScreen(
+                          onApply: (filters) {
+                            setState(() {
+                              filterStatuses = List<String>.from(filters['status'] ?? []);
+                              filterCouriers = List<String>.from(filters['courier'] ?? []);
+                              filterCities = List<String>.from(filters['city'] ?? []);
+                              filterPaymentMethod = filters['paymentMethod'];
+                              filterPaymentStatus = filters['paymentStatus'];
+                            });
+                            fetchCourierInsights();
+                            customSnackBar('Success', 'Filters applied successfully');
+                          },
+                          onReset: () {
+                            setState(() {
+                              filterStatuses = [];
+                              filterCouriers = [];
+                              filterCities = [];
+                              filterPaymentMethod = null;
+                              filterPaymentStatus = null;
+                            });
+                            fetchCourierInsights();
+                            customSnackBar('Success', 'Filters reset successfully');
+                          },
+                        ),
+                      ),
+                    );
+                  },
+                ),
+                if (_hasActiveFilters())
+                  Positioned(
+                    right: 8,
+                    top: 8,
+                    child: Container(
+                      width: 8,
+                      height: 8,
+                      decoration: const BoxDecoration(
+                        color: Colors.blue,
+                        shape: BoxShape.circle,
+                      ),
                     ),
                   ),
-                );
-              },
+              ],
             ),
           ),
           IconButton(
@@ -380,6 +463,48 @@ class _CourierInsightsScreenState extends State<CourierInsightsScreen> {
                 color: Colors.black,
               ),
             ),
+            // Filter Summary
+            if (_hasActiveFilters()) ...[
+              const SizedBox(height: 8),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                decoration: BoxDecoration(
+                  color: Colors.blue.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: Colors.blue.withOpacity(0.3)),
+                ),
+                child: Row(
+                  children: [
+                    Icon(Icons.filter_list_rounded, size: 16, color: Colors.blue[700]),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        _getFilterSummary(),
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: Colors.blue[700],
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ),
+                    GestureDetector(
+                      onTap: () {
+                        setState(() {
+                          filterStatuses = [];
+                          filterCouriers = [];
+                          filterCities = [];
+                          filterPaymentMethod = null;
+                          filterPaymentStatus = null;
+                        });
+                        fetchCourierInsights();
+                        customSnackBar('Success', 'Filters cleared');
+                      },
+                      child: Icon(Icons.clear_rounded, size: 16, color: Colors.blue[700]),
+                    ),
+                  ],
+                ),
+              ),
+            ],
             const SizedBox(height: 8),
             Expanded(
               child: isLoading

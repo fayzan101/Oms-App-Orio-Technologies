@@ -40,11 +40,18 @@ class _CreateOrderScreenState extends State<CreateOrderScreen> {
   bool _isLoadingCities = false;
   final AuthService _authService = Get.find<AuthService>();
   bool _isSaving = false;
+  // Add these state variables for platform selection
+  List<Map<String, dynamic>> _platforms = [];
+  Map<String, dynamic>? _selectedPlatform;
+  bool _isLoadingPlatforms = false;
+  String? _platformError;
+  String _platformSearch = '';
 
   @override
   void initState() {
     super.initState();
     _fetchCities();
+    _fetchPlatforms();
   }
 
   Future<void> _fetchCities() async {
@@ -66,20 +73,52 @@ class _CreateOrderScreenState extends State<CreateOrderScreen> {
     }
   }
 
+  Future<void> _fetchPlatforms() async {
+    setState(() {
+      _isLoadingPlatforms = true;
+      _platformError = null;
+    });
+    try {
+      final acno = _authService.getCurrentAcno();
+      if (acno == null) {
+        setState(() {
+          _platformError = 'User not logged in';
+          _isLoadingPlatforms = false;
+        });
+        return;
+      }
+      final service = StatementService();
+      final platformData = await service.fetchShopNames(acno);
+      // Only keep platforms with a non-empty platform_name, just like filter screen
+      final filtered = platformData.where((e) => (e['platform_name']?.toString() ?? '').isNotEmpty).toList();
+      setState(() {
+        _platforms = filtered;
+        _isLoadingPlatforms = false;
+      });
+    } catch (e) {
+      setState(() {
+        _platformError = 'Failed to load platforms: $e';
+        _isLoadingPlatforms = false;
+      });
+    }
+  }
+
   void _addOrder(OrderItem item) {
     setState(() {
       _orders.add(item);
     });
   }
 
-  void _showSelectStoreDialog(BuildContext context) {
-    String selectedStore = 'OMS';
+  void _showSelectPlatformDialog(BuildContext context) {
     showDialog(
       context: context,
       barrierDismissible: false,
       builder: (context) {
+        String search = '';
+        List<Map<String, dynamic>> filteredPlatforms = _platforms;
         return StatefulBuilder(
           builder: (context, setState) {
+            filteredPlatforms = _platforms.where((p) => (p['platform_name']?.toString().toLowerCase() ?? '').contains(search.toLowerCase())).toList();
             return Dialog(
               backgroundColor: Colors.white,
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
@@ -100,7 +139,7 @@ class _CreateOrderScreenState extends State<CreateOrderScreen> {
                     ),
                     const SizedBox(height: 4),
                     const Text(
-                      'Select Store',
+                      'Select Platform',
                       style: TextStyle(
                         fontFamily: 'SF Pro Display',
                         fontWeight: FontWeight.w700,
@@ -108,70 +147,58 @@ class _CreateOrderScreenState extends State<CreateOrderScreen> {
                         color: Colors.black,
                       ),
                     ),
-                    const SizedBox(height: 24),
-                    Container(
-                      decoration: BoxDecoration(
-                        color: Color(0xFFF5F5F7),
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      child: DropdownButtonFormField<String>(
-                        value: selectedStore,
-                        items: const [
-                          DropdownMenuItem(value: 'OMS', child: Text('OMS')),
-                        ],
-                        onChanged: (val) {
-                          setState(() {
-                            selectedStore = val ?? 'OMS';
-                          });
-                        },
-                        decoration: const InputDecoration(
-                          border: InputBorder.none,
-                          contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                    const SizedBox(height: 16),
+                    TextField(
+                      decoration: InputDecoration(
+                        hintText: 'Search Platform',
+                        prefixIcon: Icon(Icons.search_rounded),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
                         ),
-                        style: const TextStyle(
-                          fontFamily: 'SF Pro Display',
-                          fontWeight: FontWeight.w400,
-                          fontSize: 16,
-                          color: Colors.black,
-                        ),
-                        icon: const Icon(Icons.keyboard_arrow_down_rounded, color: Color(0xFF222222)),
-                        dropdownColor: Color(0xFFF5F5F7),
+                        contentPadding: EdgeInsets.symmetric(vertical: 0, horizontal: 12),
                       ),
+                      onChanged: (val) {
+                        setState(() {
+                          search = val;
+                        });
+                      },
                     ),
-                    const SizedBox(height: 24),
-                    SizedBox(
-                      width: double.infinity,
-                      height: 48,
-                      child: ElevatedButton(
-                        onPressed: () async {
-                          Navigator.of(context).pop();
-                          final result = await Navigator.of(context).push(
-                            MaterialPageRoute(
-                              builder: (_) => AddProductScreen(),
-                            ),
-                          );
-                          if (result is OrderItem) {
-                            _addOrder(result);
-                          }
-                        },
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Color(0xFF007AFF),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(10),
-                          ),
-                          elevation: 0,
-                        ),
-                        child: const Text(
-                          'Next',
-                          style: TextStyle(
-                            fontFamily: 'SF Pro Display',
-                            fontWeight: FontWeight.w600,
-                            fontSize: 16,
-                            color: Colors.white,
-                          ),
-                        ),
-                      ),
-                    ),
+                    const SizedBox(height: 16),
+                    _isLoadingPlatforms
+                        ? const Center(child: CircularProgressIndicator())
+                        : _platformError != null
+                            ? Text(_platformError!, style: const TextStyle(color: Colors.red))
+                            : filteredPlatforms.isEmpty
+                                ? const Text('No platforms found.')
+                                : SizedBox(
+                                    height: 200,
+                                    child: ListView.separated(
+                                      shrinkWrap: true,
+                                      itemCount: filteredPlatforms.length,
+                                      separatorBuilder: (context, i) => const Divider(height: 1, color: Color(0xFFE0E0E0)),
+                                      itemBuilder: (context, i) {
+                                        final platform = filteredPlatforms[i];
+                                        return ListTile(
+                                          title: Text(
+                                            platform['platform_name']?.toString() ?? 'Unknown Platform',
+                                            style: const TextStyle(fontFamily: 'SF Pro Display', fontSize: 15),
+                                          ),
+                                          subtitle: Text(
+                                            'ID: ${platform['id']}',
+                                            style: const TextStyle(fontFamily: 'SF Pro Display', fontSize: 12, color: Color(0xFF6B6B6B)),
+                                          ),
+                                          onTap: () {
+                                            setState(() {
+                                              _selectedPlatform = platform;
+                                            });
+                                            Navigator.of(context).pop();
+                                            _showAddProductScreen(context);
+                                          },
+                                          contentPadding: EdgeInsets.zero,
+                                        );
+                                      },
+                                    ),
+                                  ),
                   ],
                 ),
               ),
@@ -180,6 +207,22 @@ class _CreateOrderScreenState extends State<CreateOrderScreen> {
         );
       },
     );
+  }
+
+  void _showAddProductScreen(BuildContext context) async {
+    final result = await Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => AddProductScreen(
+          platformId: int.tryParse(_selectedPlatform?['id']?.toString() ?? ''),
+          customerPlatformId: _selectedPlatform?['customer_platform_id'] != null
+              ? int.tryParse(_selectedPlatform?['customer_platform_id']?.toString() ?? '')
+              : null,
+        ),
+      ),
+    );
+    if (result is OrderItem) {
+      _addOrder(result);
+    }
   }
 
   Future<bool?> showDeleteProductDialog(BuildContext context) {
@@ -565,7 +608,7 @@ class _CreateOrderScreenState extends State<CreateOrderScreen> {
                       ? Padding(
                           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                           child: OutlinedButton(
-                            onPressed: () => _showSelectStoreDialog(context),
+                            onPressed: () => _showSelectPlatformDialog(context),
                             style: OutlinedButton.styleFrom(
                               backgroundColor: const Color(0xFFF5F5F7),
                               side: BorderSide.none,
@@ -606,7 +649,7 @@ class _CreateOrderScreenState extends State<CreateOrderScreen> {
                               const Spacer(),
                               IconButton(
                                 icon: const Icon(Icons.add_circle_outline, color: Color(0xFF222222), size: 22),
-                                onPressed: () => _showSelectStoreDialog(context),
+                                onPressed: () => _showSelectPlatformDialog(context),
                               ),
                             ],
                           ),

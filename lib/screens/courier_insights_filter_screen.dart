@@ -209,7 +209,10 @@ class _CourierInsightsFilterScreenState extends State<CourierInsightsFilterScree
               child: MultiSelectDialogField<String>(
                 items: statusApiOptions.map((e) => MultiSelectItem(e, e)).toList(),
                 title: const Text('Select Status'),
-                buttonText: Text('Select Status', style: GoogleFonts.poppins(fontSize: 15, color: Colors.black)),
+                buttonText: Text(
+                  selectedStatuses.isEmpty ? 'Select Status' : 'Status: ${selectedStatuses.length} selected',
+                  style: GoogleFonts.poppins(fontSize: 15, color: selectedStatuses.isEmpty ? Color(0xFF6B6B6B) : Colors.black)
+                ),
                 buttonIcon: const Icon(Icons.keyboard_arrow_down_rounded, color: Color(0xFF222222)),
                 decoration: const BoxDecoration(
                   color: Colors.transparent,
@@ -245,7 +248,10 @@ class _CourierInsightsFilterScreenState extends State<CourierInsightsFilterScree
               child: MultiSelectDialogField<String>(
                 items: courierOptions.map((e) => MultiSelectItem(e, e)).toList(),
                 title: const Text('Select Courier'),
-                buttonText: Text('Select Courier', style: GoogleFonts.poppins(fontSize: 15, color: Colors.black)),
+                buttonText: Text(
+                  selectedCouriers.isEmpty ? 'Select Courier' : 'Courier: ${selectedCouriers.length} selected',
+                  style: GoogleFonts.poppins(fontSize: 15, color: selectedCouriers.isEmpty ? Color(0xFF6B6B6B) : Colors.black)
+                ),
                 buttonIcon: const Icon(Icons.keyboard_arrow_down_rounded, color: Color(0xFF222222)),
                 decoration: const BoxDecoration(
                   color: Colors.transparent,
@@ -281,7 +287,10 @@ class _CourierInsightsFilterScreenState extends State<CourierInsightsFilterScree
               child: MultiSelectDialogField<String>(
                 items: cityOptions.map((e) => MultiSelectItem(e, e)).toList(),
                 title: const Text('Select Destination City'),
-                buttonText: Text('Select Destination City', style: GoogleFonts.poppins(fontSize: 15, color: Colors.black)),
+                buttonText: Text(
+                  selectedCities.isEmpty ? 'Select City' : 'City: ${selectedCities.length} selected',
+                  style: GoogleFonts.poppins(fontSize: 15, color: selectedCities.isEmpty ? Color(0xFF6B6B6B) : Colors.black)
+                ),
                 buttonIcon: const Icon(Icons.keyboard_arrow_down_rounded, color: Color(0xFF222222)),
                 decoration: const BoxDecoration(
                   color: Colors.transparent,
@@ -316,7 +325,13 @@ class _CourierInsightsFilterScreenState extends State<CourierInsightsFilterScree
               ),
               child: DropdownButtonFormField<String>(
               value: selectedPaymentMethod,
-                items: paymentMethodOptions.map((e) => DropdownMenuItem(value: e, child: Text(e, style: GoogleFonts.poppins(fontSize: 15, color: Colors.black)))).toList(),
+                items: [
+                  DropdownMenuItem<String>(
+                    value: null,
+                    child: Text('Select Payment Method', style: GoogleFonts.poppins(fontSize: 15, color: Color(0xFF6B6B6B))),
+                  ),
+                  ...paymentMethodOptions.map((e) => DropdownMenuItem(value: e, child: Text(e, style: GoogleFonts.poppins(fontSize: 15, color: Colors.black)))).toList()
+                ],
                 onChanged: (val) => setState(() => selectedPaymentMethod = val),
                 decoration: InputDecoration(
                   hintText: 'Select Payment Method',
@@ -358,7 +373,13 @@ class _CourierInsightsFilterScreenState extends State<CourierInsightsFilterScree
               ),
               child: DropdownButtonFormField<String>(
               value: selectedPaymentStatus,
-                items: paymentStatusOptions.map((e) => DropdownMenuItem(value: e, child: Text(e, style: GoogleFonts.poppins(fontSize: 15, color: Colors.black)))).toList(),
+                items: [
+                  DropdownMenuItem<String>(
+                    value: null,
+                    child: Text('Select Payment Status', style: GoogleFonts.poppins(fontSize: 15, color: Color(0xFF6B6B6B))),
+                  ),
+                  ...paymentStatusOptions.map((e) => DropdownMenuItem(value: e, child: Text(e, style: GoogleFonts.poppins(fontSize: 15, color: Colors.black)))).toList()
+                ],
                 onChanged: (val) => setState(() => selectedPaymentStatus = val),
                 decoration: InputDecoration(
                   hintText: 'Select Payment Status',
@@ -395,14 +416,7 @@ class _CourierInsightsFilterScreenState extends State<CourierInsightsFilterScree
                   ),
                 ),
                 onPressed: () {
-                  // Check if all fields are selected
-                  if (selectedStatuses.isEmpty || selectedCouriers.isEmpty || selectedCities.isEmpty || selectedPaymentMethod == null || selectedPaymentStatus == null) {
-                    setState(() {
-                      showValidationErrors = true;
-                    });
-                    return;
-                  }
-                  // Reset validation errors
+                  // Apply filters - all fields are optional
                   setState(() {
                     showValidationErrors = false;
                   });

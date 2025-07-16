@@ -201,6 +201,17 @@ class _CODStatementScreenState extends State<CODStatementScreen> {
     }
   }
 
+  String _getCODFilterSummary() {
+    if (_activeFilters == null) return '';
+    final summary = <String>[];
+    if (_activeFilters!['order'] != null) summary.add('Order: ${_activeFilters!['order']}');
+    if (_activeFilters!['status'] != null && (_activeFilters!['status'] as List).isNotEmpty) summary.add('Status: ${(_activeFilters!['status'] as List).join(", ")}');
+    if (_activeFilters!['platform'] != null && (_activeFilters!['platform'] as List).isNotEmpty) summary.add('Platform: ${(_activeFilters!['platform'] as List).join(", ")}');
+    if (_activeFilters!['courier'] != null && (_activeFilters!['courier'] as List).isNotEmpty) summary.add('Courier: ${(_activeFilters!['courier'] as List).join(", ")}');
+    if (_activeFilters!['city'] != null && (_activeFilters!['city'] as List).isNotEmpty) summary.add('City: ${(_activeFilters!['city'] as List).join(", ")}');
+    return summary.join(' | ');
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -313,6 +324,45 @@ class _CODStatementScreenState extends State<CODStatementScreen> {
                         ),
                       ),
                       // --- End Search Bar ---
+                      // Filter Summary
+                      if (_activeFilters != null && _activeFilters!.isNotEmpty) ...[
+                        const SizedBox(height: 8),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                          decoration: BoxDecoration(
+                            color: Colors.blue.withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(8),
+                            border: Border.all(color: Colors.blue.withOpacity(0.3)),
+                          ),
+                          child: Row(
+                            children: [
+                              Icon(Icons.filter_list_rounded, size: 16, color: Colors.blue[700]),
+                              const SizedBox(width: 8),
+                              Expanded(
+                                child: Text(
+                                  _getCODFilterSummary(),
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    color: Colors.blue[700],
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                              ),
+                              GestureDetector(
+                                onTap: () {
+                                  setState(() {
+                                    _activeFilters = null;
+                                  });
+                                  _applySearch();
+                                  // Optionally show a snackbar
+                                },
+                                child: Icon(Icons.clear_rounded, size: 16, color: Colors.blue[700]),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                      const SizedBox(height: 8),
                       Container(
                         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                         decoration: BoxDecoration(

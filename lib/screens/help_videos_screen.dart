@@ -3,6 +3,7 @@ import 'package:get/get.dart';
 import '../models/help_video_model.dart';
 import '../services/help_video_service.dart';
 import '../utils/Layout/app_bottom_bar.dart';
+import 'package:youtube_player_flutter/youtube_player_flutter.dart';
 
 class HelpVideosScreen extends StatefulWidget {
   const HelpVideosScreen({Key? key}) : super(key: key);
@@ -80,6 +81,19 @@ class _HelpVideosScreenState extends State<HelpVideosScreen> {
     final videoId = uri.pathSegments.isNotEmpty ? uri.pathSegments.last.split('?').first : '';
     if (videoId.isEmpty) return '';
     return 'https://img.youtube.com/vi/$videoId/0.jpg';
+  }
+
+  void _showVideoPlayer(BuildContext context, String youtubeUrl) {
+    final videoId = YoutubePlayer.convertUrlToId(youtubeUrl);
+    if (videoId == null) {
+      Get.snackbar('Error', 'Invalid YouTube URL');
+      return;
+    }
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => YoutubePlayerFullScreenPage(videoId: videoId),
+      ),
+    );
   }
 
   @override
@@ -256,8 +270,7 @@ class _HelpVideosScreenState extends State<HelpVideosScreen> {
           elevation: 2,
           child: InkWell(
             onTap: () {
-              // TODO: Implement video player functionality
-              Get.snackbar('Info', 'Video player coming soon!');
+              _showVideoPlayer(context, video.postLink);
             },
             borderRadius: BorderRadius.circular(16),
             child: Padding(
@@ -395,5 +408,36 @@ class _HelpVideosScreenState extends State<HelpVideosScreen> {
       default:
         return Colors.grey;
     }
+  }
+} 
+
+class YoutubePlayerFullScreenPage extends StatelessWidget {
+  final String videoId;
+  const YoutubePlayerFullScreenPage({Key? key, required this.videoId}) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: Colors.black,
+      appBar: AppBar(
+        backgroundColor: Colors.black,
+        foregroundColor: Colors.white,
+        elevation: 0,
+        iconTheme: const IconThemeData(color: Colors.white),
+      ),
+      body: Center(
+        child: YoutubePlayer(
+          controller: YoutubePlayerController(
+            initialVideoId: videoId,
+            flags: const YoutubePlayerFlags(
+              autoPlay: true,
+              mute: false,
+            ),
+          ),
+          showVideoProgressIndicator: true,
+          progressIndicatorColor: Colors.blueAccent,
+        ),
+      ),
+    );
   }
 } 

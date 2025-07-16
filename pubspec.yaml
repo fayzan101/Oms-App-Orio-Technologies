@@ -20,6 +20,7 @@ dependencies:
   table_calendar: ^3.1.0
   material_symbols_icons: ^4.2668.0 
   multi_select_flutter: ^4.0.0 
+  youtube_player_flutter: ^9.1.1
   
   # <-- Added dependency
   # <-- Added dependency
