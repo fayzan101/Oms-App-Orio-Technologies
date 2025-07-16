@@ -230,12 +230,7 @@ class _OrderListScreenState extends State<OrderListScreen> {
       final List<dynamic> newOrders = data['data'] ?? [];
       setState(() {
         orders.addAll(newOrders);
-        // Sort orders in descending order by 'id' (assuming 'id' is numeric and higher means newer)
-        orders.sort((a, b) {
-          final aId = int.tryParse(a['id']?.toString() ?? '') ?? 0;
-          final bId = int.tryParse(b['id']?.toString() ?? '') ?? 0;
-          return bId.compareTo(aId);
-        });
+        // Remove descending sort
         startLimit = endLimit + 1;
         endLimit += pageSize;
         hasMore = newOrders.length == pageSize;
@@ -377,7 +372,7 @@ class _OrderListScreenState extends State<OrderListScreen> {
     );
   }
 
-  void _showTrackingDialog(BuildContext context) {
+  void _showTrackingDialog(BuildContext context, dynamic order) {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -540,7 +535,8 @@ class _OrderListScreenState extends State<OrderListScreen> {
                 setState(() {
                   _activeFilters = result;
                 });
-                _applySearch();
+                await fetchOrders(reset: true); // Ensure API is called again after filter
+                customSnackBar('Success', 'Filter applied'); // Show snackbar at bottom
               }
             },
           ),
@@ -580,6 +576,19 @@ class _OrderListScreenState extends State<OrderListScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            // Show selected date range above search bar
+            Padding(
+              padding: const EdgeInsets.only(bottom: 4, top: 8),
+              child: Text(
+                _getDateRangeText(),
+                style: const TextStyle(
+                  fontFamily: 'SF Pro Display',
+                  fontWeight: FontWeight.w400,
+                  fontSize: 13,
+                  color: Colors.grey,
+                ),
+              ),
+            ),
             // --- Search Bar ---
             Padding(
               padding: const EdgeInsets.symmetric(vertical: 4),
@@ -621,10 +630,11 @@ class _OrderListScreenState extends State<OrderListScreen> {
                       ),
                     ),
                     GestureDetector(
-                      onTap: () {
+                      onTap: () async {
                         setState(() {
                           _activeFilters = null;
                         });
+                        await fetchOrders(reset: true); // Call API again after clearing filter
                         _applySearch();
                         customSnackBar('Success', 'Filters cleared');
                       },
@@ -662,20 +672,20 @@ class _OrderListScreenState extends State<OrderListScreen> {
               children: [
                 Checkbox(
                   value: selectAll,
-                                      onChanged: (val) {
-                      setState(() {
-                        selectAll = val ?? false;
-                        final currentList = (_searchQuery != null && _searchQuery!.isNotEmpty ? _filteredOrders : orders);
-                        if (val == true) {
-                          selectedOrders.clear();
-                          for (int i = 0; i < currentList.length; i++) {
-                            selectedOrders.add(i);
-                          }
-                        } else {
-                          selectedOrders.clear();
+                  onChanged: (val) {
+                    setState(() {
+                      selectAll = val ?? false;
+                      final currentList = (_searchQuery != null && _searchQuery!.isNotEmpty ? _filteredOrders : orders);
+                      if (val == true) {
+                        selectedOrders.clear();
+                        for (int i = 0; i < currentList.length; i++) {
+                          selectedOrders.add(i);
                         }
-                      });
-                    },
+                      } else {
+                        selectedOrders.clear();
+                      }
+                    });
+                  },
                   activeColor: const Color(0xFF007AFF),
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
                   materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
@@ -683,24 +693,26 @@ class _OrderListScreenState extends State<OrderListScreen> {
                 ),
                 const Text('Select All', style: TextStyle(fontFamily: 'SF Pro Display', fontWeight: FontWeight.w500, fontSize: 15)),
                 const Spacer(),
-                GestureDetector(
-                  onTap: () {
-                    Get.to(() => const CreateCnScreen());
-                  },
-                  child: const Text('Create CN', style: TextStyle(fontFamily: 'SF Pro Display', fontWeight: FontWeight.w500, fontSize: 15, color: Color(0xFF007AFF), decoration: TextDecoration.underline)),
-                ),
-                const SizedBox(width: 16),
-                GestureDetector(
-                  onTap: () {
-                    showModalBottomSheet(
-                      context: context,
-                      isScrollControlled: true,
-                      backgroundColor: Colors.transparent,
-                      builder: (context) => const _BulkTrackingBottomSheet(),
-                    );
-                  },
-                  child: const Text('Bulk Tracking', style: TextStyle(fontFamily: 'SF Pro Display', fontWeight: FontWeight.w500, fontSize: 15, color: Color(0xFF007AFF), decoration: TextDecoration.underline)),
-                ),
+                if (selectedOrders.isNotEmpty) ...[
+                  GestureDetector(
+                    onTap: () {
+                      Get.to(() => const CreateCnScreen());
+                    },
+                    child: const Text('Create CN', style: TextStyle(fontFamily: 'SF Pro Display', fontWeight: FontWeight.w500, fontSize: 15, color: Color(0xFF007AFF), decoration: TextDecoration.underline)),
+                  ),
+                  const SizedBox(width: 16),
+                  GestureDetector(
+                    onTap: () {
+                      showModalBottomSheet(
+                        context: context,
+                        isScrollControlled: true,
+                        backgroundColor: Colors.transparent,
+                        builder: (context) => const _BulkTrackingBottomSheet(),
+                      );
+                    },
+                    child: const Text('Bulk Tracking', style: TextStyle(fontFamily: 'SF Pro Display', fontWeight: FontWeight.w500, fontSize: 15, color: Color(0xFF007AFF), decoration: TextDecoration.underline)),
+                  ),
+                ],
               ],
             ),
             const SizedBox(height: 8),
@@ -709,7 +721,7 @@ class _OrderListScreenState extends State<OrderListScreen> {
               child: ListView.separated(
                 controller: _scrollController,
                 itemCount: ((_searchQuery != null && _searchQuery!.isNotEmpty) || _activeFilters != null ? _filteredOrders.length : orders.length) + (isLoading ? 1 : 0),
-                separatorBuilder: (context, i) => const SizedBox(height: 10),
+                separatorBuilder: (context, i) => const SizedBox(height: 16),
                 itemBuilder: (context, i) {
                   final list = ((_searchQuery != null && _searchQuery!.isNotEmpty) || _activeFilters != null ? _filteredOrders : orders);
                   if (i >= list.length) {
@@ -719,27 +731,20 @@ class _OrderListScreenState extends State<OrderListScreen> {
                     ));
                   }
                   final order = list[i];
-                  final isExpanded = expanded.contains(i);
-                  return GestureDetector(
-                    onTap: () {
-                      setState(() {
-                        if (isExpanded) {
-                          expanded.remove(i);
-                        } else {
-                          expanded.add(i);
-                        }
-                      });
-                    },
-                    child: Container(
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFF5F5F7),
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          ListTile(
-                            leading: Checkbox(
+                  return Container(
+                    padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFF5F5F7),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: Colors.grey.shade300),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Checkbox(
                               value: selectedOrders.contains(i),
                               onChanged: (val) {
                                 setState(() {
@@ -748,9 +753,6 @@ class _OrderListScreenState extends State<OrderListScreen> {
                                   } else {
                                     selectedOrders.remove(i);
                                   }
-                                  // Update select all state
-                                  final currentList = (_searchQuery != null && _searchQuery!.isNotEmpty ? _filteredOrders : orders);
-                                  selectAll = selectedOrders.length == currentList.length;
                                 });
                               },
                               activeColor: const Color(0xFF007AFF),
@@ -758,105 +760,133 @@ class _OrderListScreenState extends State<OrderListScreen> {
                               materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
                               visualDensity: VisualDensity.compact,
                             ),
-                            title: Text('Order ID:  ${order['id'] ?? ''}'),
-                            trailing: Icon(isExpanded ? Icons.keyboard_arrow_up_rounded : Icons.keyboard_arrow_down_rounded),
-                          ),
-                          if (isExpanded)
-                            Padding(
-                              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
+                            const SizedBox(width: 4),
+                            Expanded(
+                              child: Padding(
+                                padding: const EdgeInsets.only(top: 8),
+                                child: Text(
+                                  'Order ID: ${order['id'] ?? ''}',
+                                  style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 15),
+                                ),
+                              ),
+                            ),
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+                              decoration: BoxDecoration(
+                                color: (order['status']?.toString().toLowerCase() == 'booked')
+                                    ? const Color(0xFF1DA1F2)
+                                    : Colors.grey,
+                                borderRadius: BorderRadius.circular(20),
+                              ),
+                              child: Text(
+                                order['status']?.toString().capitalize ?? '',
+                                style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600, fontSize: 14),
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 10),
+                        Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Expanded(
+                              child: Table(
+                                columnWidths: const {
+                                  0: IntrinsicColumnWidth(),
+                                  1: FlexColumnWidth(),
+                                },
+                                defaultVerticalAlignment: TableCellVerticalAlignment.middle,
                                 children: [
-                                  Text('Name:  ${order['consignee_name'] ?? ''}'),
-                                  Text('Contact:  ${order['consignee_contact'] ?? ''}'),
-                                  Text('City:  ${order['city_name'] ?? ''}'),
-                                  Text('Web Order ID:  ${order['web_order_id'] ?? order['order_ref'] ?? ''}'),
-                                  Text('Store:  ${order['store_name'] ?? ''}'),
-                                  Text('Payment Type:  ${order['payment_type'] ?? ''}'),
-                                  Text('COD Amount:  ${order['cod_amount'] ?? order['order_amount'] ?? ''}'),
-                                  Row(
-                                    children: [
-                                      const Text('Courier:', style: TextStyle(fontWeight: FontWeight.w600)),
-                                      const SizedBox(width: 8),
-                                      Padding(
-                                        padding: const EdgeInsets.only(bottom: 2),
-                                        child: CourierLogoWidget(
-                                          logoUrl: _getCourierLogoUrl(order['courier_name'] ?? ''),
-                                          width: 48,
-                                          height: 24,
-                                          fit: BoxFit.contain,
-                                        ),
+                                  TableRow(children: [
+                                    Padding(
+                                      padding: const EdgeInsets.only(right: 8.0),
+                                      child: Text('Name:', style: TextStyle(fontWeight: FontWeight.w600)),
+                                    ),
+                                    Text(order['consignee_name'] ?? '', style: const TextStyle(fontWeight: FontWeight.w400)),
+                                  ]),
+                                  TableRow(children: [
+                                    Padding(
+                                      padding: const EdgeInsets.only(right: 8.0, top: 8.0),
+                                      child: Text('Courier:', style: TextStyle(fontWeight: FontWeight.w600)),
+                                    ),
+                                    Align(
+                                      alignment: Alignment.centerLeft,
+                                      child: Padding(
+                                        padding: const EdgeInsets.only(top: 8.0),
+                                        child: order['courier_name'] != null && order['courier_name'].toString().isNotEmpty
+                                          ? CourierLogoWidget(
+                                              logoUrl: _getCourierLogoUrl(order['courier_name']),
+                                              width: 64,
+                                              height: 32,
+                                              fit: BoxFit.contain,
+                                            )
+                                          : const SizedBox(height: 24),
                                       ),
-                                    ],
-                                  ),
-                                  Text('Account:  ${order['account_title'] ?? ''}'),
-                                  Text('CN:  ${order['consigment_no'] ?? ''}'),
-                                  Text('Tags:  ${order['tags'] ?? ''}'),
-                                  Text('Status:  ${order['status'] ?? ''}'),
-                                  const SizedBox(height: 16),
-                                  Row(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    children: [
-                                      const Text('Action', style: TextStyle(fontWeight: FontWeight.w700)),
-                                      const SizedBox(width: 32),
-                                      Column(
-                                        crossAxisAlignment: CrossAxisAlignment.start,
-                                        children: [
-                                          GestureDetector(
-                                            onTap: () async {
-                                              final confirmed = await showModalBottomSheet<bool>(
-                                                context: context,
-                                                isScrollControlled: true,
-                                                backgroundColor: Colors.transparent,
-                                                builder: (context) => _DeleteConfirmationBottomSheet(),
-                                              );
-                                              if (confirmed == true) {
-                                                await _deleteOrder(order['id'].toString());
-                                              }
-                                            },
-                                            child: Row(
-                                              children: const [
-                                                Icon(Icons.delete_rounded, color: Color(0xFF007AFF)),
-                                                SizedBox(width: 4),
-                                                Text('Delete', style: TextStyle(color: Color(0xFF007AFF), fontWeight: FontWeight.w500)),
-                                              ],
-                                            ),
-                                          ),
-                                          SizedBox(height: 8),
-                                          GestureDetector(
-                                            onTap: () {
-                                              Get.to(() => const QuickEditScreen());
-                                            },
-                                            child: Row(
-                                              children: const [
-                                                Icon(Icons.edit_rounded, color: Color(0xFF007AFF)),
-                                                SizedBox(width: 4),
-                                                Text('Quick Edit', style: TextStyle(color: Color(0xFF007AFF), fontWeight: FontWeight.w500)),
-                                              ],
-                                            ),
-                                          ),
-                                          SizedBox(height: 8),
-                                          GestureDetector(
-                                            onTap: () {
-                                              _showTrackingDialog(context);
-                                            },
-                                            child: Row(
-                                              children: const [
-                                                Icon(Icons.place_rounded, color: Color(0xFF007AFF)),
-                                                SizedBox(width: 4),
-                                                Text('Tracking', style: TextStyle(color: Color(0xFF007AFF), fontWeight: FontWeight.w500)),
-                                              ],
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                    ],
-                                  ),
+                                    ),
+                                  ]),
+                                  TableRow(children: [
+                                    Padding(
+                                      padding: const EdgeInsets.only(right: 8.0, top: 8.0),
+                                      child: Text('City:', style: TextStyle(fontWeight: FontWeight.w600)),
+                                    ),
+                                    Padding(
+                                      padding: const EdgeInsets.only(top: 8.0),
+                                      child: Text(order['destination_city'] ?? '', style: const TextStyle(fontWeight: FontWeight.w400)),
+                                    ),
+                                  ]),
                                 ],
                               ),
                             ),
-                        ],
-                      ),
+                          ],
+                        ),
+                        const SizedBox(height: 12),
+                        Row(
+                          children: [
+                            const Text('Actions', style: TextStyle(fontWeight: FontWeight.w600)),
+                            const SizedBox(width: 16),
+                            GestureDetector(
+                              onTap: () async {
+                                final confirmed = await showModalBottomSheet<bool>(
+                                  context: context,
+                                  isScrollControlled: true,
+                                  backgroundColor: Colors.transparent,
+                                  builder: (context) => _DeleteConfirmationBottomSheet(),
+                                );
+                                if (confirmed == true) {
+                                  await _deleteOrder(order['id'].toString());
+                                }
+                              },
+                              child: Row(
+                                children: const [
+                                  Icon(Icons.delete_rounded, color: Color(0xFF007AFF), size: 20),
+                                  SizedBox(width: 4),
+                                  Text('Delete', style: TextStyle(color: Color(0xFF007AFF), fontWeight: FontWeight.w500)),
+                                ],
+                              ),
+                            ),
+                            const SizedBox(width: 16),
+                            GestureDetector(
+                              onTap: () {
+                                Get.to(() => const QuickEditScreen());
+                              },
+                              child: Row(
+                                children: const [
+                                  Icon(Icons.edit_rounded, color: Color(0xFF007AFF), size: 20),
+                                  SizedBox(width: 4),
+                                  Text('Edit', style: TextStyle(color: Color(0xFF007AFF), fontWeight: FontWeight.w500)),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 8),
+                        GestureDetector(
+                          onTap: () {
+                            _showOrderDetailsBottomSheet(context, order);
+                          },
+                          child: const Text('View Details', style: TextStyle(color: Color(0xFF007AFF), fontWeight: FontWeight.w600, fontSize: 15, decoration: TextDecoration.underline)),
+                        ),
+                      ],
                     ),
                   );
                 },
@@ -877,6 +907,108 @@ class _OrderListScreenState extends State<OrderListScreen> {
         child: const Icon(Icons.edit_rounded, color: Colors.white, size: 28),
       ),
     );
+  }
+
+  void _showOrderDetailsBottomSheet(BuildContext context, dynamic order) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) {
+        return Container(
+          width: double.infinity,
+          padding: EdgeInsets.only(
+            left: 0,
+            right: 0,
+            bottom: MediaQuery.of(context).viewInsets.bottom,
+          ),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+          ),
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(20, 20, 20, 32),
+            child: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Text(
+                        'Order Details',
+                        style: TextStyle(
+                          fontWeight: FontWeight.w700,
+                          fontSize: 18,
+                          fontFamily: 'SF Pro Display',
+                        ),
+                      ),
+                      IconButton(
+                        icon: const Icon(Icons.close_rounded),
+                        onPressed: () => Navigator.of(context).pop(),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                  _orderDetailRow('Order ID', order['id']?.toString() ?? ''),
+                  _orderDetailRow('Consignee Name', order['consignee_name'] ?? ''),
+                  _orderDetailRow('Consignee Contact', order['consignee_contact'] ?? ''),
+                  _orderDetailRow('Consignee Address', order['consignee_address'] ?? ''),
+                  _orderDetailRow('CN', order['consigment_no'] ?? ''),
+                  _orderDetailRow('Order Amount', order['order_amount'] ?? ''),
+                  _orderDetailRow('Status', order['status'] ?? ''),
+                  _orderDetailRow('Booking Date', order['booking_date'] ?? ''),
+                  _orderDetailRow('Store Name', order['store_name'] ?? ''),
+                  _orderDetailRow('Courier Name', order['courier_name'] ?? ''),
+                  _orderDetailRow('Payment Type', order['payment_type'] ?? ''),
+                  _orderDetailRow('Tags', order['tags_name'] ?? ''),
+                ],
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _orderDetailRow(String label, String value) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: Row(
+        children: [
+          SizedBox(
+            width: 120,
+            child: Text(
+              label,
+              style: const TextStyle(
+                fontWeight: FontWeight.w600,
+                fontFamily: 'SF Pro Display',
+                fontSize: 15,
+              ),
+            ),
+          ),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              value,
+              style: const TextStyle(
+                fontWeight: FontWeight.w400,
+                fontFamily: 'SF Pro Display',
+                fontSize: 15,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  String _getDateRangeText() {
+    final days = _endDate.difference(_startDate).inDays;
+    final start = '${_startDate.day.toString().padLeft(2, '0')}-${_startDate.month.toString().padLeft(2, '0')}-${_startDate.year}';
+    final end = '${_endDate.day.toString().padLeft(2, '0')}-${_endDate.month.toString().padLeft(2, '0')}-${_endDate.year}';
+    return ' $start to $end';
   }
 }
 
