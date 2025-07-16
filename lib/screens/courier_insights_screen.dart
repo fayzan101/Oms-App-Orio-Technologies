@@ -356,36 +356,36 @@ class _CourierInsightsScreenState extends State<CourierInsightsScreen> {
                     Icons.filter_list_rounded, 
                     color: _hasActiveFilters() ? Colors.blue : Colors.black
                   ),
-                  onPressed: () async {
-                    await Navigator.of(context).push(
-                      MaterialPageRoute(
-                        builder: (_) => CourierInsightsFilterScreen(
-                          onApply: (filters) {
-                            setState(() {
-                              filterStatuses = List<String>.from(filters['status'] ?? []);
-                              filterCouriers = List<String>.from(filters['courier'] ?? []);
-                              filterCities = List<String>.from(filters['city'] ?? []);
-                              filterPaymentMethod = filters['paymentMethod'];
-                              filterPaymentStatus = filters['paymentStatus'];
-                            });
-                            fetchCourierInsights();
-                            customSnackBar('Success', 'Filters applied successfully');
-                          },
-                          onReset: () {
-                            setState(() {
-                              filterStatuses = [];
-                              filterCouriers = [];
-                              filterCities = [];
-                              filterPaymentMethod = null;
-                              filterPaymentStatus = null;
-                            });
-                            fetchCourierInsights();
-                            customSnackBar('Success', 'Filters reset successfully');
-                          },
-                        ),
-                      ),
-                    );
-                  },
+              onPressed: () async {
+                await Navigator.of(context).push(
+                  MaterialPageRoute(
+                    builder: (_) => CourierInsightsFilterScreen(
+                      onApply: (filters) {
+                        setState(() {
+                          filterStatuses = List<String>.from(filters['status'] ?? []);
+                          filterCouriers = List<String>.from(filters['courier'] ?? []);
+                          filterCities = List<String>.from(filters['city'] ?? []);
+                          filterPaymentMethod = filters['paymentMethod'];
+                          filterPaymentStatus = filters['paymentStatus'];
+                        });
+                        fetchCourierInsights();
+                        customSnackBar('Success', 'Filters applied successfully');
+                      },
+                      onReset: () {
+                        setState(() {
+                          filterStatuses = [];
+                          filterCouriers = [];
+                          filterCities = [];
+                          filterPaymentMethod = null;
+                          filterPaymentStatus = null;
+                        });
+                        fetchCourierInsights();
+                        customSnackBar('Success', 'Filters reset successfully');
+                      },
+                    ),
+                  ),
+                );
+              },
                 ),
                 if (_hasActiveFilters())
                   Positioned(

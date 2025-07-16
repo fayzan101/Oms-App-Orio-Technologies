@@ -17,6 +17,7 @@ import '../utils/custom_snackbar.dart';
 import 'package:dio/dio.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../widgets/courier_logo_widget.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 class OrderListScreen extends StatefulWidget {
   final String? snackbarMessage;
@@ -644,7 +645,7 @@ class _OrderListScreenState extends State<OrderListScreen> {
                 ),
               ),
             ],
-            const SizedBox(height: 8),
+            const SizedBox(height: 1),
             // --- Order Status Dropdown ---
             // (Removed Order Status Dropdown as per user request)
             // --- End Order Status Dropdown ---
@@ -696,6 +697,14 @@ class _OrderListScreenState extends State<OrderListScreen> {
                 if (selectedOrders.isNotEmpty) ...[
                   GestureDetector(
                     onTap: () {
+                      final list = ((_searchQuery != null && _searchQuery!.isNotEmpty) || _activeFilters != null ? _filteredOrders : orders);
+                      bool anyBooked = selectedOrders.any((idx) =>
+                        (list[idx]['status']?.toString().toLowerCase() == 'booked')
+                      );
+                      if (anyBooked) {
+                        customSnackBar('Error', 'The order is already booked, please try another CN.');
+                        return;
+                      }
                       Get.to(() => const CreateCnScreen());
                     },
                     child: const Text('Create CN', style: TextStyle(fontFamily: 'SF Pro Display', fontWeight: FontWeight.w500, fontSize: 15, color: Color(0xFF007AFF), decoration: TextDecoration.underline)),
@@ -715,13 +724,13 @@ class _OrderListScreenState extends State<OrderListScreen> {
                 ],
               ],
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: 1),
             // Orders List
             Expanded(
               child: ListView.separated(
                 controller: _scrollController,
                 itemCount: ((_searchQuery != null && _searchQuery!.isNotEmpty) || _activeFilters != null ? _filteredOrders.length : orders.length) + (isLoading ? 1 : 0),
-                separatorBuilder: (context, i) => const SizedBox(height: 16),
+                separatorBuilder: (context, i) => const SizedBox(height: 8),
                 itemBuilder: (context, i) {
                   final list = ((_searchQuery != null && _searchQuery!.isNotEmpty) || _activeFilters != null ? _filteredOrders : orders);
                   if (i >= list.length) {
@@ -732,7 +741,8 @@ class _OrderListScreenState extends State<OrderListScreen> {
                   }
                   final order = list[i];
                   return Container(
-                    padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
+                    width: MediaQuery.of(context).size.width,
+                    padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 10),
                     decoration: BoxDecoration(
                       color: const Color(0xFFF5F5F7),
                       borderRadius: BorderRadius.circular(12),
@@ -766,7 +776,7 @@ class _OrderListScreenState extends State<OrderListScreen> {
                                 padding: const EdgeInsets.only(top: 8),
                                 child: Text(
                                   'Order ID: ${order['id'] ?? ''}',
-                                  style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 15),
+                                  style: GoogleFonts.inter(fontWeight: FontWeight.w600, fontSize: 15),
                                 ),
                               ),
                             ),
@@ -780,19 +790,19 @@ class _OrderListScreenState extends State<OrderListScreen> {
                               ),
                               child: Text(
                                 order['status']?.toString().capitalize ?? '',
-                                style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600, fontSize: 14),
+                                style: GoogleFonts.inter(color: Colors.white, fontWeight: FontWeight.w600, fontSize: 14),
                               ),
                             ),
                           ],
                         ),
-                        const SizedBox(height: 10),
+                        const SizedBox(height: 4),
                         Row(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Expanded(
                               child: Table(
                                 columnWidths: const {
-                                  0: IntrinsicColumnWidth(),
+                                  0: FixedColumnWidth(80),
                                   1: FlexColumnWidth(),
                                 },
                                 defaultVerticalAlignment: TableCellVerticalAlignment.middle,
@@ -800,17 +810,24 @@ class _OrderListScreenState extends State<OrderListScreen> {
                                   TableRow(children: [
                                     Padding(
                                       padding: const EdgeInsets.only(right: 8.0),
-                                      child: Text('Name:', style: TextStyle(fontWeight: FontWeight.w600)),
+                                      child: Align(
+                                        alignment: Alignment.centerLeft,
+                                        child: Text('Name:', style: GoogleFonts.inter(fontWeight: FontWeight.w600)),
+                                      ),
                                     ),
-                                    Text(order['consignee_name'] ?? '', style: const TextStyle(fontWeight: FontWeight.w400)),
+                                    Center(
+                                      child: Text(order['consignee_name'] ?? '', style: GoogleFonts.inter(fontWeight: FontWeight.w400)),
+                                    ),
                                   ]),
                                   TableRow(children: [
                                     Padding(
                                       padding: const EdgeInsets.only(right: 8.0, top: 8.0),
-                                      child: Text('Courier:', style: TextStyle(fontWeight: FontWeight.w600)),
+                                      child: Align(
+                                        alignment: Alignment.centerLeft,
+                                        child: Text('Courier:', style: GoogleFonts.inter(fontWeight: FontWeight.w600)),
+                                      ),
                                     ),
-                                    Align(
-                                      alignment: Alignment.centerLeft,
+                                    Center(
                                       child: Padding(
                                         padding: const EdgeInsets.only(top: 8.0),
                                         child: order['courier_name'] != null && order['courier_name'].toString().isNotEmpty
@@ -827,11 +844,16 @@ class _OrderListScreenState extends State<OrderListScreen> {
                                   TableRow(children: [
                                     Padding(
                                       padding: const EdgeInsets.only(right: 8.0, top: 8.0),
-                                      child: Text('City:', style: TextStyle(fontWeight: FontWeight.w600)),
+                                      child: Align(
+                                        alignment: Alignment.centerLeft,
+                                        child: Text('City:', style: GoogleFonts.inter(fontWeight: FontWeight.w600)),
+                                      ),
                                     ),
-                                    Padding(
-                                      padding: const EdgeInsets.only(top: 8.0),
-                                      child: Text(order['destination_city'] ?? '', style: const TextStyle(fontWeight: FontWeight.w400)),
+                                    Center(
+                                      child: Padding(
+                                        padding: const EdgeInsets.only(top: 8.0),
+                                        child: Text(order['destination_city'] ?? '', style: GoogleFonts.inter(fontWeight: FontWeight.w400)),
+                                      ),
                                     ),
                                   ]),
                                 ],
@@ -839,52 +861,68 @@ class _OrderListScreenState extends State<OrderListScreen> {
                             ),
                           ],
                         ),
-                        const SizedBox(height: 12),
+                        const SizedBox(height: 10),
                         Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            const Text('Actions', style: TextStyle(fontWeight: FontWeight.w600)),
-                            const SizedBox(width: 16),
-                            GestureDetector(
-                              onTap: () async {
-                                final confirmed = await showModalBottomSheet<bool>(
-                                  context: context,
-                                  isScrollControlled: true,
-                                  backgroundColor: Colors.transparent,
-                                  builder: (context) => _DeleteConfirmationBottomSheet(),
-                                );
-                                if (confirmed == true) {
-                                  await _deleteOrder(order['id'].toString());
-                                }
-                              },
-                              child: Row(
-                                children: const [
-                                  Icon(Icons.delete_rounded, color: Color(0xFF007AFF), size: 20),
-                                  SizedBox(width: 4),
-                                  Text('Delete', style: TextStyle(color: Color(0xFF007AFF), fontWeight: FontWeight.w500)),
-                                ],
-                              ),
+                            Expanded(
+                              child: Text('Actions', style: GoogleFonts.inter(fontWeight: FontWeight.w600)),
                             ),
-                            const SizedBox(width: 16),
-                            GestureDetector(
-                              onTap: () {
-                                Get.to(() => const QuickEditScreen());
-                              },
-                              child: Row(
-                                children: const [
-                                  Icon(Icons.edit_rounded, color: Color(0xFF007AFF), size: 20),
-                                  SizedBox(width: 4),
-                                  Text('Edit', style: TextStyle(color: Color(0xFF007AFF), fontWeight: FontWeight.w500)),
-                                ],
-                              ),
+                            SizedBox(width: 8), // Move Delete button left
+                            Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                GestureDetector(
+                                  onTap: () async {
+                                    final confirmed = await showModalBottomSheet<bool>(
+                                      context: context,
+                                      isScrollControlled: true,
+                                      backgroundColor: Colors.transparent,
+                                      builder: (context) => _DeleteConfirmationBottomSheet(),
+                                    );
+                                    if (confirmed == true) {
+                                      await _deleteOrder(order['id'].toString());
+                                    }
+                                  },
+                                  child: Row(
+                                    children: [
+                                      const Icon(Icons.delete_rounded, color: Color(0xFF007AFF), size: 20),
+                                      const SizedBox(width: 0.0005), // Reduce space between icon and text
+                                      Text('Delete    ', style: GoogleFonts.inter(color: Color(0xFF007AFF), fontWeight: FontWeight.w500)),
+                                    ],
+                                  ),
+                                ),
+                                const SizedBox(width: 16),
+                                GestureDetector(
+                                  onTap: () {
+                                    Get.to(() => const QuickEditScreen());
+                                  },
+                                  child: Row(
+                                    children: [
+                                      const Icon(Icons.edit_rounded, color: Color(0xFF007AFF), size: 20),
+                                      const SizedBox(width: 4),
+                                      Text('Edit', style: GoogleFonts.inter(color: Color(0xFF007AFF), fontWeight: FontWeight.w500)),
+                                    ],
+                                  ),
+                                ),
+                              ],
                             ),
                           ],
                         ),
-                        const SizedBox(height: 8),
+                        const SizedBox(height: 6),
                         GestureDetector(
                           onTap: () {
                             _showOrderDetailsBottomSheet(context, order);
                           },
-                          child: const Text('View Details', style: TextStyle(color: Color(0xFF007AFF), fontWeight: FontWeight.w600, fontSize: 15, decoration: TextDecoration.underline)),
+                          child: Text(
+                            'View Details',
+                            style: GoogleFonts.inter(
+                              color: const Color(0xFF007AFF),
+                              fontWeight: FontWeight.w600,
+                              fontSize: 14,
+                              decoration: TextDecoration.none,
+                            ),
+                          ),
                         ),
                       ],
                     ),
@@ -951,18 +989,64 @@ class _OrderListScreenState extends State<OrderListScreen> {
                     ],
                   ),
                   const SizedBox(height: 12),
-                  _orderDetailRow('Order ID', order['id']?.toString() ?? ''),
-                  _orderDetailRow('Consignee Name', order['consignee_name'] ?? ''),
-                  _orderDetailRow('Consignee Contact', order['consignee_contact'] ?? ''),
-                  _orderDetailRow('Consignee Address', order['consignee_address'] ?? ''),
-                  _orderDetailRow('CN', order['consigment_no'] ?? ''),
-                  _orderDetailRow('Order Amount', order['order_amount'] ?? ''),
-                  _orderDetailRow('Status', order['status'] ?? ''),
-                  _orderDetailRow('Booking Date', order['booking_date'] ?? ''),
-                  _orderDetailRow('Store Name', order['store_name'] ?? ''),
-                  _orderDetailRow('Courier Name', order['courier_name'] ?? ''),
-                  _orderDetailRow('Payment Type', order['payment_type'] ?? ''),
-                  _orderDetailRow('Tags', order['tags_name'] ?? ''),
+                  // Replace multiple _orderDetailRow calls with a Table for perfect alignment
+                  Table(
+                    columnWidths: const {
+                      0: FixedColumnWidth(120),
+                      1: FlexColumnWidth(),
+                    },
+                    defaultVerticalAlignment: TableCellVerticalAlignment.middle,
+                    children: [
+                      TableRow(children: [
+                        Text('Order ID', style: GoogleFonts.inter(fontWeight: FontWeight.w600, fontSize: 15)),
+                        Text(order['id']?.toString() ?? '', textAlign: TextAlign.center, style: GoogleFonts.inter(fontWeight: FontWeight.w400, fontSize: 15)),
+                      ]),
+                      TableRow(children: [
+                        Text('Consignee Name', style: GoogleFonts.inter(fontWeight: FontWeight.w600, fontSize: 15)),
+                        Text(order['consignee_name'] ?? '', textAlign: TextAlign.center, style: GoogleFonts.inter(fontWeight: FontWeight.w400, fontSize: 15)),
+                      ]),
+                      TableRow(children: [
+                        Text('Consignee Contact', style: GoogleFonts.inter(fontWeight: FontWeight.w600, fontSize: 15)),
+                        Text(order['consignee_contact'] ?? '', textAlign: TextAlign.center, style: GoogleFonts.inter(fontWeight: FontWeight.w400, fontSize: 15)),
+                      ]),
+                      TableRow(children: [
+                        Text('Consignee Address', style: GoogleFonts.inter(fontWeight: FontWeight.w600, fontSize: 15)),
+                        Text(order['consignee_address'] ?? '', textAlign: TextAlign.center, style: GoogleFonts.inter(fontWeight: FontWeight.w400, fontSize: 15)),
+                      ]),
+                      TableRow(children: [
+                        Text('CN', style: GoogleFonts.inter(fontWeight: FontWeight.w600, fontSize: 15)),
+                        Text(order['consigment_no'] ?? '', textAlign: TextAlign.center, style: GoogleFonts.inter(fontWeight: FontWeight.w400, fontSize: 15)),
+                      ]),
+                      TableRow(children: [
+                        Text('Order Amount', style: GoogleFonts.inter(fontWeight: FontWeight.w600, fontSize: 15)),
+                        Text(order['order_amount'] ?? '', textAlign: TextAlign.center, style: GoogleFonts.inter(fontWeight: FontWeight.w400, fontSize: 15)),
+                      ]),
+                      TableRow(children: [
+                        Text('Status', style: GoogleFonts.inter(fontWeight: FontWeight.w600, fontSize: 15)),
+                        Text(order['status'] ?? '', textAlign: TextAlign.center, style: GoogleFonts.inter(fontWeight: FontWeight.w400, fontSize: 15)),
+                      ]),
+                      TableRow(children: [
+                        Text('Booking Date', style: GoogleFonts.inter(fontWeight: FontWeight.w600, fontSize: 15)),
+                        Text(order['booking_date'] ?? '', textAlign: TextAlign.center, style: GoogleFonts.inter(fontWeight: FontWeight.w400, fontSize: 15)),
+                      ]),
+                      TableRow(children: [
+                        Text('Store Name', style: GoogleFonts.inter(fontWeight: FontWeight.w600, fontSize: 15)),
+                        Text(order['store_name'] ?? '', textAlign: TextAlign.center, style: GoogleFonts.inter(fontWeight: FontWeight.w400, fontSize: 15)),
+                      ]),
+                      TableRow(children: [
+                        Text('Courier Name', style: GoogleFonts.inter(fontWeight: FontWeight.w600, fontSize: 15)),
+                        Text(order['courier_name'] ?? '', textAlign: TextAlign.center, style: GoogleFonts.inter(fontWeight: FontWeight.w400, fontSize: 15)),
+                      ]),
+                      TableRow(children: [
+                        Text('Payment Type', style: GoogleFonts.inter(fontWeight: FontWeight.w600, fontSize: 15)),
+                        Text(order['payment_type'] ?? '', textAlign: TextAlign.center, style: GoogleFonts.inter(fontWeight: FontWeight.w400, fontSize: 15)),
+                      ]),
+                      TableRow(children: [
+                        Text('Tags', style: GoogleFonts.inter(fontWeight: FontWeight.w600, fontSize: 15)),
+                        Text(order['tags_name'] ?? '', textAlign: TextAlign.center, style: GoogleFonts.inter(fontWeight: FontWeight.w400, fontSize: 15)),
+                      ]),
+                    ],
+                  ),
                 ],
               ),
             ),
@@ -981,20 +1065,19 @@ class _OrderListScreenState extends State<OrderListScreen> {
             width: 120,
             child: Text(
               label,
-              style: const TextStyle(
+              style: GoogleFonts.inter(
                 fontWeight: FontWeight.w600,
-                fontFamily: 'SF Pro Display',
                 fontSize: 15,
               ),
             ),
           ),
-          const SizedBox(width: 8),
+          const SizedBox(width: 24), // Increased spacing
           Expanded(
             child: Text(
               value,
-              style: const TextStyle(
+              textAlign: TextAlign.center, // Center the value
+              style: GoogleFonts.inter(
                 fontWeight: FontWeight.w400,
-                fontFamily: 'SF Pro Display',
                 fontSize: 15,
               ),
             ),

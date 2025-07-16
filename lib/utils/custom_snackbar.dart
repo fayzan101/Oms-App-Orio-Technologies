@@ -17,7 +17,7 @@ void customSnackBar(String titleTxt, String msg, {SnackPosition position = Snack
         backgroundColor: titleTxt == 'Processing'
             ? const Color(0xff030D1F)
             : titleTxt == 'Success'
-                ? const Color.fromARGB(255, 20, 68, 36)
+                ? const Color(0xFF4CAF50) // Standard green
                 : const Color.fromARGB(255, 85, 11, 14),
         colorText: titleTxt == 'Processing' ? const Color.fromARGB(255, 13, 59, 146) : Colors.white,
         icon: titleTxt == 'Processing'
