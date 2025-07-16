@@ -262,12 +262,24 @@ class _DashboardScreenState extends State<DashboardScreen> {
                                 color: Colors.black,
                               ),
                             )),
-                            // Simple chart representation
-                            Image.asset(
-                              'assets/icon/graph.png',
+                            // Replaced PNG graph with fl_chart bar chart
+                            SizedBox(
                               width: 100,
                               height: 50,
-                              fit: BoxFit.contain,
+                              child: BarChart(
+                                BarChartData(
+                                  alignment: BarChartAlignment.spaceAround,
+                                  barTouchData: BarTouchData(enabled: false),
+                                  titlesData: FlTitlesData(show: false),
+                                  borderData: FlBorderData(show: false),
+                                  gridData: FlGridData(show: false),
+                                  barGroups: [
+                                    BarChartGroupData(x: 0, barRods: [BarChartRodData(toY: controller.totalCurrentOutstanding.value / 10000, color: Colors.blue, width: 16)]),
+                                    BarChartGroupData(x: 1, barRods: [BarChartRodData(toY: (controller.totalCurrentOutstanding.value * 0.8) / 10000, color: Colors.blue[200]!, width: 16)]),
+                                    BarChartGroupData(x: 2, barRods: [BarChartRodData(toY: (controller.totalCurrentOutstanding.value * 0.6) / 10000, color: Colors.blue[100]!, width: 16)]),
+                                  ],
+                                ),
+                              ),
                             ),
                           ],
                         ),

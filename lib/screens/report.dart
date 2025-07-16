@@ -65,7 +65,7 @@ class ReportsScreen extends StatelessWidget {
                 },
               ),
               _ReportCard(
-                icon: Icons.show_chart_rounded,
+                imageAsset: 'assets/ageing.jpg',
                 label: 'Ageing Report',
                 onTap: () {
                   Navigator.of(context).push(
@@ -109,10 +109,11 @@ class ReportsScreen extends StatelessWidget {
 }
 
 class _ReportCard extends StatelessWidget {
-  final IconData icon;
+  final IconData? icon;
+  final String? imageAsset;
   final String label;
   final VoidCallback onTap;
-  const _ReportCard({required this.icon, required this.label, required this.onTap});
+  const _ReportCard({this.icon, this.imageAsset, required this.label, required this.onTap});
 
   @override
   Widget build(BuildContext context) {
@@ -125,7 +126,15 @@ class _ReportCard extends StatelessWidget {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(icon, color: Color(0xFF007AFF), size: 40),
+            if (imageAsset != null)
+              Image.asset(
+                imageAsset!,
+                width: 60,
+                height: 60,
+                fit: BoxFit.contain,
+              )
+            else if (icon != null)
+              Icon(icon, color: Color(0xFF007AFF), size: 40),
             const SizedBox(height: 16),
             Text(
               label,

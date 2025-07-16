@@ -25,6 +25,7 @@ class OrderService {
     String? statusId,
     String? storeName,
     String? customerCourierId,
+    Map<String, dynamic>? extraParams,
   }) async {
     final body = {
       "acno": acno,
@@ -37,6 +38,7 @@ class OrderService {
       if (statusId != null && statusId.isNotEmpty) "status_id": statusId,
       if (storeName != null && storeName.isNotEmpty) "store_name": storeName,
       if (customerCourierId != null && customerCourierId.isNotEmpty) "customer_courier_id": customerCourierId,
+      if (extraParams != null) ...extraParams,
     };
     try {
       final response = await _dio.post(_baseUrl, data: jsonEncode(body));

@@ -21,6 +21,7 @@ dependencies:
   material_symbols_icons: ^4.2668.0 
   multi_select_flutter: ^4.0.0 
   youtube_player_flutter: ^9.1.1
+  calendar_date_picker2: ^2.0.1
   
   # <-- Added dependency
   # <-- Added dependency
@@ -45,6 +46,7 @@ flutter:
     - assets/icon/bluex.jpeg
     - assets/icon/graph.png
     - assets/icon/create.png
+    - assets/ageing.jpg
 
 flutter_icons:
   android: true

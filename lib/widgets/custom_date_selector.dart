@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:table_calendar/table_calendar.dart';
 import 'package:intl/intl.dart';
+import 'package:calendar_date_picker2/calendar_date_picker2.dart';
 
 class CustomDateSelector extends StatefulWidget {
   final DateTime initialStartDate;
@@ -110,29 +111,31 @@ class _CustomDateSelectorState extends State<CustomDateSelector> {
                     _formKey.currentState?.validate();
                   },
                   onTap: () async {
-                    final picked = await showDatePicker(
+                    final picked = await showDialog<List<DateTime>>(
                       context: context,
-                      initialDate: _startDate,
-                      firstDate: DateTime(2020),
-                      lastDate: DateTime.now(),
-                      builder: (context, child) {
-                        return Theme(
-                          data: Theme.of(context).copyWith(
-                            colorScheme: ColorScheme.light(
-                              primary: splashColor,
-                              onPrimary: Colors.white,
-                              surface: Colors.white,
-                              onSurface: Colors.black,
+                      builder: (context) {
+                        return Dialog(
+                          child: CalendarDatePicker2(
+                            config: CalendarDatePicker2Config(
+                              calendarType: CalendarDatePicker2Type.single,
+                              firstDate: DateTime(2020),
+                              lastDate: DateTime.now(),
+                              selectedDayHighlightColor: splashColor,
                             ),
+                            value: [_startDate],
+                            onValueChanged: (dates) {
+                              if (dates.isNotEmpty && dates.first != null) {
+                                Navigator.of(context).pop(dates);
+                              }
+                            },
                           ),
-                          child: child!,
                         );
                       },
                     );
-                    if (picked != null) {
+                    if (picked != null && picked.isNotEmpty && picked.first != null) {
                       setState(() {
-                        _startDate = picked;
-                        _startController.text = _dateFormat.format(picked);
+                        _startDate = picked.first!;
+                        _startController.text = _dateFormat.format(_startDate);
                         if (_endDate.isBefore(_startDate)) {
                           _endDate = _startDate;
                           _endController.text = _dateFormat.format(_endDate);
@@ -150,29 +153,31 @@ class _CustomDateSelectorState extends State<CustomDateSelector> {
                     _formKey.currentState?.validate();
                   },
                   onTap: () async {
-                    final picked = await showDatePicker(
+                    final picked = await showDialog<List<DateTime>>(
                       context: context,
-                      initialDate: _endDate,
-                      firstDate: DateTime(2020),
-                      lastDate: DateTime.now(),
-                      builder: (context, child) {
-                        return Theme(
-                          data: Theme.of(context).copyWith(
-                            colorScheme: ColorScheme.light(
-                              primary: splashColor,
-                              onPrimary: Colors.white,
-                              surface: Colors.white,
-                              onSurface: Colors.black,
+                      builder: (context) {
+                        return Dialog(
+                          child: CalendarDatePicker2(
+                            config: CalendarDatePicker2Config(
+                              calendarType: CalendarDatePicker2Type.single,
+                              firstDate: DateTime(2020),
+                              lastDate: DateTime.now(),
+                              selectedDayHighlightColor: splashColor,
                             ),
+                            value: [_endDate],
+                            onValueChanged: (dates) {
+                              if (dates.isNotEmpty && dates.first != null) {
+                                Navigator.of(context).pop(dates);
+                              }
+                            },
                           ),
-                          child: child!,
                         );
                       },
                     );
-                    if (picked != null) {
+                    if (picked != null && picked.isNotEmpty && picked.first != null) {
                       setState(() {
-                        _endDate = picked;
-                        _endController.text = _dateFormat.format(picked);
+                        _endDate = picked.first!;
+                        _endController.text = _dateFormat.format(_endDate);
                         if (_endDate.isBefore(_startDate)) {
                           _startDate = _endDate;
                           _startController.text = _dateFormat.format(_startDate);

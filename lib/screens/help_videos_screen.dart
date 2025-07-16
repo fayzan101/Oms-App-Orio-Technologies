@@ -4,6 +4,7 @@ import '../models/help_video_model.dart';
 import '../services/help_video_service.dart';
 import '../utils/Layout/app_bottom_bar.dart';
 import 'package:youtube_player_flutter/youtube_player_flutter.dart';
+import 'package:flutter/services.dart';
 
 class HelpVideosScreen extends StatefulWidget {
   const HelpVideosScreen({Key? key}) : super(key: key);
@@ -26,6 +27,10 @@ class _HelpVideosScreenState extends State<HelpVideosScreen> {
   final List<String> _videoTypes = ['All', 'Tutorial', 'Guide', 'FAQ', 'Setup'];
   final List<String> _statusOptions = ['All', 'active', 'inactive'];
 
+  int? _playingIndex; // Track which video is playing
+  YoutubePlayerController? _youtubeController;
+  YoutubePlayerValue? _lastPlayerValue;
+
   @override
   void initState() {
     super.initState();
@@ -35,6 +40,10 @@ class _HelpVideosScreenState extends State<HelpVideosScreen> {
   @override
   void dispose() {
     _searchController.dispose();
+    _youtubeController?.dispose();
+    SystemChrome.setPreferredOrientations([
+      DeviceOrientation.portraitUp,
+    ]);
     super.dispose();
   }
 
@@ -264,13 +273,52 @@ class _HelpVideosScreenState extends State<HelpVideosScreen> {
       itemCount: _filteredVideos.length,
       itemBuilder: (context, index) {
         final video = _filteredVideos[index];
+        final isPlaying = _playingIndex == index;
         return Card(
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
           margin: const EdgeInsets.only(bottom: 16),
           elevation: 2,
           child: InkWell(
             onTap: () {
-              _showVideoPlayer(context, video.postLink);
+              setState(() {
+                if (_playingIndex == index) {
+                  _playingIndex = null;
+                  _youtubeController?.pause();
+                  _youtubeController?.dispose();
+                  _youtubeController = null;
+                  SystemChrome.setPreferredOrientations([
+                    DeviceOrientation.portraitUp,
+                  ]);
+                } else {
+                  _playingIndex = index;
+                  _youtubeController?.pause();
+                  _youtubeController?.dispose();
+                  final videoId = YoutubePlayer.convertUrlToId(video.postLink);
+                  if (videoId != null) {
+                    _youtubeController = YoutubePlayerController(
+                      initialVideoId: videoId,
+                      flags: const YoutubePlayerFlags(
+                        autoPlay: true,
+                        mute: false,
+                        forceHD: false,
+                        disableDragSeek: false,
+                        enableCaption: false,
+                        isLive: false,
+                        hideControls: false,
+                        hideThumbnail: false,
+                        controlsVisibleAtStart: true,
+                        useHybridComposition: true,
+                        // Removed forceLandscape and forcePortrait
+                      ),
+                    );
+                    SystemChrome.setPreferredOrientations([
+                      DeviceOrientation.portraitUp,
+                    ]);
+                  } else {
+                    _youtubeController = null;
+                  }
+                }
+              });
             },
             borderRadius: BorderRadius.circular(16),
             child: Padding(
@@ -284,57 +332,105 @@ class _HelpVideosScreenState extends State<HelpVideosScreen> {
                       children: [
                         AspectRatio(
                           aspectRatio: 16 / 9,
-                          child: Image.network(
-                            _getYoutubeThumbnail(video.postLink),
-                            fit: BoxFit.cover,
-                            width: double.infinity,
-                            errorBuilder: (c, e, s) => Container(
-                              color: Colors.grey[200],
-                              child: const Icon(Icons.video_library_rounded, size: 48),
-                            ),
-                          ),
+                          child: isPlaying && _youtubeController != null
+                              ? Stack(
+                                  children: [
+                                    YoutubePlayer(
+                                      controller: _youtubeController!,
+                                      showVideoProgressIndicator: true,
+                                      progressIndicatorColor: Colors.blueAccent,
+                                      onReady: () {
+                                        _youtubeController!.addListener(() {
+                                          setState(() {
+                                            _lastPlayerValue = _youtubeController!.value;
+                                          });
+                                        });
+                                      },
+                                      onEnded: (meta) {
+                                        setState(() {
+                                          _playingIndex = null;
+                                          _youtubeController?.dispose();
+                                          _youtubeController = null;
+                                        });
+                                      },
+                                    ),
+                                    Positioned(
+                                      top: 8,
+                                      right: 8,
+                                      child: GestureDetector(
+                                        onTap: () {
+                                          final videoId = _youtubeController!.initialVideoId;
+                                          _youtubeController?.pause();
+                                          Navigator.of(context).push(
+                                            MaterialPageRoute(
+                                              builder: (_) => YoutubePlayerFullScreenPage(videoId: videoId),
+                                            ),
+                                          );
+                                        },
+                                        child: Container(
+                                          decoration: BoxDecoration(
+                                            color: Colors.black.withOpacity(0.5),
+                                            borderRadius: BorderRadius.circular(20),
+                                          ),
+                                          padding: const EdgeInsets.all(6),
+                                          child: const Icon(Icons.fullscreen, color: Colors.white, size: 24),
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                )
+                              : Image.network(
+                                  _getYoutubeThumbnail(video.postLink),
+                                  fit: BoxFit.cover,
+                                  width: double.infinity,
+                                  errorBuilder: (c, e, s) => Container(
+                                    color: Colors.grey[200],
+                                    child: const Icon(Icons.video_library_rounded, size: 48),
+                                  ),
+                                ),
                         ),
-                        Positioned(
-                          left: 0,
-                          right: 0,
-                          bottom: 0,
-                          child: Container(
-                            decoration: BoxDecoration(
-                              gradient: LinearGradient(
-                                begin: Alignment.topCenter,
-                                end: Alignment.bottomCenter,
-                                colors: [
-                                  Colors.transparent,
-                                  Colors.black.withOpacity(0.7),
+                        if (!isPlaying)
+                          Positioned(
+                            left: 0,
+                            right: 0,
+                            bottom: 0,
+                            child: Container(
+                              decoration: BoxDecoration(
+                                gradient: LinearGradient(
+                                  begin: Alignment.topCenter,
+                                  end: Alignment.bottomCenter,
+                                  colors: [
+                                    Colors.transparent,
+                                    Colors.black.withOpacity(0.7),
+                                  ],
+                                ),
+                              ),
+                              height: 40,
+                              child: Row(
+                                children: [
+                                  const SizedBox(width: 8),
+                                  const Icon(Icons.play_arrow_rounded, color: Colors.white, size: 28),
+                                  const Spacer(),
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                    decoration: BoxDecoration(
+                                      color: Colors.black.withOpacity(0.6),
+                                      borderRadius: BorderRadius.circular(4),
+                                    ),
+                                    child: Text(
+                                      video.duration,
+                                      style: const TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.w500,
+                                      ),
+                                    ),
+                                  ),
+                                  const SizedBox(width: 8),
                                 ],
                               ),
                             ),
-                            height: 40,
-                            child: Row(
-                              children: [
-                                const SizedBox(width: 8),
-                                const Icon(Icons.play_arrow_rounded, color: Colors.white, size: 28),
-                                const Spacer(),
-                                Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                                  decoration: BoxDecoration(
-                                    color: Colors.black.withOpacity(0.6),
-                                    borderRadius: BorderRadius.circular(4),
-                                  ),
-                                  child: Text(
-                                    video.duration,
-                                    style: const TextStyle(
-                                      color: Colors.white,
-                                      fontSize: 12,
-                                      fontWeight: FontWeight.w500,
-                                    ),
-                                  ),
-                                ),
-                                const SizedBox(width: 8),
-                              ],
-                            ),
                           ),
-                        ),
                       ],
                     ),
                   ),
@@ -432,6 +528,7 @@ class YoutubePlayerFullScreenPage extends StatelessWidget {
             flags: const YoutubePlayerFlags(
               autoPlay: true,
               mute: false,
+              // Only supported flags
             ),
           ),
           showVideoProgressIndicator: true,

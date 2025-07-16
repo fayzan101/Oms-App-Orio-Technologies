@@ -131,22 +131,10 @@ class _OrderListScreenState extends State<OrderListScreen> {
         return order.values.any((v) => v != null && v.toString().toLowerCase().contains(_searchQuery!.toLowerCase()));
       }).toList();
     }
-    // Apply filter screen filters
+    // Remove order status filter from here (handled by API)
+    // Apply other filter screen filters (status, platform, courier, city)
     if (_activeFilters != null) {
       tempOrders = tempOrders.where((order) {
-        // Filter by order status (Booked/Unbooked)
-        if (_activeFilters!['order'] != null) {
-          final orderStatus = order['status']?.toString() ?? '';
-          if (_activeFilters!['order'] == 'Booked') {
-            if (orderStatus.toLowerCase() != 'booked') {
-              return false;
-            }
-          } else if (_activeFilters!['order'] == 'Unbooked') {
-            if (orderStatus.toLowerCase() == 'booked') {
-              return false;
-            }
-          }
-        }
         // Multi-select: Status
         if (_activeFilters!['status'] != null && (_activeFilters!['status'] as List).isNotEmpty) {
           final status = order['status']?.toString() ?? '';
@@ -222,16 +210,32 @@ class _OrderListScreenState extends State<OrderListScreen> {
         setState(() => isLoading = false);
         return;
       }
+      // Prepare filter param
+      Map<String, dynamic> extraParams = {};
+      if (_activeFilters != null && _activeFilters!['order'] != null) {
+        if (_activeFilters!['order'] == 'Booked') {
+          extraParams['filter_orders'] = '1';
+        } else if (_activeFilters!['order'] == 'Unbooked') {
+          extraParams['filter_orders'] = '0';
+        }
+      }
       final data = await OrderService.fetchOrders(
         startLimit: startLimit,
         endLimit: endLimit,
         acno: acno,
         startDate: _startDate.toIso8601String().split('T')[0],
         endDate: _endDate.toIso8601String().split('T')[0],
+        extraParams: extraParams,
       );
       final List<dynamic> newOrders = data['data'] ?? [];
       setState(() {
         orders.addAll(newOrders);
+        // Sort orders in descending order by 'id' (assuming 'id' is numeric and higher means newer)
+        orders.sort((a, b) {
+          final aId = int.tryParse(a['id']?.toString() ?? '') ?? 0;
+          final bId = int.tryParse(b['id']?.toString() ?? '') ?? 0;
+          return bId.compareTo(aId);
+        });
         startLimit = endLimit + 1;
         endLimit += pageSize;
         hasMore = newOrders.length == pageSize;
