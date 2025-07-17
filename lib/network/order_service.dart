@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:dio/dio.dart';
+import 'package:http/http.dart' as http;
 
 class OrderService {
   static const String _baseUrl = 'https://oms.getorio.com/api/order/order2';
@@ -196,6 +197,33 @@ class OrderService {
       }
     } catch (e) {
       throw Exception('Failed to create order: $e');
+    }
+  }
+
+  Future<Map<String, dynamic>?> fetchTrackingDetails({
+    required String acno,
+    required int orderId,
+    required String consignmentNo,
+  }) async {
+    final dio = Dio();
+    try {
+      final response = await dio.post(
+        'https://oms.getorio.com/api/shipment/tracking',
+        data: {
+          'acno': acno,
+          'order_id': orderId,
+          'consigment_no': consignmentNo,
+        },
+        options: Options(headers: {'Content-Type': 'application/json'}),
+      );
+      final data = response.data;
+      if (data['status'] == 1) {
+        return data['payload'];
+      } else {
+        throw Exception(data['message'] ?? 'Failed to fetch tracking');
+      }
+    } catch (e) {
+      throw Exception('Network error: $e');
     }
   }
 } 

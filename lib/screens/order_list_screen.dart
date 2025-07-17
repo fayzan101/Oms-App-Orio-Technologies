@@ -1015,15 +1015,15 @@ class _OrderListScreenState extends State<OrderListScreen> {
                         Text(order['id']?.toString() ?? '', textAlign: TextAlign.center, style: GoogleFonts.inter(fontWeight: FontWeight.w400, fontSize: 15)),
                       ]),
                       TableRow(children: [
-                        Text('Consignee Name', style: GoogleFonts.inter(fontWeight: FontWeight.w600, fontSize: 15)),
+                        Text('Name', style: GoogleFonts.inter(fontWeight: FontWeight.w600, fontSize: 15)),
                         Text(order['consignee_name'] ?? '', textAlign: TextAlign.center, style: GoogleFonts.inter(fontWeight: FontWeight.w400, fontSize: 15)),
                       ]),
                       TableRow(children: [
-                        Text('Consignee Contact', style: GoogleFonts.inter(fontWeight: FontWeight.w600, fontSize: 15)),
+                        Text('Contact', style: GoogleFonts.inter(fontWeight: FontWeight.w600, fontSize: 15)),
                         Text(order['consignee_contact'] ?? '', textAlign: TextAlign.center, style: GoogleFonts.inter(fontWeight: FontWeight.w400, fontSize: 15)),
                       ]),
                       TableRow(children: [
-                        Text('Consignee Address', style: GoogleFonts.inter(fontWeight: FontWeight.w600, fontSize: 15)),
+                        Text('Address', style: GoogleFonts.inter(fontWeight: FontWeight.w600, fontSize: 15)),
                         Text(order['consignee_address'] ?? '', textAlign: TextAlign.center, style: GoogleFonts.inter(fontWeight: FontWeight.w400, fontSize: 15)),
                       ]),
                       TableRow(children: [
@@ -1059,6 +1059,74 @@ class _OrderListScreenState extends State<OrderListScreen> {
                         Text(order['tags_name'] ?? '', textAlign: TextAlign.center, style: GoogleFonts.inter(fontWeight: FontWeight.w400, fontSize: 15)),
                       ]),
                     ],
+                  ),
+                  const SizedBox(height: 12),
+                  Center(
+                    child: SizedBox(
+                      width: 180, // or double.infinity for full width, or adjust as needed
+                      child: ElevatedButton(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Color(0xFF007AFF), // Blue color
+                          foregroundColor: Colors.white,
+                          elevation: 0,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          padding: const EdgeInsets.symmetric(vertical: 14),
+                        ),
+                        onPressed: () async {
+                          String? acno = Get.find<AuthService>().getCurrentAcno();
+                          if (acno == null || acno.isEmpty) {
+                            customSnackBar('Error', 'Account number not found. Please log in again.');
+                            return;
+                          }
+                          final int orderId = int.tryParse(order['id']?.toString() ?? '') ?? 0;
+                          final String consignmentNo = order['consigment_no']?.toString() ?? '';
+                          if (orderId == 0) {
+                            customSnackBar('Error', 'Order ID not found.');
+                            return;
+                          }
+                          if (consignmentNo.isEmpty) {
+                            customSnackBar('Error', 'Consignment No not found.');
+                            return;
+                          }
+                          final orderService = OrderService();
+                          showDialog(
+                            context: context,
+                            barrierDismissible: false,
+                            builder: (_) => Center(child: CircularProgressIndicator()),
+                          );
+                          try {
+                            final payload = await orderService.fetchTrackingDetails(
+                              acno: acno,
+                              orderId: orderId,
+                              consignmentNo: consignmentNo,
+                            );
+                            Navigator.pop(context); // Remove loading
+                            showDialog(
+                              context: context,
+                              builder: (_) => Dialog(
+                                insetPadding: EdgeInsets.symmetric(horizontal: 24.0, vertical: 24.0),
+                                child: ConstrainedBox(
+                                  constraints: BoxConstraints(maxWidth: 400), // Match order details dialog size
+                                  child: TrackingDetailsDialog(payload: payload!),
+                                ),
+                              ),
+                            );
+                          } catch (e) {
+                            Navigator.pop(context); // Remove loading
+                            showDialog(
+                              context: context,
+                              builder: (_) => AlertDialog(
+                                title: Text('Error'),
+                                content: Text(e.toString()),
+                              ),
+                            );
+                          }
+                        },
+                        child: Text('Tracking'),
+                      ),
+                    ),
                   ),
                 ],
               ),
@@ -1284,6 +1352,118 @@ class _DeleteConfirmationBottomSheet extends StatelessWidget {
             ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+class TrackingDetailsDialog extends StatelessWidget {
+  final Map<String, dynamic> payload;
+  const TrackingDetailsDialog({required this.payload});
+
+  @override
+  Widget build(BuildContext context) {
+    final details = payload['detail'] as List<dynamic>? ?? [];
+    return Dialog(
+      insetPadding: EdgeInsets.symmetric(horizontal: 24.0, vertical: 24.0),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      child: ConstrainedBox(
+        constraints: BoxConstraints(maxWidth: 400), // Match order details dialog size
+        child: Padding(
+          padding: const EdgeInsets.all(24.0),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Center(
+                child: Text(
+                  'Tracking Details',
+                  style: TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                    color: Color(0xFF007AFF),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 20),
+              _infoRow('Order ID', payload['order_id']?.toString() ?? ''),
+              _infoRow('Status', payload['status']?.toString() ?? ''),
+              _infoRow('Courier', payload['courier_name']?.toString() ?? ''),
+              _infoRow('Consignee', payload['consignee_name']?.toString() ?? ''),
+              _infoRow('COD', payload['cod_amount']?.toString() ?? ''),
+              _infoRow('Origin', payload['origin']?.toString() ?? ''),
+              _infoRow('Destination', payload['destination']?.toString() ?? ''),
+              const SizedBox(height: 16),
+              Text(
+                'History:',
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  color: Color(0xFF007AFF),
+                  fontSize: 16,
+                ),
+              ),
+              const SizedBox(height: 8),
+              ...details.map((d) => Card(
+                color: Color(0xFFEAF3FF),
+                margin: const EdgeInsets.symmetric(vertical: 4),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                child: ListTile(
+                  title: Text(
+                    d['status'] ?? '',
+                    style: TextStyle(color: Color(0xFF007AFF), fontWeight: FontWeight.w600),
+                  ),
+                  subtitle: Text(
+                    d['dateTime'] ?? '',
+                    style: TextStyle(color: Colors.black87),
+                  ),
+                ),
+              )),
+              const SizedBox(height: 16),
+              Align(
+                alignment: Alignment.center,
+                child: SizedBox(
+                  width: 120,
+                  child: ElevatedButton(
+                    onPressed: () => Navigator.pop(context),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Color(0xFF007AFF),
+                      foregroundColor: Colors.white,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                    ),
+                    child: const Text('Close'),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _infoRow(String label, String value) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4.0),
+      child: Row(
+        children: [
+          Text(
+            '$label: ',
+            style: TextStyle(
+              fontWeight: FontWeight.w600,
+              color: Color(0xFF007AFF),
+            ),
+          ),
+          Expanded(
+            child: Text(
+              value,
+              style: TextStyle(fontWeight: FontWeight.w400, color: Colors.black87),
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
+        ],
       ),
     );
   }

@@ -27,7 +27,7 @@ class RulesService extends GetxService {
       isLoading.value = true;
       errorMessage.value = '';
 
-      print('RulesService: Fetching rules for acno: $acno');
+      
       
       // Prepare request data
       final requestData = {
@@ -37,8 +37,7 @@ class RulesService extends GetxService {
       // Make API call to rules/index endpoint
       final response = await _apiService.post('rules/index', data: requestData);
       
-      print('RulesService: Response status: ${response.statusCode}');
-      print('RulesService: Response data: ${response.data}');
+      
 
       if (response.statusCode == 200) {
         final data = response.data;
@@ -47,12 +46,12 @@ class RulesService extends GetxService {
         if (data['status'] == 1 && data['payload'] != null) {
           final rulesList = data['payload'] as List;
           rules.value = rulesList.map((rule) => rule as Map<String, dynamic>).toList();
-          print('RulesService: Successfully loaded ${rules.length} rules');
+          
           return true;
         } else {
           // No rules found or empty response
           rules.value = [];
-          print('RulesService: No rules found or empty response');
+          
           return true;
         }
       } else {
@@ -138,8 +137,7 @@ class RulesService extends GetxService {
       // Make API call to rules/store endpoint
       final response = await _apiService.post('rules/store', data: requestData);
       
-      print('RulesService: Create rule response status: ${response.statusCode}');
-      print('RulesService: Create rule response data: ${response.data}');
+      
 
       if (response.statusCode == 200) {
         final data = response.data;
@@ -195,7 +193,7 @@ class RulesService extends GetxService {
         return false;
       }
 
-      print('RulesService: Updating rule for acno: $acno');
+      
       
       // Prepare request data matching the API requirements
       final requestData = {

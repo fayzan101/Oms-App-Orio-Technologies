@@ -35,7 +35,7 @@ class StatementService {
         }
       }
       
-      print('Statement acno: $accountNumber');
+      
       
       // Validate account number
       if (accountNumber.isEmpty) {
@@ -62,7 +62,7 @@ class StatementService {
         requestData['customer_courier_id'] = customerCourierId;
       }
 
-      print('Statement request data: $requestData');
+      
 
       // Add authentication header
       final headers = <String, String>{
@@ -73,7 +73,7 @@ class StatementService {
         headers['Authorization'] = 'Bearer $apiKey';
       }
 
-      print('Statement headers: $headers');
+      
 
       final response = await _apiService.post(
         ApiConfig.statementEndpoint,
@@ -81,8 +81,7 @@ class StatementService {
         headers: headers,
       );
 
-      print('Statement response status: ${response.statusCode}');
-      print('Statement response data: ${response.data}');
+      
 
       if (response.statusCode == 200 && response.data['status'] == 1) {
         final payload = response.data['payload'];
@@ -139,8 +138,7 @@ class StatementService {
 
   Future<List<Map<String, dynamic>>> fetchCityList(String acno) async {
     final url = Uri.parse('https://oms.getorio.com/api/rules/citylist');
-    print('Fetching city list for acno: $acno');
-    print('City list URL: $url');
+    
     
     final response = await http.post(
       url,
@@ -148,13 +146,11 @@ class StatementService {
       body: jsonEncode({'acno': acno}),
     );
     
-    print('City list response status: ${response.statusCode}');
-    print('City list response body: ${response.body}');
+    
     
     if (response.statusCode == 200) {
       final data = jsonDecode(response.body);
-      print('City list decoded data: $data');
-      print('City list data type: ${data.runtimeType}');
+      
       
       if (data is List) {
         print('City list is List, length: ${data.length}');
@@ -174,8 +170,7 @@ class StatementService {
 
   Future<List<Map<String, dynamic>>> fetchBanks(int countryId) async {
     final url = Uri.parse('https://oms.getorio.com/api/banks');
-    print('Fetching banks for country_id: $countryId');
-    print('Banks URL: $url');
+   
     
     final response = await http.post(
       url,
@@ -183,19 +178,17 @@ class StatementService {
       body: jsonEncode({'country_id': countryId}),
     );
     
-    print('Banks response status: ${response.statusCode}');
-    print('Banks response body: ${response.body}');
+    
     
     if (response.statusCode == 200) {
       final data = jsonDecode(response.body);
-      print('Banks decoded data: $data');
-      print('Banks data type: ${data.runtimeType}');
+      
       
       if (data is List) {
-        print('Banks is List, length: ${data.length}');
+        
         return data.cast<Map<String, dynamic>>();
       } else if (data is Map && data['payload'] is List) {
-        print('Banks has payload, length: ${(data['payload'] as List).length}');
+        
         return (data['payload'] as List).cast<Map<String, dynamic>>();
       } else {
         print('Banks unexpected format: $data');
@@ -213,8 +206,7 @@ class StatementService {
     int? customerPlatformId,
   }) async {
     final url = Uri.parse('https://stagingoms.orio.digital/api/product/suggestproduct');
-    print('Fetching product suggestions for acno: $acno, platform_id: $platformId');
-    print('Product suggestions URL: $url');
+    
     
     final Map<String, dynamic> requestBody = {
       'acno': acno,
@@ -226,7 +218,7 @@ class StatementService {
       requestBody['customer_platform_id'] = customerPlatformId;
     }
     
-    print('Product suggestions request body: $requestBody');
+    
     
     final response = await http.post(
       url,
@@ -234,13 +226,11 @@ class StatementService {
       body: jsonEncode(requestBody),
     );
     
-    print('Product suggestions response status: ${response.statusCode}');
-    print('Product suggestions response body: ${response.body}');
+    
     
     if (response.statusCode == 200) {
       final data = jsonDecode(response.body);
-      print('Product suggestions decoded data: $data');
-      print('Product suggestions data type: ${data.runtimeType}');
+      
       
       if (data is List) {
         print('Product suggestions is List, length: ${data.length}');
@@ -253,7 +243,7 @@ class StatementService {
         throw Exception('Unexpected response format');
       }
     } else {
-      print('Product suggestions failed with status: ${response.statusCode}');
+    
       throw Exception('Failed to load product suggestions');
     }
   }

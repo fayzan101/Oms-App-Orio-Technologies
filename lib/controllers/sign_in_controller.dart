@@ -56,7 +56,7 @@ class SignInController extends GetxController {
     if (email.isEmpty || password.isEmpty || !emailValid) {
       emailError.value = true;
       passwordError.value = true;
-      print('Validation failed: emailValid=\u001b[32m$emailValid\u001b[0m, emailEmpty=\u001b[32m${email.isEmpty}\u001b[0m, passwordEmpty=\u001b[32m${password.isEmpty}\u001b[0m');
+      
       Get.snackbar(
         'Invalid',
         'Invalid email or password',
@@ -81,12 +81,12 @@ class SignInController extends GetxController {
       await prefs.setBool('remember_me', false);
     }
 
-    print('🔐 Attempting login...');
+    
     final success = await authService.login(email, password);
-    print('🔐 Login success: $success');
+    
 
     if (success) {
-      print('🔐 Login successful, navigating to dashboard...');
+      
       Get.offAllNamed('/dashboard');
       Future.delayed(const Duration(milliseconds: 300), () {
         customSnackBar('Success', 'Login successful!');
@@ -94,7 +94,7 @@ class SignInController extends GetxController {
     } else {
       emailError.value = true;
       passwordError.value = true;
-      print('Login failed');
+      
       
       // If login fails and "Remember Me" was enabled, clear the saved credentials
       if (rememberMe.value) {

@@ -33,8 +33,7 @@ class HelpVideoService {
         acno = prefs.getString('acno') ?? '';
       }
       
-      print('Help videos acno: $acno');
-      print('Help videos user: ${user?.acno}');
+      
       
       // Validate account number
       if (acno.isEmpty) {
@@ -78,8 +77,7 @@ class HelpVideoService {
         headers['Authorization'] = 'Bearer $apiKey';
       }
 
-      print('Help videos request data: $requestData');
-      print('Help videos headers: $headers');
+      
 
       final response = await _apiService.post(
         ApiConfig.helpVideosEndpoint,
@@ -94,9 +92,7 @@ class HelpVideoService {
         throw Exception(response.data['message'] ?? 'Failed to load help videos');
       }
     } on DioException catch (e) {
-      print('Help videos DioException: ${e.message}');
-      print('Help videos DioException status: ${e.response?.statusCode}');
-      print('Help videos DioException response: ${e.response?.data}');
+     
       throw Exception('Network error: ${e.message}');
     } catch (e) {
       throw Exception('An unexpected error occurred: $e');

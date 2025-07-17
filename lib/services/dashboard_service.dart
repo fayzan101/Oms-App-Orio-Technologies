@@ -27,8 +27,7 @@ class DashboardService {
       final formattedStartDate = _validateAndFormatDate(startDate);
       final formattedEndDate = _validateAndFormatDate(endDate);
       
-      print('Original dates - Start: $startDate, End: $endDate');
-      print('Formatted dates - Start: $formattedStartDate, End: $formattedEndDate');
+     
       
       // Get authentication token
       final apiKey = await _authService.getApiKey();
@@ -46,7 +45,7 @@ class DashboardService {
         }
       }
       
-      print('Dashboard reporting acno: $accountNumber');
+      
       
       // Validate account number
       if (accountNumber.isEmpty) {
@@ -65,8 +64,7 @@ class DashboardService {
         'end_date': formattedEndDate,
       };
 
-      print('Dashboard reporting request data: $requestData');
-      print('Dashboard reporting request JSON: ${requestData.toString()}');
+      
 
       // Add authentication header
       final headers = <String, String>{
@@ -77,9 +75,7 @@ class DashboardService {
         headers['Authorization'] = 'Bearer $apiKey';
       }
 
-      print('Dashboard reporting headers: $headers');
-      print('Dashboard reporting endpoint: ${ApiConfig.dashboardEndpoint}');
-      print('Dashboard reporting full URL: ${ApiConfig.getEndpointUrl(ApiConfig.dashboardEndpoint)}');
+      
 
       final response = await _apiService.post(
         ApiConfig.dashboardEndpoint,
@@ -87,9 +83,7 @@ class DashboardService {
         headers: headers,
       );
 
-      print('Dashboard reporting response status: ${response.statusCode}');
-      print('Dashboard reporting response data: ${response.data}');
-      print('Dashboard reporting response headers: ${response.headers}');
+    
 
       if (response.statusCode == 200 && response.data['status'] == 1) {
         final dashboardData = DashboardReportingModel.fromJson(response.data['payload']);
@@ -98,7 +92,7 @@ class DashboardService {
         if (dashboardData.acno.isNotEmpty) {
           final prefs = await SharedPreferences.getInstance();
           await prefs.setString('acno', dashboardData.acno);
-          print('Stored account number from API response: ${dashboardData.acno}');
+          
         }
         
         return dashboardData;
@@ -106,12 +100,10 @@ class DashboardService {
         throw Exception(response.data['message'] ?? 'Failed to load dashboard reporting data');
       }
     } on DioException catch (e) {
-      print('Dashboard reporting DioException: ${e.message}');
-      print('Dashboard reporting DioException status: ${e.response?.statusCode}');
-      print('Dashboard reporting DioException response: ${e.response?.data}');
+      
       throw Exception('Network error: ${e.message}');
     } catch (e) {
-      print('Dashboard reporting error: $e');
+      
       throw Exception('An unexpected error occurred: $e');
     }
   }
@@ -137,7 +129,7 @@ class DashboardService {
       final date = DateTime.parse(dateStr);
       return _formatDateToISO(date);
     } catch (e) {
-      print('Date validation error for "$dateStr": $e');
+      
       // Return the original string if we can't parse it
       return dateStr;
     }

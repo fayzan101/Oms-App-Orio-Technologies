@@ -355,6 +355,20 @@ class _FilterScreenState extends State<FilterScreen> {
     );
   }
 
+  void customSnackBar(String title, String message) {
+    final snackBar = SnackBar(
+      content: Text(message),
+      backgroundColor: Colors.red,
+      behavior: SnackBarBehavior.floating,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(10),
+      ),
+      margin: const EdgeInsets.all(16),
+      duration: const Duration(seconds: 3),
+    );
+    ScaffoldMessenger.of(Get.context!).showSnackBar(snackBar);
+  }
+
   @override
   Widget build(BuildContext context) {
     final isLoadingAll = _isLoadingStatuses || _isLoadingCouriers || _isLoadingPlatforms || _isLoadingCities;
@@ -460,6 +474,15 @@ class _FilterScreenState extends State<FilterScreen> {
                     height: 48,
                     child: ElevatedButton(
                       onPressed: () {
+                        // Check if all filters are empty
+                        if (selectedOrder == null &&
+                            selectedPlatforms.isEmpty &&
+                            selectedCouriers.isEmpty &&
+                            selectedCities.isEmpty &&
+                            selectedStatuses.isEmpty) {
+                          customSnackBar('Error', 'Please select at least one filter');
+                          return;
+                        }
                         // Return selected filters to the calling screen
                         final filters = {
                           'order': selectedOrder,

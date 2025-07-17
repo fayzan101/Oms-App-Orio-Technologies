@@ -62,8 +62,7 @@ class DashboardController extends GetxController {
     error.value = '';
     
     try {
-      print('DashboardController: Fetching data with dates - Start: $startDate, End: $endDate');
-      print('DashboardController: AC number: $acno');
+      
       
       // Fetch dashboard data first (this is required)
       final data = await _dashboardService.getDashboardReporting(
@@ -72,39 +71,19 @@ class DashboardController extends GetxController {
         acno: acno,
       );
       
-      print('DashboardController: Received dashboard data: $data');
-      print('DashboardController: Orders: ${data.orders}');
-      print('DashboardController: Sales: ${data.sales}');
-      print('DashboardController: Total Current Outstanding: ${data.totalCurrentOutstanding}');
-      print('DashboardController: Account Number from API: ${data.acno}');
-      print('DashboardController: Status Summary - Total Orders: ${data.statusSummary.orderStatusSummary.totalOrders}');
-      print('DashboardController: Status Summary - Total Amount: ${data.statusSummary.orderStatusSummary.totalAmount}');
-      print('DashboardController: Status Summary - Detail Count: ${data.statusSummary.orderStatusSummary.detail.length}');
-      print('DashboardController: Failed Status Summary - Total Orders: ${data.statusSummary.failedStatusSummary.totalOrders}');
-      print('DashboardController: Failed Status Summary - Total Amount: ${data.statusSummary.failedStatusSummary.totalAmount}');
-      print('DashboardController: Failed Status Summary - Detail Count: ${data.statusSummary.failedStatusSummary.detail.length}');
+     
       
       // Dashboard API already includes courier data with logos, no need for separate API call
       
       dashboardData.value = data;
       _updateObservables(data);
       
-      print('DashboardController: Updated observables - Orders: ${orders.value}');
-      print('DashboardController: Updated observables - Sales: ${revenue.value}');
-      print('DashboardController: Updated observables - Total Current Outstanding: ${totalCurrentOutstanding.value}');
-      print('DashboardController: Updated observables - Account Number: ${accountNumber.value}');
-      print('DashboardController: Updated observables - Order Status Summary Count: ${orderStatusSummary.value.length}');
-      print('DashboardController: Updated observables - Total Orders: ${totalOrders.value}');
-      print('DashboardController: Updated observables - Total Amount: ${totalAmount.value}');
-      print('DashboardController: Updated observables - Failed Status Summary Count: ${failedStatusSummary.value.length}');
-      print('DashboardController: Updated observables - Total Failed Orders: ${totalFailedOrders.value}');
-      print('DashboardController: Updated observables - Total Failed Amount: ${totalFailedAmount.value}');
-      print('DashboardController: Updated observables - Courier Data Count: ${courierData.value.length}');
-      print('DashboardController: Updated observables - Merged Courier Data Count: ${mergedCourierData.value.length}');
+      
+     
       
     } catch (e) {
       error.value = e.toString();
-      print('DashboardController: Error occurred: $e');
+      
       Get.snackbar('Error', 'Failed to load dashboard data: ${e.toString()}');
     } finally {
       isLoading.value = false;

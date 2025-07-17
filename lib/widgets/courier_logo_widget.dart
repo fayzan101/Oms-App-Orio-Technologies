@@ -40,7 +40,7 @@ class CourierLogoWidget extends StatelessWidget {
 
     // Prefer PNG over SVG if available
     if (pngUrl != null && pngUrl!.isNotEmpty) {
-      print('CourierLogoWidget: Attempting to load PNG: $pngUrl');
+      
       return Image.network(
         pngUrl!,
         width: width,
@@ -48,18 +48,17 @@ class CourierLogoWidget extends StatelessWidget {
         fit: fit,
         loadingBuilder: (context, child, loadingProgress) {
           if (loadingProgress == null) {
-            print('CourierLogoWidget: PNG loaded successfully: $pngUrl');
+            
             return child;
           }
-          print('CourierLogoWidget: PNG loading progress: ${loadingProgress.expectedTotalBytes != null ? '${loadingProgress.cumulativeBytesLoaded}/${loadingProgress.expectedTotalBytes}' : 'Unknown'}');
+         
           return _buildLoadingPlaceholder();
         },
         errorBuilder: (context, error, stackTrace) {
-          print('CourierLogoWidget: PNG failed to load: $error');
-          print('CourierLogoWidget: PNG URL that failed: $pngUrl');
+         
           // Try SVG as fallback
           if (logoUrl != null && logoUrl!.isNotEmpty && logoUrl!.toLowerCase().endsWith('.svg')) {
-            print('CourierLogoWidget: Trying SVG fallback: $logoUrl');
+            
             return SvgPicture.network(
               logoUrl!,
               width: width,
@@ -67,7 +66,7 @@ class CourierLogoWidget extends StatelessWidget {
               fit: fit,
               placeholderBuilder: (context) => _buildLoadingPlaceholder(),
               errorBuilder: (context, error, stackTrace) {
-                print('CourierLogoWidget: SVG also failed to load: $error');
+                
                 return _buildFallback();
               },
             );
@@ -86,7 +85,7 @@ class CourierLogoWidget extends StatelessWidget {
         fit: fit,
         placeholderBuilder: (context) => _buildLoadingPlaceholder(),
         errorBuilder: (context, error, stackTrace) {
-          print('CourierLogoWidget: SVG failed to load: $error');
+          
           return _buildFallback();
         },
       );
@@ -104,7 +103,7 @@ class CourierLogoWidget extends StatelessWidget {
           return _buildLoadingPlaceholder();
         },
         errorBuilder: (context, error, stackTrace) {
-          print('CourierLogoWidget: Logo URL failed to load: $error');
+          
           return _buildFallback();
         },
       );

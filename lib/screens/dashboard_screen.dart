@@ -39,7 +39,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
   @override
   void initState() {
     super.initState();
-    print('DashboardScreen initState');
+    
     
     // Fetch dashboard data on screen load
     _fetchDashboardData();
@@ -57,7 +57,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
     final startStr = '${startDate.year}-${startDate.month.toString().padLeft(2, '0')}-${startDate.day.toString().padLeft(2, '0')}';
     final endStr = '${endDate.year}-${endDate.month.toString().padLeft(2, '0')}-${endDate.day.toString().padLeft(2, '0')}';
     
-    print('Dashboard fetch dates - Start: $startStr, End: $endStr');
+    
     
     // Update the current date range
     _currentDateRange.value = DateTimeRange(start: startDate, end: endDate);
@@ -137,7 +137,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 );
                 
                 if (result != null) {
-                  print('Dashboard: Date range selected - Start: ${result.start}, End: ${result.end}');
+                  
                   await _fetchDashboardDataWithRange(result.start, result.end);
                 }
               },
@@ -379,7 +379,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   Obx(() {
                     final courierPaymentData = controller.courierPaymentData;
                     final isLoading = controller.isLoading.value;
-                    print('Dashboard UI: Courier payment data count: ${courierPaymentData.length}, Loading: $isLoading');
+                    
                     
                     // Show loading state while data is being fetched
                     if (isLoading) {
@@ -479,7 +479,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     }
                     
                     if (courierPaymentData.isEmpty) {
-                      print('Dashboard UI: No courier payment data, showing fallback cards');
+                      
                       return Column(
                         children: [
                           PaymentCard(
@@ -497,14 +497,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
                       );
                     }
                     
-                    print('Dashboard UI: Rendering ${courierPaymentData.length} courier cards');
+                    
                     return Column(
                       children: courierPaymentData.map((courier) {
-                        print('Dashboard UI: Rendering courier: "${courier.courierName}"');
-                        print('  Logo URL: "${courier.logo}"');
-                        print('  PNG URL: "${courier.png}"');
-                        print('  Pending Payment: ${courier.pendingPayment}');
-                        print('  Shipments: ${courier.shipments}');
+                       
                         
                         return Padding(
                           padding: EdgeInsets.only(bottom: 16),
@@ -566,7 +562,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                             height: 180,
                             child: Obx(() {
                               final statusData = controller.orderStatusSummary;
-                              print('Dashboard UI: Pie chart - Order status count: ${statusData.length}');
+                              
                               
                               if (statusData.isEmpty) {
                                 return Column(
@@ -619,7 +615,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                                     showTitle: false,
                                   ),
                                 );
-                                print('Dashboard UI: Pie chart section - ${item.name}: ${item.quantity} (color: $color)');
+                                
                               }
                               
                               // Find the status with highest quantity for center display
@@ -737,7 +733,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                       children: [
                         Obx(() {
                           final statusData = controller.orderStatusSummary;
-                          print('Dashboard UI: Order status summary count: ${statusData.length}');
+                          
                           
                           if (statusData.isEmpty) {
                             return Column(
@@ -797,7 +793,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                                 final progress = controller.totalOrders.value > 0 
                                     ? item.quantity / controller.totalOrders.value 
                                     : 0.0;
-                                print('Dashboard UI: Rendering status item: ${item.name}, Quantity: ${item.quantity}, Amount: ${item.amount}, Progress: $progress');
+                                
                                 return Padding(
                                   padding: const EdgeInsets.only(bottom: 16),
                                   child: _OrderStatusSummaryRow(
@@ -880,7 +876,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                       children: [
                         Obx(() {
                           final failedData = controller.failedStatusSummary;
-                          print('Dashboard UI: Failed status summary count: ${failedData.length}');
+                          
                           
                           if (failedData.isEmpty) {
                             return Column(
@@ -940,7 +936,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                                 final progress = controller.totalFailedOrders.value > 0 
                                     ? item.quantity / controller.totalFailedOrders.value 
                                     : 0.0;
-                                print('Dashboard UI: Rendering failed attempt item: ${item.name}, Quantity: ${item.quantity}, Amount: ${item.amount}, Progress: $progress');
+                                
                                 return Padding(
                                   padding: const EdgeInsets.only(bottom: 16),
                                   child: _FailedAttemptRow(

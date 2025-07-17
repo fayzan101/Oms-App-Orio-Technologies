@@ -329,20 +329,18 @@ class _ProfileScreenState extends State<ProfileScreen> {
     try {
       final service = StatementService();
       final bankData = await service.fetchBanks(1); // country_id = 1 for Pakistan
-      print('Profile screen received bank data: $bankData');
-      print('Bank data length: ${bankData.length}');
+      
       
       final bankNames = bankData.map((e) => e['name']?.toString() ?? '').where((e) => e.isNotEmpty).toList();
-      print('Extracted bank names: $bankNames');
-      print('Bank names length: ${bankNames.length}');
+      
       
       setState(() {
         banks = bankNames;
         _isLoadingBanks = false;
       });
-      print('Banks list updated: $banks');
+      
     } catch (e) {
-      print('Error fetching banks: $e');
+     
       setState(() {
         _bankError = 'Failed to load banks: $e';
         _isLoadingBanks = false;

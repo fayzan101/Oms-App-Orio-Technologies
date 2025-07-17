@@ -134,11 +134,7 @@ class LoadSheetService {
         if (acno != null && acno.isNotEmpty) 'acno': acno,
       };
 
-      print('Request headers: $headers');
-      print('Request data: $requestData');
-      print('Endpoint: ${ApiConfig.loadSheetSingleEndpoint}');
-      print('Full URL: ${ApiConfig.baseUrl}${ApiConfig.loadSheetSingleEndpoint}');
-      print('Headers being sent: ${headers.toString()}');
+      
 
       final response = await _apiService.post(
         ApiConfig.loadSheetSingleEndpoint,
@@ -146,8 +142,7 @@ class LoadSheetService {
         headers: headers,
       );
 
-      print('Response received: ${response.statusCode}');
-      print('Response data: ${response.data}');
+      
 
       if (response.statusCode == 200 && response.data['status'] == 1) {
         final List payload = response.data['payload'];
@@ -237,16 +232,11 @@ class LoadSheetService {
     String? acno,
   }) async {
     try {
-      print('Delete load sheet service called');
-      print('Order ID: $orderId');
-      print('Consignment No: $consignmentNo');
-      print('ACNO: $acno');
+    
       
       // Get authentication token
       final apiKey = await _authService.getApiKey();
-      print('API Key: ${apiKey.isNotEmpty ? 'Present' : 'Missing'}');
-      print('API Key length: ${apiKey.length}');
-      print('API Key preview: ${apiKey.isNotEmpty ? apiKey.substring(0, apiKey.length > 10 ? 10 : apiKey.length) + '...' : 'Empty'}');
+      
       
       // Add authentication header
       final headers = <String, String>{
@@ -255,7 +245,7 @@ class LoadSheetService {
       };
       if (apiKey.isNotEmpty) {
         headers['Authorization'] = 'Bearer $apiKey';
-        print('Authorization header: Bearer ${apiKey.substring(0, apiKey.length > 10 ? 10 : apiKey.length)}...');
+        
       } else {
         print('Warning: API key is empty!');
       }
@@ -267,18 +257,7 @@ class LoadSheetService {
         if (acno != null && acno.isNotEmpty) 'acno': acno,
       };
       
-      print('Request data: $requestData');
-      print('Request data JSON: ${requestData.toString()}');
-      print('order_id type: ${orderId.runtimeType}');
-      print('consignment_no type: ${consignmentNo.runtimeType}');
-      print('acno type: ${acno?.runtimeType}');
-      print('Endpoint: ${ApiConfig.loadSheetDeleteEndpoint}');
-      print('Full URL: ${ApiConfig.baseUrl}${ApiConfig.loadSheetDeleteEndpoint}');
-      print('Headers being sent: $headers');
-
-      print('About to make API call to: ${ApiConfig.baseUrl}${ApiConfig.loadSheetDeleteEndpoint}');
-      print('With data: $requestData');
-      print('With headers: $headers');
+      
       
       final response = await _apiService.post(
         ApiConfig.loadSheetDeleteEndpoint,
@@ -286,8 +265,7 @@ class LoadSheetService {
         headers: headers,
       );
 
-      print('Response status code: ${response.statusCode}');
-      print('Response data: ${response.data}');
+      
 
       if (response.statusCode == 200) {
         // Check if the response indicates success

@@ -183,16 +183,13 @@ class AuthService extends GetxService {
       await prefs.setString('otp', user.otp);
       await prefs.setBool('is_logged_in', true);
       
-      print('💾 User data saved successfully:');
-      print('   User ID: ${user.userId}');
-      print('   Email: ${user.email}');
-      print('   is_logged_in: true');
+      
       
       // Verify the data was saved
       final savedLoginStatus = prefs.getBool('is_logged_in') ?? false;
-      print('   Verification - is_logged_in: $savedLoginStatus');
+      
     } catch (e) {
-      print('❌ Error saving user data: $e');
+      
     }
   }
 
@@ -202,11 +199,10 @@ class AuthService extends GetxService {
       final prefs = await SharedPreferences.getInstance();
       final isLoggedIn = prefs.getBool('is_logged_in') ?? false;
       
-      print('📂 Loading user data:');
-      print('   is_logged_in: $isLoggedIn');
+      
       
       if (!isLoggedIn) {
-        print('   ❌ User not logged in, returning null');
+        
         return null;
       }
       
@@ -221,14 +217,12 @@ class AuthService extends GetxService {
         otp: prefs.getString('otp') ?? '',
       );
       
-      print('   ✅ User data loaded:');
-      print('   User ID: ${user.userId}');
-      print('   Email: ${user.email}');
+      
       
       currentUser.value = user;
       return user;
     } catch (e) {
-      print('❌ Error loading user data: $e');
+      
       return null;
     }
   }
@@ -251,7 +245,7 @@ class AuthService extends GetxService {
         currentUser.value = null;
       }
     } catch (e) {
-      print('Error during logout: $e');
+      
     }
   }
 

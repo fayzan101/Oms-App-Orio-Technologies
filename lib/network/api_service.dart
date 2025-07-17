@@ -26,7 +26,7 @@ class ApiService {
   static String get baseUrl => ApiConfig.baseUrl;
 
   void init() {
-    print('ApiService.init called with baseUrl: $baseUrl');
+    
     
     _dio = Dio(BaseOptions(
       baseUrl: baseUrl,
@@ -46,13 +46,11 @@ class ApiService {
 
     _dio.interceptors.add(InterceptorsWrapper(
       onRequest: (options, handler) {
-        print('Dio Request: ${options.method} ${options.path}');
-        print('Dio Request Headers: ${options.headers}');
+      
         handler.next(options);
       },
       onError: (error, handler) {
-        print('Dio Error: ${error.message}');
-        print('Dio Error Response: ${error.response?.data}');
+        
         handler.next(error);
       },
     ));
@@ -77,16 +75,14 @@ class ApiService {
   // Generic POST request
   Future<ApiResponse> post(String endpoint, {dynamic data, Map<String, String>? headers}) async {
     try {
-      print('ApiService.post called with endpoint: $endpoint');
-      print('ApiService.post headers: $headers');
+      
       
       final options = headers != null ? Options(headers: headers) : null;
-      print('ApiService.post options: ${options?.headers}');
+      
       
       final response = await _dio.post(endpoint, data: data, options: options);
       
-      print('ApiService.post response status: ${response.statusCode}');
-      print('ApiService.post response data: ${response.data}');
+      
       
       return ApiResponse(
         data: response.data,
@@ -94,9 +90,7 @@ class ApiService {
         headers: _convertHeaders(response.headers),
       );
     } on DioException catch (e) {
-      print('ApiService.post DioException: ${e.message}');
-      print('ApiService.post DioException response: ${e.response?.data}');
-      print('ApiService.post DioException status: ${e.response?.statusCode}');
+      
       throw _handleDioError(e);
     }
   }

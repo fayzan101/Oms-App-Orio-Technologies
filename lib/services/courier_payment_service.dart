@@ -11,10 +11,7 @@ class CourierPaymentService {
     String? acno,
   }) async {
     try {
-      print('CourierPaymentService: Fetching courier payment data');
-      print('CourierPaymentService: Start date: $startDate, End date: $endDate, AC: $acno');
-      
-      print('CourierPaymentService: Making API call to dashboard-reporting/img/shipping-icons/');
+    
       final response = await _dio.post(
         'dashboard-reporting/img/shipping-icons/',
         data: {
@@ -26,22 +23,22 @@ class CourierPaymentService {
 
       if (response.statusCode == 200) {
         final data = response.data is String ? jsonDecode(response.data) : response.data;
-        print('CourierPaymentService: Raw response: $data');
+        
         
         // Debug: Print the actual image paths from API
         if (data['paymentcourierpayment'] != null) {
           final courierList = data['paymentcourierpayment'] as List;
           for (var courier in courierList) {
-            print('CourierPaymentService: API returned - Name: ${courier['courier_name']}, Logo: ${courier['logo']}, PNG: ${courier['png']}');
+            
           }
         }
         
         final courierResponse = CourierPaymentResponse.fromJson(data);
-        print('CourierPaymentService: Parsed ${courierResponse.paymentCourierPayment.length} couriers');
+
         
         return courierResponse;
       } else {
-        print('CourierPaymentService: API returned status ${response.statusCode}, using mock data for testing');
+        
         // Return mock data for testing
         final mockData = {
           "paymentcourierpayment": [
@@ -61,19 +58,18 @@ class CourierPaymentService {
         };
         
         final courierResponse = CourierPaymentResponse.fromJson(mockData);
-        print('CourierPaymentService: Mock data - ${courierResponse.paymentCourierPayment.length} couriers');
+        
         
         return courierResponse;
       }
     } on DioException catch (e) {
       print('CourierPaymentService: DioException: ${e.message}');
       if (e.response != null) {
-        print('CourierPaymentService: Response status: ${e.response!.statusCode}');
-        print('CourierPaymentService: Response data: ${e.response!.data}');
+        
         
         // If the API endpoint doesn't exist yet, return mock data for testing
         if (e.response!.statusCode == 404) {
-          print('CourierPaymentService: API endpoint not found, returning mock data for testing');
+          
           final mockData = {
             "paymentcourierpayment": [
               {
@@ -98,14 +94,14 @@ class CourierPaymentService {
           };
           
           final courierResponse = CourierPaymentResponse.fromJson(mockData);
-          print('CourierPaymentService: Mock data - ${courierResponse.paymentCourierPayment.length} couriers');
+          
           
           return courierResponse;
         }
       }
       throw Exception('Network error: ${e.message}');
     } catch (e) {
-      print('CourierPaymentService: Unexpected error: $e');
+      
       throw Exception('Unexpected error: $e');
     }
   }

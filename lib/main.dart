@@ -48,33 +48,29 @@ class _InitialScreenSelectorState extends State<InitialScreenSelector> {
       final rememberMe = prefs.getBool('remember_me') ?? false;
       final isLoggedIn = prefs.getBool('is_logged_in') ?? false;
       
-      print('🔍 Initial Screen Check:');
-      print('   Remember Me: $rememberMe');
-      print('   Is Logged In: $isLoggedIn');
+     
       
       // Debug: Print all relevant SharedPreferences values
       final userId = prefs.getString('user_id') ?? 'null';
       final email = prefs.getString('email') ?? 'null';
       final rememberEmail = prefs.getString('remember_email') ?? 'null';
-      print('   Debug - user_id: $userId');
-      print('   Debug - email: $email');
-      print('   Debug - remember_email: $rememberEmail');
+      
       
       // First, check if user is already logged in (regardless of Remember Me)
       if (isLoggedIn) {
-        print('   ✅ User is logged in, loading user data...');
+        
         final authService = Get.find<AuthService>();
         final user = await authService.loadUserData();
         
         if (user != null) {
-          print('   ✅ User data loaded successfully, going to Dashboard');
+          
           setState(() {
             _initialScreen = DashboardScreen();
             _isLoading = false;
           });
           return;
         } else {
-          print('   ❌ User data couldn\'t be loaded, clearing login status');
+          
           // User data couldn't be loaded, clear login status
           await prefs.setBool('is_logged_in', false);
         }
@@ -82,14 +78,14 @@ class _InitialScreenSelectorState extends State<InitialScreenSelector> {
       
       // Check Remember Me scenarios
       if (rememberMe) {
-        print('   🔄 Remember Me enabled, checking saved credentials...');
+        
         // User has "Remember Me" enabled but not logged in
         // Check if we have saved credentials and try to login
         final savedEmail = prefs.getString('remember_email') ?? '';
         final savedPassword = prefs.getString('remember_password') ?? '';
         
         if (savedEmail.isNotEmpty && savedPassword.isNotEmpty) {
-          print('   🔄 Attempting auto-login with saved credentials...');
+          
           final authService = Get.find<AuthService>();
           final loginSuccess = await authService.login(savedEmail, savedPassword);
           
