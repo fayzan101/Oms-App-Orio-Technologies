@@ -53,12 +53,23 @@ class _CODStatementScreenState extends State<CODStatementScreen> {
   final TextEditingController _searchController = TextEditingController();
   final AuthService _authService = Get.find<AuthService>();
   Map<String, dynamic>? _activeFilters; // <-- Add this line
+  // 1. Add pagination state variables
+  int startLimit = 1;
+  int endLimit = 15;
+  final int pageSize = 15;
+  bool hasMore = true;
+  final ScrollController _scrollController = ScrollController();
 
   @override
   void initState() {
     super.initState();
     _loadUserDataAndFetchStatements();
     _searchController.addListener(_onSearchChanged);
+    _scrollController.addListener(() {
+      if (mounted && _scrollController.position.pixels >= _scrollController.position.maxScrollExtent - 200 && !isLoading && hasMore) {
+        fetchStatements();
+      }
+    });
   }
 
   Future<void> _loadUserDataAndFetchStatements() async {
@@ -82,7 +93,17 @@ class _CODStatementScreenState extends State<CODStatementScreen> {
     });
   }
 
-  Future<void> fetchStatements() async {
+  // 2. Update fetchStatements for pagination
+  Future<void> fetchStatements({bool reset = false}) async {
+    if (reset) {
+      setState(() {
+        statements = [];
+        startLimit = 1;
+        endLimit = pageSize;
+        hasMore = true;
+      });
+    }
+    if (!hasMore) return;
     setState(() {
       isLoading = true;
       error = null;
@@ -96,28 +117,37 @@ class _CODStatementScreenState extends State<CODStatementScreen> {
         });
         return;
       }
-
       final response = await GetConnect().post(
         'https://oms.getorio.com/api/statement/index',
         {
           'acno': acno,
           'start_date': _startDate.toIso8601String().split('T')[0],
           'end_date': _endDate.toIso8601String().split('T')[0],
+          'start_limit': startLimit,
+          'end_limit': endLimit,
+          // Add filter params if needed
         },
       );
+      List<CODStatement> newStatements = [];
       if (response.body['status'] == 1 && response.body['payload'] is List) {
-        statements = (response.body['payload'] as List)
+        newStatements = (response.body['payload'] as List)
             .map((e) => CODStatement.fromJson(e))
             .toList();
-        _applySearch();
-      } else {
-        statements = [];
       }
+      setState(() {
+        statements.addAll(newStatements);
+        startLimit = endLimit + 1;
+        endLimit += pageSize;
+        hasMore = newStatements.length == pageSize;
+        _applySearch();
+      });
     } catch (e) {
-      statements = [];
-      error = e.toString();
+      setState(() {
+        error = e.toString();
+      });
+    } finally {
+      setState(() => isLoading = false);
     }
-    setState(() => isLoading = false);
   }
 
   void _applySearch() {
@@ -276,10 +306,14 @@ class _CODStatementScreenState extends State<CODStatementScreen> {
                 context: context,
                 barrierDismissible: true,
                 builder: (context) => Dialog(
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(20),
+                  ),
                   child: Container(
-                    width: 320,
-                    padding: const EdgeInsets.all(24),
+                    constraints: BoxConstraints(
+                      maxWidth: MediaQuery.of(context).size.width * 0.9,
+                      maxHeight: MediaQuery.of(context).size.height * 0.7,
+                    ),
                     child: CustomDateSelector(
                       initialStartDate: _startDate,
                       initialEndDate: _endDate,
@@ -292,7 +326,7 @@ class _CODStatementScreenState extends State<CODStatementScreen> {
                   _startDate = picked.start;
                   _endDate = picked.end;
                 });
-                await fetchStatements();
+                await fetchStatements(reset: true);
               }
             },
           ),
@@ -383,10 +417,18 @@ class _CODStatementScreenState extends State<CODStatementScreen> {
                         child: (_searchQuery != null && _searchQuery!.isNotEmpty ? _filteredStatements : statements).isEmpty
                             ? const Center(child: Text('No COD statements found.'))
                             : ListView.separated(
-                                itemCount: (_searchQuery != null && _searchQuery!.isNotEmpty ? _filteredStatements : statements).length,
+                                controller: _scrollController,
+                                itemCount: (_searchQuery != null && _searchQuery!.isNotEmpty ? _filteredStatements : statements).length + (isLoading ? 1 : 0),
                                 separatorBuilder: (_, __) => const SizedBox(height: 12),
                                 itemBuilder: (context, i) {
-                                  final s = (_searchQuery != null && _searchQuery!.isNotEmpty ? _filteredStatements : statements)[i];
+                                  final list = (_searchQuery != null && _searchQuery!.isNotEmpty ? _filteredStatements : statements);
+                                  if (i >= list.length) {
+                                    return const Center(child: Padding(
+                                      padding: EdgeInsets.symmetric(vertical: 16),
+                                      child: CircularProgressIndicator(),
+                                    ));
+                                  }
+                                  final s = list[i];
                                   return Container(
                                     width: double.infinity,
                                     padding: const EdgeInsets.all(16),

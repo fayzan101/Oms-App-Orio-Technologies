@@ -7,6 +7,7 @@ import 'package:flutter/services.dart'; // Added for SystemChrome
 import 'create_order.dart';
 import '../services/statement_service.dart';
 import '../services/auth_service.dart';
+import 'package:google_fonts/google_fonts.dart'; // Added for GoogleFonts
 
 class AddProductScreen extends StatefulWidget {
   final int? platformId;
@@ -134,96 +135,88 @@ class _AddProductScreenState extends State<AddProductScreen> {
       );
       return;
     }
-    String? picked = await showModalBottomSheet<String>(
+    String? picked = await showDialog<String>(
       context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
+      barrierDismissible: true,
       builder: (context) {
         List<String> filtered = List.from(productList);
-        return SafeArea(
+        return Dialog(
+          backgroundColor: const Color(0xFFE6F0FA),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
           child: Padding(
-            padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
-            child: StatefulBuilder(
-              builder: (context, setState) {
-                return Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.only(top: 24, left: 16, right: 16, bottom: 24),
-                  decoration: const BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.only(
-                      topLeft: Radius.circular(28),
-                      topRight: Radius.circular(28),
-                    ),
-                  ),
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    crossAxisAlignment: CrossAxisAlignment.start,
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
+            child: SizedBox(
+              width: 340,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          const Text('Product Name', style: TextStyle(fontFamily: 'SF Pro Display', fontWeight: FontWeight.w700, fontSize: 18)),
-                          GestureDetector(
-                            onTap: () => Navigator.of(context).pop(),
-                            child: const Icon(Icons.close, size: 24, color: Color(0xFF222222)),
-                          ),
-                        ],
+                      Text('Select Product',
+                        style: GoogleFonts.poppins(fontWeight: FontWeight.w700, fontSize: 18, color: Color(0xFF0A253B)),
                       ),
-                      const SizedBox(height: 16),
-                      Container(
-                        decoration: BoxDecoration(
-                          color: const Color(0xFFF5F5F7),
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                        child: TextField(
-                          controller: searchController,
-                          onChanged: (val) {
-                            setState(() {
-                              filtered = productList.where((p) => p.toLowerCase().contains(val.toLowerCase())).toList();
-                            });
-                          },
-                          decoration: const InputDecoration(
-                            hintText: 'Search',
-                            border: InputBorder.none,
-                            prefixIcon: Icon(Icons.search, color: Color(0xFF222222)),
-                            contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-                          ),
-                          style: const TextStyle(fontFamily: 'SF Pro Display', fontSize: 15),
-                        ),
-                      ),
-                      const SizedBox(height: 16),
-                      Flexible(
-                        child: filtered.isEmpty
-                            ? const Center(
-                                child: Padding(
-                                  padding: EdgeInsets.all(16),
-                                  child: Text(
-                                    'No products found',
-                                    style: TextStyle(
-                                      fontFamily: 'SF Pro Display',
-                                      fontSize: 16,
-                                      color: Color(0xFF6B6B6B),
-                                    ),
-                                  ),
-                                ),
-                              )
-                            : ListView.separated(
-                                shrinkWrap: true,
-                                itemCount: filtered.length,
-                                separatorBuilder: (context, i) => const Divider(height: 1, color: Color(0xFFE0E0E0)),
-                                itemBuilder: (context, i) {
-                                  return ListTile(
-                                    title: Text(filtered[i], style: const TextStyle(fontFamily: 'SF Pro Display', fontSize: 15)),
-                                    onTap: () => Navigator.of(context).pop(filtered[i]),
-                                    contentPadding: EdgeInsets.zero,
-                                  );
-                                },
-                              ),
+                      GestureDetector(
+                        onTap: () => Navigator.of(context).pop(),
+                        child: const Icon(Icons.close, size: 24, color: Color(0xFF007AFF)),
                       ),
                     ],
                   ),
-                );
-              },
+                  const SizedBox(height: 14),
+                  TextField(
+                    controller: searchController,
+                    onChanged: (val) {
+                      filtered = productList.where((p) => p.toLowerCase().contains(val.toLowerCase())).toList();
+                      (context as Element).markNeedsBuild();
+                    },
+                    decoration: InputDecoration(
+                      hintText: 'Search product',
+                      hintStyle: GoogleFonts.poppins(color: Color(0xFF6B6B6B)),
+                      prefixIcon: Icon(Icons.search_rounded, color: Color(0xFF007AFF)),
+                      filled: true,
+                      fillColor: Colors.white,
+                      contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide(color: Color(0xFF007AFF)),
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide(color: Color(0xFF007AFF), width: 2),
+                      ),
+                    ),
+                    style: GoogleFonts.poppins(fontSize: 15, color: Color(0xFF0A253B)),
+                  ),
+                  const SizedBox(height: 14),
+                  SizedBox(
+                    height: 250,
+                    child: filtered.isEmpty
+                        ? Center(
+                            child: Padding(
+                              padding: const EdgeInsets.all(16),
+                              child: Text(
+                                'No products found',
+                                style: GoogleFonts.poppins(fontSize: 16, color: Color(0xFF6B6B6B)),
+                              ),
+                            ),
+                          )
+                        : ListView.separated(
+                            shrinkWrap: true,
+                            itemCount: filtered.length,
+                            separatorBuilder: (context, i) => const Divider(height: 1, color: Color(0xFFB3D4FC)),
+                            itemBuilder: (context, i) {
+                              return ListTile(
+                                title: Text(filtered[i], style: GoogleFonts.poppins(fontSize: 15, color: Color(0xFF0A253B))),
+                                onTap: () => Navigator.of(context).pop(filtered[i]),
+                                contentPadding: EdgeInsets.zero,
+                                trailing: Icon(Icons.arrow_forward_ios_rounded, color: Color(0xFF007AFF), size: 18),
+                              );
+                            },
+                          ),
+                  ),
+                ],
+              ),
             ),
           ),
         );

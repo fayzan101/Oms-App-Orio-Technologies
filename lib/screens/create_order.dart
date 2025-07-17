@@ -51,6 +51,7 @@ class _CreateOrderScreenState extends State<CreateOrderScreen> {
   final List<GlobalKey<_OrderFieldState>> _orderFieldKeys = List.generate(11, (_) => GlobalKey<_OrderFieldState>());
   // In _CreateOrderScreenState, add controllers for each field
   final List<TextEditingController> _controllers = List.generate(11, (_) => TextEditingController());
+  final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
 
   @override
   void initState() {
@@ -125,7 +126,7 @@ class _CreateOrderScreenState extends State<CreateOrderScreen> {
           builder: (context, setState) {
             filteredPlatforms = _platforms.where((p) => (p['platform_name']?.toString().toLowerCase() ?? '').contains(search.toLowerCase())).toList();
             return Dialog(
-              backgroundColor: Colors.white,
+              backgroundColor: const Color(0xFFE6F0FA), // Light blue background
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
               child: Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
@@ -138,30 +139,38 @@ class _CreateOrderScreenState extends State<CreateOrderScreen> {
                       children: [
                         GestureDetector(
                           onTap: () => Navigator.of(context).pop(),
-                          child: const Icon(Icons.close, size: 24, color: Color(0xFF222222)),
+                          child: const Icon(Icons.close, size: 24, color: Color(0xFF007AFF)), // Blue close icon
                         ),
                       ],
                     ),
                     const SizedBox(height: 4),
-                    const Text(
+                    Text(
                       'Select Platform',
-                      style: TextStyle(
-                        fontFamily: 'SF Pro Display',
+                      style: GoogleFonts.poppins(
                         fontWeight: FontWeight.w700,
                         fontSize: 20,
-                        color: Colors.black,
+                        color: Color(0xFF0A253B), // Dark blue text
                       ),
                     ),
                     const SizedBox(height: 16),
                     TextField(
                       decoration: InputDecoration(
                         hintText: 'Search Platform',
-                        prefixIcon: Icon(Icons.search_rounded),
+                        hintStyle: GoogleFonts.poppins(color: Color(0xFF6B6B6B)),
+                        prefixIcon: Icon(Icons.search_rounded, color: Color(0xFF007AFF)),
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(12),
+                          borderSide: BorderSide(color: Color(0xFF007AFF)),
                         ),
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: BorderSide(color: Color(0xFF007AFF), width: 2),
+                        ),
+                        filled: true,
+                        fillColor: Colors.white,
                         contentPadding: EdgeInsets.symmetric(vertical: 0, horizontal: 12),
                       ),
+                      style: GoogleFonts.poppins(fontSize: 16, color: Color(0xFF0A253B)),
                       onChanged: (val) {
                         setState(() {
                           search = val;
@@ -170,27 +179,27 @@ class _CreateOrderScreenState extends State<CreateOrderScreen> {
                     ),
                     const SizedBox(height: 16),
                     _isLoadingPlatforms
-                        ? const Center(child: CircularProgressIndicator())
+                        ? const Center(child: CircularProgressIndicator(color: Color(0xFF007AFF)))
                         : _platformError != null
-                            ? Text(_platformError!, style: const TextStyle(color: Colors.red))
+                            ? Text(_platformError!, style: GoogleFonts.poppins(color: Colors.red))
                             : filteredPlatforms.isEmpty
-                                ? const Text('No platforms found.')
+                                ? Text('No platforms found.', style: GoogleFonts.poppins(color: Color(0xFF0A253B)))
                                 : SizedBox(
                                     height: 200,
                                     child: ListView.separated(
                                       shrinkWrap: true,
                                       itemCount: filteredPlatforms.length,
-                                      separatorBuilder: (context, i) => const Divider(height: 1, color: Color(0xFFE0E0E0)),
+                                      separatorBuilder: (context, i) => const Divider(height: 1, color: Color(0xFFB3D4FC)),
                                       itemBuilder: (context, i) {
                                         final platform = filteredPlatforms[i];
                                         return ListTile(
                                           title: Text(
                                             platform['platform_name']?.toString() ?? 'Unknown Platform',
-                                            style: const TextStyle(fontFamily: 'SF Pro Display', fontSize: 15),
+                                            style: GoogleFonts.poppins(fontSize: 15, color: Color(0xFF0A253B)),
                                           ),
                                           subtitle: Text(
                                             'ID: ${platform['id']}',
-                                            style: const TextStyle(fontFamily: 'SF Pro Display', fontSize: 12, color: Color(0xFF6B6B6B)),
+                                            style: GoogleFonts.poppins(fontSize: 12, color: Color(0xFF007AFF)),
                                           ),
                                           onTap: () {
                                             setState(() {
@@ -200,6 +209,7 @@ class _CreateOrderScreenState extends State<CreateOrderScreen> {
                                             _showAddProductScreen(context);
                                           },
                                           contentPadding: EdgeInsets.zero,
+                                          trailing: Icon(Icons.arrow_forward_ios_rounded, color: Color(0xFF007AFF), size: 18),
                                         );
                                       },
                                     ),
@@ -430,11 +440,10 @@ class _CreateOrderScreenState extends State<CreateOrderScreen> {
       customSnackBar('Error', 'Please select a city');
       hasError = true;
     }
-    // Validate customer detail fields
-    for (final field in _orderFieldKeys) {
-      if (field.currentState != null) {
-        final valid = field.currentState!.validate();
-        if (!valid) hasError = true;
+    // Validate all fields using Form
+    if (_formKey.currentState != null) {
+      if (!_formKey.currentState!.validate()) {
+        hasError = true;
       }
     }
     if (hasError) return;
@@ -685,78 +694,95 @@ class _CreateOrderScreenState extends State<CreateOrderScreen> {
                         ),
                       ),
                     ),
-                  const SizedBox(height: 16),
-                 Padding(
-                   padding: const EdgeInsets.symmetric(horizontal: 16),
-                   child: Column(
-                     children: [
-                       _OrderField(key: _orderFieldKeys[0], controller: _controllers[0], hint: 'Full Name', isRequired: true),
-                       _OrderField(key: _orderFieldKeys[1], controller: _controllers[1], hint: 'Email', isRequired: true),
-                       _OrderField(key: _orderFieldKeys[2], controller: _controllers[2], hint: 'Phone No', keyboardType: TextInputType.number, isRequired: true),
-                       _OrderField(key: _orderFieldKeys[3], controller: _controllers[3], hint: 'Order Reference Code', isRequired: true),
-                       _OrderField(key: _orderFieldKeys[4], controller: _controllers[4], hint: 'Address', isRequired: true),
-                       _OrderField(key: _orderFieldKeys[5], controller: _controllers[5], hint: 'Landmark', isRequired: true),
-                       // Country (fixed)
-                       Padding(
-                         padding: const EdgeInsets.symmetric(vertical: 8),
-                         child: TextField(
-                           enabled: false,
-                           controller: TextEditingController(text: selectedCountry),
-                           decoration: InputDecoration(
-                             labelText: 'Country',
-                             filled: true,
-                             fillColor: const Color(0xFFF5F5F7),
-                             border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide.none),
-                             isDense: true,
-                             contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                  const SizedBox(height: 2),
+                 Form(
+                   key: _formKey,
+                   child: Padding(
+                     padding: const EdgeInsets.symmetric(horizontal: 16),
+                     child: Column(
+                       children: [
+                         _OrderField(key: _orderFieldKeys[0], controller: _controllers[0], hint: 'Full Name', isRequired: true, prefixIcon: Icons.person_outline),
+                         _OrderField(key: _orderFieldKeys[1], controller: _controllers[1], hint: 'Email', isRequired: true, keyboardType: TextInputType.emailAddress, prefixIcon: Icons.email_outlined),
+                         _OrderField(key: _orderFieldKeys[2], controller: _controllers[2], hint: 'Phone No', keyboardType: TextInputType.phone, isRequired: true, prefixIcon: Icons.phone_outlined),
+                         _OrderField(key: _orderFieldKeys[3], controller: _controllers[3], hint: 'Order Reference Code', isRequired: true, prefixIcon: Icons.confirmation_number_outlined),
+                         _OrderField(key: _orderFieldKeys[4], controller: _controllers[4], hint: 'Address', isRequired: true, prefixIcon: Icons.location_on_outlined),
+                         _OrderField(key: _orderFieldKeys[5], controller: _controllers[5], hint: 'Landmark', isRequired: true, prefixIcon: Icons.landscape_outlined),
+                         // Country (fixed)
+                         Padding(
+                           padding: const EdgeInsets.symmetric(vertical: 8),
+                           child: Material(
+                             elevation: 1.5,
+                             shadowColor: Colors.black12,
+                             borderRadius: BorderRadius.circular(12),
+                             child: TextFormField(
+                               enabled: false,
+                               controller: TextEditingController(text: selectedCountry),
+                               style: GoogleFonts.poppins(fontSize: 16, color: Colors.black),
+                               decoration: InputDecoration(
+                                 labelText: 'Country',
+                                 labelStyle: GoogleFonts.poppins(fontWeight: FontWeight.w500, color: Colors.grey[700]),
+                                 prefixIcon: Icon(Icons.flag_outlined, color: Colors.grey[600]),
+                                 filled: true,
+                                 fillColor: const Color(0xFFF5F5F7),
+                                 contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 18),
+                                 border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
+                                 isDense: true,
+                               ),
+                             ),
                            ),
-                           style: const TextStyle(fontSize: 16, color: Colors.black),
                          ),
-                       ),
-                       // City (from API)
-                       Padding(
-                         padding: const EdgeInsets.symmetric(vertical: 8),
-                         child: _isLoadingCities
-                             ? const Center(child: CircularProgressIndicator())
-                             : GestureDetector(
-                                 onTap: () async {
-                                   final selected = await showDialog<String>(
-                                     context: context,
-                                     builder: (context) => _CitySearchDialog(
-                                       cities: cityList,
-                                       initialCity: selectedCity,
+                         // City (from API)
+                         Padding(
+                           padding: const EdgeInsets.symmetric(vertical: 8),
+                           child: _isLoadingCities
+                               ? const Center(child: CircularProgressIndicator())
+                               : GestureDetector(
+                                   onTap: () async {
+                                     final selected = await showDialog<String>(
+                                       context: context,
+                                       builder: (context) => _CitySearchDialog(
+                                         cities: cityList,
+                                         initialCity: selectedCity,
+                                       ),
+                                     );
+                                     if (selected != null) {
+                                       setState(() {
+                                         selectedCity = selected;
+                                       });
+                                     }
+                                   },
+                                   child: AbsorbPointer(
+                                     child: Material(
+                                       elevation: 1.5,
+                                       shadowColor: Colors.black12,
+                                       borderRadius: BorderRadius.circular(12),
+                                       child: TextFormField(
+                                         controller: TextEditingController(text: selectedCity ?? ''),
+                                         style: GoogleFonts.poppins(fontSize: 16, color: Colors.black),
+                                         decoration: InputDecoration(
+                                           labelText: 'City',
+                                           labelStyle: GoogleFonts.poppins(fontWeight: FontWeight.w500, color: Colors.grey[700]),
+                                           prefixIcon: Icon(Icons.location_city_outlined, color: Colors.grey[600]),
+                                           filled: true,
+                                           fillColor: const Color(0xFFF5F5F7),
+                                           contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 18),
+                                           border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
+                                           isDense: true,
+                                           suffixIcon: const Icon(Icons.keyboard_arrow_down_rounded, color: Color(0xFF222222)),
+                                         ),
+                                         readOnly: true,
+                                       ),
                                      ),
-                                   );
-                                   if (selected != null) {
-                                     setState(() {
-                                       selectedCity = selected;
-                                     });
-                                   }
-                                 },
-                                 child: AbsorbPointer(
-                                   child: TextFormField(
-                                     controller: TextEditingController(text: selectedCity ?? ''),
-                                     decoration: InputDecoration(
-                                       labelText: 'City',
-                                       filled: true,
-                                       fillColor: const Color(0xFFF5F5F7),
-                                       border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide.none),
-                                       isDense: true,
-                                       contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-                                       suffixIcon: const Icon(Icons.keyboard_arrow_down_rounded, color: Color(0xFF222222)),
-                                     ),
-                                     style: const TextStyle(fontSize: 16, color: Colors.black),
-                                     readOnly: true,
                                    ),
                                  ),
-                               ),
-                       ),
-                       _OrderField(key: _orderFieldKeys[6], controller: _controllers[6], hint: 'Latitude', keyboardType: TextInputType.number),
-                       _OrderField(key: _orderFieldKeys[7], controller: _controllers[7], hint: 'Longitude', keyboardType: TextInputType.number),
-                       _OrderField(key: _orderFieldKeys[8], controller: _controllers[8], hint: 'Weight', keyboardType: TextInputType.number),
-                       _OrderField(key: _orderFieldKeys[9], controller: _controllers[9], hint: 'Shipping Charges'),
-                       _OrderField(key: _orderFieldKeys[10], controller: _controllers[10], hint: 'Remarks'),
-                     ],
+                         ),
+                         _OrderField(key: _orderFieldKeys[6], controller: _controllers[6], hint: 'Latitude', keyboardType: TextInputType.number, isRequired: true, prefixIcon: Icons.my_location_outlined),
+                         _OrderField(key: _orderFieldKeys[7], controller: _controllers[7], hint: 'Longitude', keyboardType: TextInputType.number, isRequired: true, prefixIcon: Icons.my_location_outlined),
+                         _OrderField(key: _orderFieldKeys[8], controller: _controllers[8], hint: 'Weight', keyboardType: TextInputType.number, isRequired: true, prefixIcon: Icons.scale_outlined),
+                         _OrderField(key: _orderFieldKeys[9], controller: _controllers[9], hint: 'Shipping Charges', isRequired: true, prefixIcon: Icons.local_shipping_outlined),
+                         _OrderField(key: _orderFieldKeys[10], controller: _controllers[10], hint: 'Remarks', isRequired: true, prefixIcon: Icons.notes_outlined),
+                       ],
+                     ),
                    ),
                  ),
                   const SizedBox(height: 16),
@@ -832,7 +858,9 @@ class _OrderField extends StatefulWidget {
   final TextInputType? keyboardType;
   final bool isRequired;
   final TextEditingController? controller;
-  const _OrderField({Key? key, required this.hint, this.keyboardType, this.isRequired = false, this.controller}) : super(key: key);
+  final IconData? prefixIcon;
+  final IconData? suffixIcon;
+  const _OrderField({Key? key, required this.hint, this.keyboardType, this.isRequired = false, this.controller, this.prefixIcon, this.suffixIcon}) : super(key: key);
 
   @override
   State<_OrderField> createState() => _OrderFieldState();
@@ -860,32 +888,48 @@ class _OrderFieldState extends State<_OrderField> {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8),
-      child: TextField(
-        controller: _controller,
-        keyboardType: widget.keyboardType,
-        decoration: InputDecoration(
-          labelText: widget.hint,
-          filled: true,
-          fillColor: const Color(0xFFF5F5F7),
-          border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(10),
-            borderSide: BorderSide(
-              color: _showError ? Colors.red : Colors.transparent,
-              width: 1.5,
+      padding: const EdgeInsets.symmetric(vertical: 6), // slightly reduced
+      child: Material(
+        elevation: 1.5,
+        shadowColor: Colors.black12,
+        borderRadius: BorderRadius.circular(12),
+        child: TextFormField(
+          controller: _controller,
+          keyboardType: widget.keyboardType,
+          style: GoogleFonts.poppins(fontSize: 16, color: Colors.black),
+          decoration: InputDecoration(
+            labelText: widget.hint,
+            labelStyle: GoogleFonts.poppins(fontWeight: FontWeight.w500, color: Colors.grey[700]),
+            prefixIcon: widget.prefixIcon != null ? Icon(widget.prefixIcon, color: Colors.grey[600]) : null,
+            suffixIcon: widget.suffixIcon != null ? Icon(widget.suffixIcon, color: Colors.grey[600]) : null,
+            filled: true,
+            fillColor: const Color(0xFFF5F5F7),
+            contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10), // reduced vertical padding
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: BorderSide(color: Colors.transparent),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: BorderSide(color: Color(0xFF007AFF), width: 2),
+            ),
+            errorBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: BorderSide(color: Colors.red, width: 1.5),
+            ),
+            focusedErrorBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: BorderSide(color: Colors.red, width: 2),
             ),
           ),
-          enabledBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(10),
-            borderSide: BorderSide(
-              color: _showError ? Colors.red : Colors.transparent,
-              width: 1.5,
-            ),
-          ),
-          isDense: true,
-          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+          autovalidateMode: AutovalidateMode.onUserInteraction,
+          validator: (value) {
+            if (widget.isRequired && (value == null || value.trim().isEmpty)) {
+              return 'Required';
+            }
+            return null;
+          },
         ),
-        style: const TextStyle(fontSize: 16, color: Colors.black),
       ),
     );
   }
@@ -896,33 +940,50 @@ class _OrderDropdownField extends StatelessWidget {
   final List<String> items;
   final String? value;
   final void Function(String?)? onChanged;
-  const _OrderDropdownField({required this.hint, required this.items, this.value, this.onChanged});
+  final IconData? prefixIcon;
+  const _OrderDropdownField({required this.hint, required this.items, this.value, this.onChanged, this.prefixIcon});
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 14),
-      child: DropdownButtonFormField<String>(
-        value: value,
-        items: items.map((e) => DropdownMenuItem(value: e, child: Text(e))).toList(),
-        onChanged: onChanged,
-        decoration: InputDecoration(
-          hintText: hint,
-          hintStyle: const TextStyle(
-            fontFamily: 'SF Pro Display',
-            fontWeight: FontWeight.w400,
-            fontSize: 15,
-            color: Color(0xFF6B6B6B),
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 6), // slightly reduced
+      child: Material(
+        elevation: 1.5,
+        shadowColor: Colors.black12,
+        borderRadius: BorderRadius.circular(12),
+        child: DropdownButtonFormField<String>(
+          value: value,
+          items: items.map((e) => DropdownMenuItem(
+            value: e,
+            child: Text(e, style: GoogleFonts.poppins(fontSize: 16)),
+          )).toList(),
+          onChanged: onChanged,
+          decoration: InputDecoration(
+            labelText: hint,
+            labelStyle: GoogleFonts.poppins(fontWeight: FontWeight.w500, color: Colors.grey[700]),
+            prefixIcon: prefixIcon != null ? Icon(prefixIcon, color: Colors.grey[600]) : null,
+            filled: true,
+            fillColor: const Color(0xFFF5F5F7),
+            contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10), // reduced vertical padding
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: BorderSide(color: Colors.transparent),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: BorderSide(color: Color(0xFF007AFF), width: 2),
+            ),
+            errorBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: BorderSide(color: Colors.red, width: 1.5),
+            ),
+            focusedErrorBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: BorderSide(color: Colors.red, width: 2),
+            ),
           ),
-          filled: true,
-          fillColor: Color(0xFFF5F5F7),
-          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 18),
-          border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(10),
-            borderSide: BorderSide.none,
-          ),
+          icon: const Icon(Icons.keyboard_arrow_down_rounded, color: Color(0xFF222222)),
         ),
-        icon: const Icon(Icons.keyboard_arrow_down_rounded, color: Color(0xFF222222)),
       ),
     );
   }

@@ -410,10 +410,14 @@ class _CourierInsightsScreenState extends State<CourierInsightsScreen> {
                 context: context,
                 barrierDismissible: true,
                 builder: (context) => Dialog(
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(20),
+                  ),
                   child: Container(
-                    width: 320,
-                    padding: const EdgeInsets.all(24),
+                    constraints: BoxConstraints(
+                      maxWidth: MediaQuery.of(context).size.width * 0.9,
+                      maxHeight: MediaQuery.of(context).size.height * 0.7,
+                    ),
                     child: CustomDateSelector(
                       initialStartDate: _startDate,
                       initialEndDate: _endDate,
