@@ -864,59 +864,64 @@ class _OrderListScreenState extends State<OrderListScreen> {
                                       ),
                                     ),
                                   ]),
+                                  TableRow(children: [
+                                    Padding(
+                                      padding: const EdgeInsets.only(right: 8.0, top: 8.0),
+                                      child: Align(
+                                        alignment: Alignment.centerLeft,
+                                        child: Text('Actions:', style: GoogleFonts.inter(fontWeight: FontWeight.w600)),
+                                      ),
+                                    ),
+                                    Center(
+                                      child: Padding(
+                                        padding: const EdgeInsets.only(top: 8.0),
+                                        child: Row(
+                                          mainAxisSize: MainAxisSize.min,
+                                          children: [
+                                            GestureDetector(
+                                              onTap: () {
+                                                Get.to(() => const QuickEditScreen());
+                                              },
+                                              child: Row(
+                                                children: [
+                                                  const Icon(Icons.edit_rounded, color: Color(0xFF007AFF), size: 20),
+                                                  const SizedBox(width: 4),
+                                                  Text('Edit', style: GoogleFonts.inter(color: Color(0xFF007AFF), fontWeight: FontWeight.w500)),
+                                                ],
+                                              ),
+                                            ),
+                                            const SizedBox(width: 24),
+                                            GestureDetector(
+                                              onTap: () async {
+                                                final confirmed = await showModalBottomSheet<bool>(
+                                                  context: context,
+                                                  isScrollControlled: true,
+                                                  backgroundColor: Colors.transparent,
+                                                  builder: (context) => _DeleteConfirmationBottomSheet(),
+                                                );
+                                                if (confirmed == true) {
+                                                  await _deleteOrder(order['id'].toString());
+                                                }
+                                              },
+                                              child: Row(
+                                                children: [
+                                                  const Icon(Icons.delete_rounded, color: Color(0xFF007AFF), size: 20),
+                                                  const SizedBox(width: 4),
+                                                  Text('Delete', style: GoogleFonts.inter(color: Color(0xFF007AFF), fontWeight: FontWeight.w500)),
+                                                ],
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    ),
+                                  ]),
                                 ],
                               ),
                             ),
                           ],
                         ),
-                        const SizedBox(height: 10),
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Expanded(
-                              child: Text('Actions', style: GoogleFonts.inter(fontWeight: FontWeight.w600)),
-                            ),
-                            SizedBox(width: 8), // Move Delete button left
-                            Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                GestureDetector(
-                                  onTap: () async {
-                                    final confirmed = await showModalBottomSheet<bool>(
-                                      context: context,
-                                      isScrollControlled: true,
-                                      backgroundColor: Colors.transparent,
-                                      builder: (context) => _DeleteConfirmationBottomSheet(),
-                                    );
-                                    if (confirmed == true) {
-                                      await _deleteOrder(order['id'].toString());
-                                    }
-                                  },
-                                  child: Row(
-                                    children: [
-                                      const Icon(Icons.delete_rounded, color: Color(0xFF007AFF), size: 20),
-                                      const SizedBox(width: 0.0005), // Reduce space between icon and text
-                                      Text('Delete    ', style: GoogleFonts.inter(color: Color(0xFF007AFF), fontWeight: FontWeight.w500)),
-                                    ],
-                                  ),
-                                ),
-                                const SizedBox(width: 16),
-                                GestureDetector(
-                                  onTap: () {
-                                    Get.to(() => const QuickEditScreen());
-                                  },
-                                  child: Row(
-                                    children: [
-                                      const Icon(Icons.edit_rounded, color: Color(0xFF007AFF), size: 20),
-                                      const SizedBox(width: 4),
-                                      Text('Edit', style: GoogleFonts.inter(color: Color(0xFF007AFF), fontWeight: FontWeight.w500)),
-                                    ],
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ],
-                        ),
+
                         const SizedBox(height: 6),
                         GestureDetector(
                           onTap: () {

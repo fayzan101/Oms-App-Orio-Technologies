@@ -94,33 +94,31 @@ class _InitialScreenSelectorState extends State<InitialScreenSelector> {
           final loginSuccess = await authService.login(savedEmail, savedPassword);
           
           if (loginSuccess) {
-            print('   ✅ Auto-login successful, going to Dashboard');
+          
             setState(() {
               _initialScreen = DashboardScreen();
               _isLoading = false;
             });
             return;
           } else {
-            print('   ❌ Auto-login failed, clearing saved credentials');
+            
             // Login failed, clear saved credentials
             await prefs.remove('remember_email');
             await prefs.remove('remember_password');
             await prefs.setBool('remember_me', false);
           }
         } else {
-          print('   ❌ No saved credentials found');
+         
         }
       }
       
-      // Default: go to onboarding
-      print('   📱 Going to Onboarding screen');
+     
       setState(() {
         _initialScreen = OnboardingScreen();
         _isLoading = false;
       });
     } catch (e) {
-      print('   ❌ Error in initial screen determination: $e');
-      // If any error occurs, go to onboarding
+      
       setState(() {
         _initialScreen = OnboardingScreen();
         _isLoading = false;
@@ -143,9 +141,16 @@ class MyApp extends StatelessWidget {
   // This widget is the root of your application.
   @override
   Widget build(BuildContext context) {
-    return GetMaterialApp(
-      debugShowCheckedModeBanner: false,
-      title: 'Orio',
+    return MediaQuery(
+      data: MediaQuery.of(context)
+          .copyWith(
+            textScaler: TextScaler.noScaling, 
+            boldText: false,
+            devicePixelRatio: MediaQuery.of(context).devicePixelRatio * 0.5,
+          ),
+      child: GetMaterialApp(
+        debugShowCheckedModeBanner: false,
+        title: 'Orio',
       initialBinding: BindingsBuilder(() {
         Get.put(AuthService(), permanent: true);
         Get.put(RulesService(Get.find<AuthService>()), permanent: true);
@@ -195,6 +200,7 @@ class MyApp extends StatelessWidget {
         useMaterial3: true,
       ),
       home: const InitialScreenSelector(),
+      ),
     );
   }
 }
