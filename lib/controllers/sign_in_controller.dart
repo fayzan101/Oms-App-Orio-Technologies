@@ -53,10 +53,23 @@ class SignInController extends GetxController {
 
     // Simple email validation
     final emailValid = RegExp(r"^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}").hasMatch(email);
-    if (email.isEmpty || password.isEmpty || !emailValid) {
+    if (email.isEmpty || password.isEmpty) {
       emailError.value = true;
       passwordError.value = true;
-      
+      Get.snackbar(
+        'Invalid!',
+        'Email and password required',
+        snackPosition: SnackPosition.BOTTOM,
+        backgroundColor: Colors.red,
+        colorText: Colors.white,
+        margin: const EdgeInsets.all(16),
+        borderRadius: 12,
+      );
+      return;
+    }
+    if (!emailValid) {
+      emailError.value = true;
+      passwordError.value = true;
       Get.snackbar(
         'Invalid',
         'Invalid email or password',
@@ -106,7 +119,7 @@ class SignInController extends GetxController {
       }
       
       Get.snackbar(
-        'Invalid',
+        'Error!',
         'Invalid email or password',
         snackPosition: SnackPosition.BOTTOM,
         backgroundColor: Colors.red,

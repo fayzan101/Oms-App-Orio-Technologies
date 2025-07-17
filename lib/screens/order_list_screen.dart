@@ -11,6 +11,7 @@ import 'search_screen.dart';
 import 'quick_edit_screen.dart';
 import '../utils/Layout/app_bottom_bar.dart';
 import 'calendar_screen.dart';
+import 'bulk_tracking_screen.dart';
 import '../widgets/custom_date_selector.dart';
 import '../services/auth_service.dart';
 import '../utils/custom_snackbar.dart';
@@ -18,6 +19,7 @@ import 'package:dio/dio.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../widgets/courier_logo_widget.dart';
 import 'package:google_fonts/google_fonts.dart';
+
 
 class OrderListScreen extends StatefulWidget {
   final String? snackbarMessage;
@@ -543,16 +545,19 @@ class _OrderListScreenState extends State<OrderListScreen> {
             },
           ),
           IconButton(
-            icon: const Icon(Icons.calendar_today_rounded, color: Colors.black),
+            icon: const Icon(Icons.calendar_today_rounded, color: Color(0xFF007AFF)),
             onPressed: () async {
               final picked = await showDialog<DateTimeRange>(
                 context: context,
-                barrierDismissible: true,
                 builder: (context) => Dialog(
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(20),
+                  ),
                   child: Container(
-                    width: 320,
-                    padding: const EdgeInsets.all(24),
+                    constraints: BoxConstraints(
+                      maxWidth: MediaQuery.of(context).size.width * 0.9,
+                      maxHeight: MediaQuery.of(context).size.height * 0.7,
+                    ),
                     child: CustomDateSelector(
                       initialStartDate: _startDate,
                       initialEndDate: _endDate,
@@ -565,7 +570,7 @@ class _OrderListScreenState extends State<OrderListScreen> {
                   _startDate = picked.start;
                   _endDate = picked.end;
                 });
-               await _saveDateRange(_startDate, _endDate);
+                await _saveDateRange(_startDate, _endDate);
                 await fetchReportSummary();
                 await fetchOrders(reset: true);
               }
@@ -720,11 +725,24 @@ class _OrderListScreenState extends State<OrderListScreen> {
                   const SizedBox(width: 16),
                   GestureDetector(
                     onTap: () {
-                      showModalBottomSheet(
-                        context: context,
-                        isScrollControlled: true,
-                        backgroundColor: Colors.transparent,
-                        builder: (context) => const _BulkTrackingBottomSheet(),
+                      final list = ((_searchQuery != null && _searchQuery!.isNotEmpty) || _activeFilters != null ? _filteredOrders : orders);
+                      final selectedList = selectedOrders.map((idx) => list[idx]).toList();
+                      final orderIds = selectedList.map((order) => order['id']?.toString() ?? '').where((id) => id.isNotEmpty).join(',');
+                      final consignmentNos = selectedList.map((order) => order['consigment_no']?.toString() ?? '').where((cn) => cn.isNotEmpty).join(',');
+                      final acno = _authService.getCurrentAcno();
+                      if (acno == null || acno.isEmpty) {
+                        customSnackBar('Error', 'Account number not found. Please log in again.');
+                        return;
+                      }
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => BulkTrackingScreen(
+                            acno: acno,
+                            orderIds: orderIds,
+                            consignmentNos: consignmentNos,
+                          ),
+                        ),
                       );
                     },
                     child: const Text('Bulk Tracking', style: TextStyle(fontFamily: 'SF Pro Display', fontWeight: FontWeight.w500, fontSize: 15, color: Color(0xFF007AFF), decoration: TextDecoration.underline)),

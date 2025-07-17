@@ -58,7 +58,7 @@ class SignInScreen extends StatelessWidget {
                     textAlign: TextAlign.center,
                   ),
                   SizedBox(height: blockH * 2.5),
-                  Container(
+                  Obx(() => Container(
                     decoration: BoxDecoration(
                       color: const Color(0xFFF3F3F3),
                       borderRadius: BorderRadius.circular(blockW * 2), // 8 on 390px
@@ -85,7 +85,7 @@ class SignInScreen extends StatelessWidget {
                       ),
                       keyboardType: TextInputType.emailAddress,
                     ),
-                  ),
+                  )),
                   SizedBox(height: blockH * 2),
                   Obx(() => Container(
                     decoration: BoxDecoration(
