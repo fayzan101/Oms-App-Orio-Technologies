@@ -6,6 +6,117 @@ import 'package:dio/dio.dart';
 import 'package:multi_select_flutter/multi_select_flutter.dart';
 import 'package:google_fonts/google_fonts.dart';
 
+const Color kBlue = Color(0xFF007AFF);
+
+class CustomMultiSelectDialog<T> extends StatefulWidget {
+  final List<MultiSelectItem<T>> items;
+  final List<T> initialValue;
+  final void Function(List<T>) onConfirm;
+  final String title;
+
+  const CustomMultiSelectDialog({
+    required this.items,
+    required this.initialValue,
+    required this.onConfirm,
+    required this.title,
+    Key? key,
+  }) : super(key: key);
+
+  @override
+  _CustomMultiSelectDialogState<T> createState() => _CustomMultiSelectDialogState<T>();
+}
+
+class _CustomMultiSelectDialogState<T> extends State<CustomMultiSelectDialog<T>> {
+  late List<T> _selected;
+  String _search = '';
+
+  @override
+  void initState() {
+    super.initState();
+    _selected = List<T>.from(widget.initialValue);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final filteredItems = widget.items
+        .where((item) => item.label.toLowerCase().contains(_search.toLowerCase()))
+        .toList();
+
+    return Dialog(
+      backgroundColor: Colors.white,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      child: Container(
+        width: 500,
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(widget.title, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: kBlue)),
+            const SizedBox(height: 12),
+            TextField(
+              decoration: InputDecoration(
+                hintText: 'Search...',
+                prefixIcon: Icon(Icons.search_rounded, color: kBlue),
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+              ),
+              onChanged: (val) => setState(() => _search = val),
+            ),
+            const SizedBox(height: 12),
+            SizedBox(
+              height: 300,
+              child: ListView.separated(
+                itemCount: filteredItems.length,
+                separatorBuilder: (_, __) => Container(
+                  height: 1,
+                  color: kBlue.withOpacity(0.2),
+                  margin: const EdgeInsets.symmetric(horizontal: 8),
+                ),
+                itemBuilder: (context, i) {
+                  final item = filteredItems[i];
+                  final isChecked = _selected.contains(item.value);
+                  return ListTile(
+                    title: Text(item.label),
+                    trailing: Checkbox(
+                      value: isChecked,
+                      activeColor: kBlue,
+                      onChanged: (checked) {
+                        setState(() {
+                          if (checked == true) {
+                            _selected.add(item.value);
+                          } else {
+                            _selected.remove(item.value);
+                          }
+                        });
+                      },
+                    ),
+                    onTap: () {
+                      setState(() {
+                        if (isChecked) {
+                          _selected.remove(item.value);
+                        } else {
+                          _selected.add(item.value);
+                        }
+                      });
+                    },
+                  );
+                },
+              ),
+            ),
+            const SizedBox(height: 16),
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(backgroundColor: kBlue),
+              onPressed: () {
+                Navigator.of(context).pop(_selected);
+              },
+              child: const Text('OK', style: TextStyle(color: Colors.white)),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
 class FilterScreen extends StatefulWidget {
   const FilterScreen({Key? key}) : super(key: key);
 
@@ -188,6 +299,62 @@ class _FilterScreenState extends State<FilterScreen> {
     }
   }
 
+  Widget _customMultiSelectField({
+    required BuildContext context,
+    required String title,
+    required List<String> items,
+    required List<String> selectedItems,
+    required void Function(List<String>) onConfirm,
+  }) {
+    return GestureDetector(
+      onTap: () async {
+        final result = await showDialog<List<String>>(
+          context: context,
+          builder: (ctx) => CustomMultiSelectDialog<String>(
+            items: items.map((e) => MultiSelectItem(e, e)).toList(),
+            initialValue: selectedItems,
+            onConfirm: (values) {
+              Navigator.of(ctx).pop(values);
+            },
+            title: title,
+          ),
+        );
+        if (result != null) {
+          onConfirm(result);
+        }
+      },
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 16),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(color: Colors.grey[300]!, width: 1),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.grey.withOpacity(0.08),
+              blurRadius: 8,
+              offset: Offset(0, 2),
+            ),
+          ],
+        ),
+        child: Row(
+          children: [
+            Expanded(
+              child: Text(
+                selectedItems.isEmpty ? title : selectedItems.join(', '),
+                style: GoogleFonts.poppins(fontSize: 15, color: selectedItems.isEmpty ? Colors.grey : Colors.black),
+                overflow: TextOverflow.ellipsis,
+                maxLines: 1,
+              ),
+            ),
+            const Icon(Icons.keyboard_arrow_down_rounded, color: Color(0xFF222222)),
+          ],
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final isLoadingAll = _isLoadingStatuses || _isLoadingCouriers || _isLoadingPlatforms || _isLoadingCities;
@@ -228,180 +395,64 @@ class _FilterScreenState extends State<FilterScreen> {
                           padding: const EdgeInsets.symmetric(vertical: 16),
                           child: Text(_statusError!, style: const TextStyle(color: Colors.red)),
                         )
-                      : Container(
-                          margin: const EdgeInsets.only(bottom: 16),
-                          decoration: BoxDecoration(
-                            color: Colors.white,
-                            borderRadius: BorderRadius.circular(14),
-                            border: Border.all(color: Colors.grey[300]!, width: 1),
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.grey.withOpacity(0.08),
-                                blurRadius: 8,
-                                offset: Offset(0, 2),
-                              ),
-                            ],
-                          ),
-                          child: MultiSelectDialogField<String>(
-                            items: statuses.map((e) => MultiSelectItem(e, e)).toList(),
-                            title: const Text('Select Status'),
-                            buttonText: Text('Select Status', style: GoogleFonts.poppins(fontSize: 15, color: Colors.black)),
-                            buttonIcon: const Icon(Icons.keyboard_arrow_down_rounded, color: Color(0xFF222222)),
-                            decoration: const BoxDecoration(
-                              color: Colors.transparent,
-                              border: Border.fromBorderSide(BorderSide.none),
-                            ),
-                            initialValue: selectedStatuses,
-                            onConfirm: (values) {
-                              setState(() {
-                                selectedStatuses = List<String>.from(values);
-                              });
-                            },
-                            chipDisplay: MultiSelectChipDisplay(
-                              chipColor: Colors.grey[200],
-                              textStyle: const TextStyle(color: Colors.black),
-                              onTap: (value) {
-                                setState(() {
-                                  selectedStatuses.remove(value);
-                                });
-                              },
-                            ),
-                          ),
+                      : _customMultiSelectField(
+                          context: context,
+                          title: 'Select Status',
+                          items: statuses,
+                          selectedItems: selectedStatuses,
+                          onConfirm: (values) {
+                            setState(() {
+                              selectedStatuses = List<String>.from(values);
+                            });
+                          },
                         ),
                   _platformError != null
                       ? Padding(
                           padding: const EdgeInsets.symmetric(vertical: 16),
                           child: Text(_platformError!, style: const TextStyle(color: Colors.red)),
                         )
-                      : Container(
-                          margin: const EdgeInsets.only(bottom: 16),
-                          decoration: BoxDecoration(
-                            color: Colors.white,
-                            borderRadius: BorderRadius.circular(14),
-                            border: Border.all(color: Colors.grey[300]!, width: 1),
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.grey.withOpacity(0.08),
-                                blurRadius: 8,
-                                offset: Offset(0, 2),
-                              ),
-                            ],
-                          ),
-                          child: MultiSelectDialogField<String>(
-                            items: platforms.map((e) => MultiSelectItem(e, e)).toList(),
-                            title: const Text('Select Platforms'),
-                            buttonText: Text('Select Platforms', style: GoogleFonts.poppins(fontSize: 15, color: Colors.black)),
-                            buttonIcon: const Icon(Icons.keyboard_arrow_down_rounded, color: Color(0xFF222222)),
-                            decoration: const BoxDecoration(
-                              color: Colors.transparent,
-                              border: Border.fromBorderSide(BorderSide.none),
-                            ),
-                            initialValue: selectedPlatforms,
-                            onConfirm: (values) {
-                              setState(() {
-                                selectedPlatforms = List<String>.from(values);
-                              });
-                            },
-                            chipDisplay: MultiSelectChipDisplay(
-                              chipColor: Colors.grey[200],
-                              textStyle: const TextStyle(color: Colors.black),
-                              onTap: (value) {
-                                setState(() {
-                                  selectedPlatforms.remove(value);
-                                });
-                              },
-                            ),
-                          ),
+                      : _customMultiSelectField(
+                          context: context,
+                          title: 'Select Platforms',
+                          items: platforms,
+                          selectedItems: selectedPlatforms,
+                          onConfirm: (values) {
+                            setState(() {
+                              selectedPlatforms = List<String>.from(values);
+                            });
+                          },
                         ),
                   _courierError != null
                       ? Padding(
                           padding: const EdgeInsets.symmetric(vertical: 16),
                           child: Text(_courierError!, style: const TextStyle(color: Colors.red)),
                         )
-                      : Container(
-                          margin: const EdgeInsets.only(bottom: 16),
-                          decoration: BoxDecoration(
-                            color: Colors.white,
-                            borderRadius: BorderRadius.circular(14),
-                            border: Border.all(color: Colors.grey[300]!, width: 1),
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.grey.withOpacity(0.08),
-                                blurRadius: 8,
-                                offset: Offset(0, 2),
-                              ),
-                            ],
-                          ),
-                          child: MultiSelectDialogField<String>(
-                            items: couriers.map((e) => MultiSelectItem(e, e)).toList(),
-                            title: const Text('Select Courier'),
-                            buttonText: Text('Select Courier', style: GoogleFonts.poppins(fontSize: 15, color: Colors.black)),
-                            buttonIcon: const Icon(Icons.keyboard_arrow_down_rounded, color: Color(0xFF222222)),
-                            decoration: const BoxDecoration(
-                              color: Colors.transparent,
-                              border: Border.fromBorderSide(BorderSide.none),
-                            ),
-                            initialValue: selectedCouriers,
-                            onConfirm: (values) {
-                              setState(() {
-                                selectedCouriers = List<String>.from(values);
-                              });
-                            },
-                            chipDisplay: MultiSelectChipDisplay(
-                              chipColor: Colors.grey[200],
-                              textStyle: const TextStyle(color: Colors.black),
-                              onTap: (value) {
-                                setState(() {
-                                  selectedCouriers.remove(value);
-                                });
-                              },
-                            ),
-                          ),
+                      : _customMultiSelectField(
+                          context: context,
+                          title: 'Select Courier',
+                          items: couriers,
+                          selectedItems: selectedCouriers,
+                          onConfirm: (values) {
+                            setState(() {
+                              selectedCouriers = List<String>.from(values);
+                            });
+                          },
                         ),
                   _cityError != null
                       ? Padding(
                           padding: const EdgeInsets.symmetric(vertical: 16),
                           child: Text(_cityError!, style: const TextStyle(color: Colors.red)),
                         )
-                      : Container(
-                          margin: const EdgeInsets.only(bottom: 16),
-                          decoration: BoxDecoration(
-                            color: Colors.white,
-                            borderRadius: BorderRadius.circular(14),
-                            border: Border.all(color: Colors.grey[300]!, width: 1),
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.grey.withOpacity(0.08),
-                                blurRadius: 8,
-                                offset: Offset(0, 2),
-                              ),
-                            ],
-                          ),
-                          child: MultiSelectDialogField<String>(
-                            items: cities.map((e) => MultiSelectItem(e, e)).toList(),
-                            title: const Text('Select Cities'),
-                            buttonText: Text('Select Cities', style: GoogleFonts.poppins(fontSize: 15, color: Colors.black)),
-                            buttonIcon: const Icon(Icons.keyboard_arrow_down_rounded, color: Color(0xFF222222)),
-                            decoration: const BoxDecoration(
-                              color: Colors.transparent,
-                              border: Border.fromBorderSide(BorderSide.none),
-                            ),
-                            initialValue: selectedCities,
-                            onConfirm: (values) {
-                              setState(() {
-                                selectedCities = List<String>.from(values);
-                              });
-                            },
-                            chipDisplay: MultiSelectChipDisplay(
-                              chipColor: Colors.grey[200],
-                              textStyle: const TextStyle(color: Colors.black),
-                              onTap: (value) {
-                                setState(() {
-                                  selectedCities.remove(value);
-                                });
-                              },
-                            ),
-                          ),
+                      : _customMultiSelectField(
+                          context: context,
+                          title: 'Select Cities',
+                          items: cities,
+                          selectedItems: selectedCities,
+                          onConfirm: (values) {
+                            setState(() {
+                              selectedCities = List<String>.from(values);
+                            });
+                          },
                         ),
                   const SizedBox(height: 24),
                   SizedBox(

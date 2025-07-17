@@ -4,6 +4,7 @@ import 'services/auth_service.dart';
 import 'services/rules_service.dart';
 import 'screens/splash_screen.dart';
 import 'screens/dashboard_screen.dart';
+import 'screens/sign_in_screen.dart';
 import 'controllers/sign_in_controller.dart';
 import 'controllers/dashboard_controller.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -24,59 +25,120 @@ void main() {
   runApp(const MyApp());
 }
 
-class MyApp extends StatelessWidget {
-  const MyApp({super.key});
+class InitialScreenSelector extends StatefulWidget {
+  const InitialScreenSelector({Key? key}) : super(key: key);
 
-  Future<Widget> _getInitialScreen() async {
-    final prefs = await SharedPreferences.getInstance();
-    final rememberMe = prefs.getBool('remember_me') ?? false;
-    final isLoggedIn = prefs.getBool('is_logged_in') ?? false;
-    
-    if (rememberMe && isLoggedIn) {
-      // User has "Remember Me" enabled and is logged in
-      // Load user data and go directly to dashboard
-      final authService = Get.find<AuthService>();
-      final user = await authService.loadUserData();
+  @override
+  State<InitialScreenSelector> createState() => _InitialScreenSelectorState();
+}
+
+class _InitialScreenSelectorState extends State<InitialScreenSelector> {
+  Widget? _initialScreen;
+  bool _isLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _determineInitialScreen();
+  }
+
+  Future<void> _determineInitialScreen() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final rememberMe = prefs.getBool('remember_me') ?? false;
+      final isLoggedIn = prefs.getBool('is_logged_in') ?? false;
       
-      if (user != null) {
-        return DashboardScreen();
-      } else {
-        // User data couldn't be loaded, clear saved data and go to onboarding
-        await prefs.remove('remember_email');
-        await prefs.remove('remember_password');
-        await prefs.setBool('remember_me', false);
-        await prefs.setBool('is_logged_in', false);
-        return OnboardingScreen();
-      }
-    } else if (rememberMe && !isLoggedIn) {
-      // User has "Remember Me" enabled but not logged in
-      // Check if we have saved credentials and try to login
-      final savedEmail = prefs.getString('remember_email') ?? '';
-      final savedPassword = prefs.getString('remember_password') ?? '';
+      print('🔍 Initial Screen Check:');
+      print('   Remember Me: $rememberMe');
+      print('   Is Logged In: $isLoggedIn');
       
-      if (savedEmail.isNotEmpty && savedPassword.isNotEmpty) {
+      // Debug: Print all relevant SharedPreferences values
+      final userId = prefs.getString('user_id') ?? 'null';
+      final email = prefs.getString('email') ?? 'null';
+      final rememberEmail = prefs.getString('remember_email') ?? 'null';
+      print('   Debug - user_id: $userId');
+      print('   Debug - email: $email');
+      print('   Debug - remember_email: $rememberEmail');
+      
+      // First, check if user is already logged in (regardless of Remember Me)
+      if (isLoggedIn) {
+        print('   ✅ User is logged in, loading user data...');
         final authService = Get.find<AuthService>();
-        final loginSuccess = await authService.login(savedEmail, savedPassword);
+        final user = await authService.loadUserData();
         
-        if (loginSuccess) {
-          return DashboardScreen();
+        if (user != null) {
+          print('   ✅ User data loaded successfully, going to Dashboard');
+          setState(() {
+            _initialScreen = DashboardScreen();
+            _isLoading = false;
+          });
+          return;
         } else {
-          // Login failed, clear saved credentials and go to onboarding
-          await prefs.remove('remember_email');
-          await prefs.remove('remember_password');
-          await prefs.setBool('remember_me', false);
+          print('   ❌ User data couldn\'t be loaded, clearing login status');
+          // User data couldn't be loaded, clear login status
           await prefs.setBool('is_logged_in', false);
-          return OnboardingScreen();
         }
-      } else {
-        // No saved credentials, go to onboarding
-        return OnboardingScreen();
       }
-    } else {
-      // Remember me not checked or user not logged in, go to onboarding
-      return OnboardingScreen();
+      
+      // Check Remember Me scenarios
+      if (rememberMe) {
+        print('   🔄 Remember Me enabled, checking saved credentials...');
+        // User has "Remember Me" enabled but not logged in
+        // Check if we have saved credentials and try to login
+        final savedEmail = prefs.getString('remember_email') ?? '';
+        final savedPassword = prefs.getString('remember_password') ?? '';
+        
+        if (savedEmail.isNotEmpty && savedPassword.isNotEmpty) {
+          print('   🔄 Attempting auto-login with saved credentials...');
+          final authService = Get.find<AuthService>();
+          final loginSuccess = await authService.login(savedEmail, savedPassword);
+          
+          if (loginSuccess) {
+            print('   ✅ Auto-login successful, going to Dashboard');
+            setState(() {
+              _initialScreen = DashboardScreen();
+              _isLoading = false;
+            });
+            return;
+          } else {
+            print('   ❌ Auto-login failed, clearing saved credentials');
+            // Login failed, clear saved credentials
+            await prefs.remove('remember_email');
+            await prefs.remove('remember_password');
+            await prefs.setBool('remember_me', false);
+          }
+        } else {
+          print('   ❌ No saved credentials found');
+        }
+      }
+      
+      // Default: go to onboarding
+      print('   📱 Going to Onboarding screen');
+      setState(() {
+        _initialScreen = OnboardingScreen();
+        _isLoading = false;
+      });
+    } catch (e) {
+      print('   ❌ Error in initial screen determination: $e');
+      // If any error occurs, go to onboarding
+      setState(() {
+        _initialScreen = OnboardingScreen();
+        _isLoading = false;
+      });
     }
   }
+
+  @override
+  Widget build(BuildContext context) {
+    if (_isLoading) {
+      return const SplashScreen();
+    }
+    return _initialScreen ?? const OnboardingScreen();
+  }
+}
+
+class MyApp extends StatelessWidget {
+  const MyApp({super.key});
 
   // This widget is the root of your application.
   @override
@@ -104,6 +166,8 @@ class MyApp extends StatelessWidget {
         GetPage(name: '/menu', page: () => MenuScreen()),
         GetPage(name: '/help-videos', page: () => HelpVideosScreen()),
         GetPage(name: '/profile', page: () => ProfileScreen()),
+        GetPage(name: '/sign-in', page: () => SignInScreen()),
+        GetPage(name: '/onboarding', page: () => OnboardingScreen()),
       ],
       unknownRoute: GetPage(
         name: '/notfound',
@@ -118,8 +182,8 @@ class MyApp extends StatelessWidget {
         // the application has a purple toolbar. Then, without quitting the app,
         // try changing the seedColor in the colorScheme below to Colors.green
         // and then invoke "hot reload" (save your changes or press the "hot
-        // reload" button in a Flutter-supported IDE, or press "r" if you used
-        // the command line to start the app).
+        // reload" button in a Flutter-supported IDE, or press "r" if the command
+        // line to start the app).
         //
         // Notice that the counter didn't reset back to zero; the application
         // state is not lost during the reload. To reset the state, use hot
@@ -130,16 +194,7 @@ class MyApp extends StatelessWidget {
         colorScheme: ColorScheme.fromSeed(seedColor: Color(0xFF007AFF)),
         useMaterial3: true,
       ),
-      home: FutureBuilder<Widget>(
-        future: _getInitialScreen(),
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.done) {
-            return snapshot.data!;
-          }
-          // Show splash while loading
-          return const SplashScreen();
-        },
-      ),
+      home: const InitialScreenSelector(),
     );
   }
 }

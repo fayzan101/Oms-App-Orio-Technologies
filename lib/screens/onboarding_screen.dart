@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import 'sign_in_screen.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class OnboardingScreen extends StatelessWidget {
   const OnboardingScreen({Key? key}) : super(key: key);
@@ -55,9 +56,17 @@ class OnboardingScreen extends StatelessWidget {
                   width: mediaQuery.size.width * 0.55,
                   height: 48,
                   child: ElevatedButton(
-                    onPressed: () {
-                      Get.to(() => SignInScreen());
-                    },
+                    onPressed: () async {
+  final prefs = await SharedPreferences.getInstance();
+  final rememberMe = prefs.getBool('remember_me') ?? false;
+  final isLoggedIn = prefs.getBool('is_logged_in') ?? false;
+
+  if (rememberMe && isLoggedIn) {
+    Get.offAllNamed('/dashboard');
+  } else {
+    Get.offAll(() => SignInScreen());
+  }
+},
                     style: ElevatedButton.styleFrom(
                       backgroundColor: const Color(0xFF007AFF),
                       shape: RoundedRectangleBorder(

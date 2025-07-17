@@ -11,6 +11,7 @@ import 'dart:async';
 import '../network/order_service.dart';
 import '../utils/custom_snackbar.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'order_list_screen.dart';
 
 class OrderItem {
   final String name;
@@ -46,6 +47,10 @@ class _CreateOrderScreenState extends State<CreateOrderScreen> {
   bool _isLoadingPlatforms = false;
   String? _platformError;
   String _platformSearch = '';
+  // Keys for each order field for validation
+  final List<GlobalKey<_OrderFieldState>> _orderFieldKeys = List.generate(11, (_) => GlobalKey<_OrderFieldState>());
+  // In _CreateOrderScreenState, add controllers for each field
+  final List<TextEditingController> _controllers = List.generate(11, (_) => TextEditingController());
 
   @override
   void initState() {
@@ -416,14 +421,23 @@ class _CreateOrderScreenState extends State<CreateOrderScreen> {
   }
 
   Future<void> _submitOrder() async {
+    bool hasError = false;
     if (_orders.isEmpty) {
       customSnackBar('Error', 'Please add at least one product');
-      return;
+      hasError = true;
     }
     if (selectedCity == null || selectedCity!.isEmpty) {
       customSnackBar('Error', 'Please select a city');
-      return;
+      hasError = true;
     }
+    // Validate customer detail fields
+    for (final field in _orderFieldKeys) {
+      if (field.currentState != null) {
+        final valid = field.currentState!.validate();
+        if (!valid) hasError = true;
+      }
+    }
+    if (hasError) return;
     setState(() { _isSaving = true; });
     try {
       final acno = _authService.getCurrentAcno();
@@ -451,7 +465,7 @@ class _CreateOrderScreenState extends State<CreateOrderScreen> {
       final response = await OrderService.createOrder(orderList: orderList);
       if (response['status'] == 1 || response['success'] == true) {
         customSnackBar('Success', 'Order created successfully!');
-        // Optionally navigate to order list screen here
+        Get.offAll(() => OrderListScreen());
       } else {
         customSnackBar('Error', response['message'] ?? 'Failed to create order');
       }
@@ -676,12 +690,12 @@ class _CreateOrderScreenState extends State<CreateOrderScreen> {
                    padding: const EdgeInsets.symmetric(horizontal: 16),
                    child: Column(
                      children: [
-                       _OrderField(hint: 'Full Name'),
-                       _OrderField(hint: 'Email'),
-                       _OrderField(hint: 'Phone No', keyboardType: TextInputType.number),
-                       _OrderField(hint: 'Order Reference Code'),
-                       _OrderField(hint: 'Address'),
-                       _OrderField(hint: 'Landmark'),
+                       _OrderField(key: _orderFieldKeys[0], controller: _controllers[0], hint: 'Full Name', isRequired: true),
+                       _OrderField(key: _orderFieldKeys[1], controller: _controllers[1], hint: 'Email', isRequired: true),
+                       _OrderField(key: _orderFieldKeys[2], controller: _controllers[2], hint: 'Phone No', keyboardType: TextInputType.number, isRequired: true),
+                       _OrderField(key: _orderFieldKeys[3], controller: _controllers[3], hint: 'Order Reference Code', isRequired: true),
+                       _OrderField(key: _orderFieldKeys[4], controller: _controllers[4], hint: 'Address', isRequired: true),
+                       _OrderField(key: _orderFieldKeys[5], controller: _controllers[5], hint: 'Landmark', isRequired: true),
                        // Country (fixed)
                        Padding(
                          padding: const EdgeInsets.symmetric(vertical: 8),
@@ -737,30 +751,11 @@ class _CreateOrderScreenState extends State<CreateOrderScreen> {
                                  ),
                                ),
                        ),
-                       _OrderField(hint: 'Latitude', keyboardType: TextInputType.number),
-                       _OrderField(hint: 'Longitude', keyboardType: TextInputType.number),
-                       _OrderField(hint: 'Weight', keyboardType: TextInputType.number),
-                       _OrderField(hint: 'Shipping Charges'),
-                       // Payment Type (fixed options)
-                       Padding(
-                         padding: const EdgeInsets.symmetric(vertical: 8),
-                         child: DropdownButtonFormField<String>(
-                           value: selectedPaymentType,
-                           items: paymentTypes.map((type) => DropdownMenuItem(value: type, child: Text(type))).toList(),
-                           onChanged: (val) => setState(() => selectedPaymentType = val ?? 'COD'),
-                           decoration: InputDecoration(
-                             labelText: 'Payment Type',
-                             filled: true,
-                             fillColor: const Color(0xFFF5F5F7),
-                             border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide.none),
-                             isDense: true,
-                             contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-                           ),
-                           style: const TextStyle(fontSize: 16, color: Colors.black),
-                           icon: const Icon(Icons.keyboard_arrow_down_rounded, color: Color(0xFF222222)),
-                         ),
-                       ),
-                       _OrderField(hint: 'Remarks'),
+                       _OrderField(key: _orderFieldKeys[6], controller: _controllers[6], hint: 'Latitude', keyboardType: TextInputType.number),
+                       _OrderField(key: _orderFieldKeys[7], controller: _controllers[7], hint: 'Longitude', keyboardType: TextInputType.number),
+                       _OrderField(key: _orderFieldKeys[8], controller: _controllers[8], hint: 'Weight', keyboardType: TextInputType.number),
+                       _OrderField(key: _orderFieldKeys[9], controller: _controllers[9], hint: 'Shipping Charges'),
+                       _OrderField(key: _orderFieldKeys[10], controller: _controllers[10], hint: 'Remarks'),
                      ],
                    ),
                  ),
@@ -824,61 +819,73 @@ class _CreateOrderScreenState extends State<CreateOrderScreen> {
         onReportsTap: () {
           Get.offAll(() => report.ReportsScreen());
         },
+        onOrderListTap: () {
+          Get.offAll(() => OrderListScreen());
+        },
       ),
     );
   }
 }
 
-class _OrderField extends StatelessWidget {
+class _OrderField extends StatefulWidget {
   final String hint;
-  final TextEditingController? controller;
   final TextInputType? keyboardType;
-  const _OrderField({required this.hint, this.controller, this.keyboardType});
+  final bool isRequired;
+  final TextEditingController? controller;
+  const _OrderField({Key? key, required this.hint, this.keyboardType, this.isRequired = false, this.controller}) : super(key: key);
+
+  @override
+  State<_OrderField> createState() => _OrderFieldState();
+}
+
+class _OrderFieldState extends State<_OrderField> {
+  TextEditingController get _controller => widget.controller ?? _internalController;
+  final TextEditingController _internalController = TextEditingController();
+  bool _showError = false;
+
+  @override
+  void initState() {
+    super.initState();
+  }
+
+  bool validate() {
+    if (!widget.isRequired) return true;
+    final isValid = _controller.text.trim().isNotEmpty;
+    setState(() {
+      _showError = !isValid;
+    });
+    return isValid;
+  }
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 14),
-      decoration: BoxDecoration(
-        boxShadow: [
-          BoxShadow(
-            color: Colors.grey.withOpacity(0.08),
-            blurRadius: 8,
-            offset: Offset(0, 2),
-          ),
-        ],
-      ),
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8),
       child: TextField(
-        controller: controller,
-        keyboardType: keyboardType,
-        style: GoogleFonts.poppins(
-          fontSize: 15,
-          color: Colors.black,
-          fontWeight: FontWeight.w400,
-        ),
+        controller: _controller,
+        keyboardType: widget.keyboardType,
         decoration: InputDecoration(
-          labelText: hint,
-          labelStyle: GoogleFonts.poppins(
-            fontSize: 14,
-            color: Colors.grey[700],
-            fontWeight: FontWeight.w500,
-          ),
+          labelText: widget.hint,
           filled: true,
-          fillColor: Colors.white,
-          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          fillColor: const Color(0xFFF5F5F7),
           border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(14),
-            borderSide: BorderSide(color: Colors.grey[300]!, width: 1),
+            borderRadius: BorderRadius.circular(10),
+            borderSide: BorderSide(
+              color: _showError ? Colors.red : Colors.transparent,
+              width: 1.5,
+            ),
           ),
           enabledBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(14),
-            borderSide: BorderSide(color: Colors.grey[300]!, width: 1),
+            borderRadius: BorderRadius.circular(10),
+            borderSide: BorderSide(
+              color: _showError ? Colors.red : Colors.transparent,
+              width: 1.5,
+            ),
           ),
-          focusedBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(14),
-            borderSide: BorderSide(color: Colors.blue[300]!, width: 1.5),
-          ),
+          isDense: true,
+          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
         ),
+        style: const TextStyle(fontSize: 16, color: Colors.black),
       ),
     );
   }

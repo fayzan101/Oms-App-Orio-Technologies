@@ -81,12 +81,12 @@ class SignInController extends GetxController {
       await prefs.setBool('remember_me', false);
     }
 
-    print('Attempting login...');
+    print('🔐 Attempting login...');
     final success = await authService.login(email, password);
-    print('Login success: $success');
+    print('🔐 Login success: $success');
 
     if (success) {
-      print('Navigating to dashboard...');
+      print('🔐 Login successful, navigating to dashboard...');
       Get.offAllNamed('/dashboard');
       Future.delayed(const Duration(milliseconds: 300), () {
         customSnackBar('Success', 'Login successful!');

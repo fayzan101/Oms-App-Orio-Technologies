@@ -496,6 +496,7 @@ class _OrderListScreenState extends State<OrderListScreen> {
     }
     return Scaffold(
       backgroundColor: Colors.white,
+      resizeToAvoidBottomInset: false,
       appBar: AppBar(
         backgroundColor: Colors.white,
         shadowColor: Colors.white,
@@ -697,6 +698,11 @@ class _OrderListScreenState extends State<OrderListScreen> {
                 if (selectedOrders.isNotEmpty) ...[
                   GestureDetector(
                     onTap: () {
+                      // Prevent CN creation if filter is set to Booked
+                      if (_activeFilters != null && _activeFilters!['order'] == 'Booked') {
+                        customSnackBar('Error', 'This order is already booked, please try another.');
+                        return;
+                      }
                       final list = ((_searchQuery != null && _searchQuery!.isNotEmpty) || _activeFilters != null ? _filteredOrders : orders);
                       bool anyBooked = selectedOrders.any((idx) =>
                         (list[idx]['status']?.toString().toLowerCase() == 'booked')
@@ -705,7 +711,9 @@ class _OrderListScreenState extends State<OrderListScreen> {
                         customSnackBar('Error', 'The order is already booked, please try another CN.');
                         return;
                       }
-                      Get.to(() => const CreateCnScreen());
+                      // Pass the first selected order to CreateCnScreen
+                      final selectedOrder = list[selectedOrders.first];
+                      Get.to(() => CreateCnScreen(order: selectedOrder));
                     },
                     child: const Text('Create CN', style: TextStyle(fontFamily: 'SF Pro Display', fontWeight: FontWeight.w500, fontSize: 15, color: Color(0xFF007AFF), decoration: TextDecoration.underline)),
                   ),

@@ -38,14 +38,17 @@ class AuthService extends GetxService {
       
       if (loginResponse.status == 1 && loginResponse.payload.isNotEmpty) {
         // Login successful
+        print('🔐 Login API response successful');
         currentUser.value = loginResponse.payload.first;
         
         // Save user data to SharedPreferences
         await _saveUserData(loginResponse.payload.first);
         
+        print('🔐 Login method returning true');
         return true;
       } else {
         // Login failed
+        print('🔐 Login API response failed: ${loginResponse.message}');
         errorMessage.value = loginResponse.message.isNotEmpty 
             ? loginResponse.message 
             : 'Login failed. Please check your credentials.';
@@ -179,8 +182,17 @@ class AuthService extends GetxService {
       await prefs.setString('phone_no', user.phoneNo);
       await prefs.setString('otp', user.otp);
       await prefs.setBool('is_logged_in', true);
+      
+      print('💾 User data saved successfully:');
+      print('   User ID: ${user.userId}');
+      print('   Email: ${user.email}');
+      print('   is_logged_in: true');
+      
+      // Verify the data was saved
+      final savedLoginStatus = prefs.getBool('is_logged_in') ?? false;
+      print('   Verification - is_logged_in: $savedLoginStatus');
     } catch (e) {
-      print('Error saving user data: $e');
+      print('❌ Error saving user data: $e');
     }
   }
 
@@ -190,7 +202,13 @@ class AuthService extends GetxService {
       final prefs = await SharedPreferences.getInstance();
       final isLoggedIn = prefs.getBool('is_logged_in') ?? false;
       
-      if (!isLoggedIn) return null;
+      print('📂 Loading user data:');
+      print('   is_logged_in: $isLoggedIn');
+      
+      if (!isLoggedIn) {
+        print('   ❌ User not logged in, returning null');
+        return null;
+      }
       
       final user = User(
         userId: prefs.getString('user_id') ?? '',
@@ -203,10 +221,14 @@ class AuthService extends GetxService {
         otp: prefs.getString('otp') ?? '',
       );
       
+      print('   ✅ User data loaded:');
+      print('   User ID: ${user.userId}');
+      print('   Email: ${user.email}');
+      
       currentUser.value = user;
       return user;
     } catch (e) {
-      print('Error loading user data: $e');
+      print('❌ Error loading user data: $e');
       return null;
     }
   }
