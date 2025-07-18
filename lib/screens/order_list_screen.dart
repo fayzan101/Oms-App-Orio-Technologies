@@ -246,13 +246,33 @@ class _OrderListScreenState extends State<OrderListScreen> {
     }
   }
 
-  Future<void> _deleteOrder(String orderId) async {
+  Future<void> _deleteOrder(String orderId, {dynamic order}) async {
     try {
       final acno = _authService.getCurrentAcno();
       if (acno == null) {
         customSnackBar('Error', 'User not logged in');
         return;
       }
+      // If is_shipment == 1, use cancelshipments API
+      if (order != null && (order['is_shipment'] == 1 || order['is_shipment'] == '1')) {
+        final dio = Dio();
+        final response = await dio.post(
+          'https://oms.getorio.com/api/cancelshipments',
+          data: {
+            "acno": acno,
+            "order_id": orderId,
+          },
+          options: Options(headers: {'Content-Type': 'application/json'}),
+        );
+        if (response.statusCode == 200 && (response.data['status'] == 1 || response.data['success'] == true)) {
+          customSnackBar('Success', 'Shipment cancelled successfully!');
+          await fetchOrders(reset: true);
+        } else {
+          customSnackBar('Error', response.data['message'] ?? 'Failed to cancel shipment');
+        }
+        return;
+      }
+      // Otherwise, use the existing delete logic
       final dio = Dio();
       final response = await dio.post(
         'https://stagingoms.orio.digital/api/order/update',
@@ -716,9 +736,9 @@ class _OrderListScreenState extends State<OrderListScreen> {
                         customSnackBar('Error', 'The order is already booked, please try another CN.');
                         return;
                       }
-                      // Pass the first selected order to CreateCnScreen
-                      final selectedOrder = list[selectedOrders.first];
-                      Get.to(() => CreateCnScreen(order: selectedOrder));
+                      // Pass all selected orders to CreateCnScreen
+                      final selectedOrdersList = selectedOrders.map((i) => list[i]).toList();
+                      Get.to(() => CreateCnScreen(orders: selectedOrdersList));
                     },
                     child: const Text('Create CN', style: TextStyle(fontFamily: 'SF Pro Display', fontWeight: FontWeight.w500, fontSize: 15, color: Color(0xFF007AFF), decoration: TextDecoration.underline)),
                   ),
@@ -918,7 +938,7 @@ class _OrderListScreenState extends State<OrderListScreen> {
                                                   builder: (context) => _DeleteConfirmationBottomSheet(),
                                                 );
                                                 if (confirmed == true) {
-                                                  await _deleteOrder(order['id'].toString());
+                                                  await _deleteOrder(order['id'].toString(), order: order);
                                                 }
                                               },
                                               child: Row(

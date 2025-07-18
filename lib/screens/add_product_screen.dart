@@ -33,6 +33,7 @@ class _AddProductScreenState extends State<AddProductScreen> {
   bool _isLoadingProducts = false;
   String? _productError;
   final AuthService _authService = Get.find<AuthService>();
+  List<Map<String, dynamic>> productData = [];
 
   @override
   void initState() {
@@ -55,14 +56,14 @@ class _AddProductScreenState extends State<AddProductScreen> {
         return;
       }
       final service = StatementService();
-      final productData = await service.fetchProductSuggestions(
+      final data = await service.fetchProductSuggestions(
         acno: acno,
         platformId: widget.platformId ?? 0,
         customerPlatformId: widget.customerPlatformId,
       );
-      final productNames = productData.map((e) => e['product_name']?.toString() ?? '').where((e) => e.isNotEmpty).toList();
       setState(() {
-        productList = productNames;
+        productData = data;
+        productList = data.map((e) => e['product_name']?.toString() ?? '').where((e) => e.isNotEmpty).toList();
         _isLoadingProducts = false;
       });
     } catch (e) {
@@ -75,18 +76,6 @@ class _AddProductScreenState extends State<AddProductScreen> {
 
   Future<void> _showProductPicker() async {
     if (_isLoadingProducts) {
-      showDialog(
-        context: context,
-        builder: (context) => const AlertDialog(
-          content: Row(
-            children: [
-              CircularProgressIndicator(),
-              SizedBox(width: 16),
-              Text('Loading products...'),
-            ],
-          ),
-        ),
-      );
       return;
     }
     if (_productError != null) {
@@ -141,7 +130,7 @@ class _AddProductScreenState extends State<AddProductScreen> {
       builder: (context) {
         List<String> filtered = List.from(productList);
         return Dialog(
-          backgroundColor: const Color(0xFFE6F0FA),
+          backgroundColor: Colors.white,
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
@@ -172,11 +161,11 @@ class _AddProductScreenState extends State<AddProductScreen> {
                     },
                     decoration: InputDecoration(
                       hintText: 'Search product',
-                      hintStyle: GoogleFonts.poppins(color: Color(0xFF6B6B6B)),
+                      hintStyle: GoogleFonts.poppins(color: Color(0xFF6B6B6B), fontSize: 13),
                       prefixIcon: Icon(Icons.search_rounded, color: Color(0xFF007AFF)),
                       filled: true,
                       fillColor: Colors.white,
-                      contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                      contentPadding: EdgeInsets.symmetric(horizontal: 10, vertical: 10),
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
                         borderSide: BorderSide(color: Color(0xFF007AFF)),
@@ -225,7 +214,9 @@ class _AddProductScreenState extends State<AddProductScreen> {
     if (picked != null) {
       setState(() {
         selectedProduct = picked;
+        // Optionally, update price/sku fields here if you want to auto-fill
       });
+      // Do NOT pop here!
     }
   }
 
@@ -301,10 +292,11 @@ class _AddProductScreenState extends State<AddProductScreen> {
               ),
               child: TextField(
                 controller: skuController,
-                decoration: const InputDecoration(
+                decoration: InputDecoration(
                   hintText: 'SKU Code',
+                  hintStyle: GoogleFonts.poppins(color: Color(0xFF6B6B6B), fontSize: 13),
                   border: InputBorder.none,
-                  contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 18),
+                  contentPadding: EdgeInsets.symmetric(horizontal: 10, vertical: 10),
                 ),
                 style: TextStyle(fontFamily: 'SF Pro Display', fontSize: 15, color: Colors.black),
               ),
@@ -327,10 +319,11 @@ class _AddProductScreenState extends State<AddProductScreen> {
               child: TextField(
                 controller: priceController,
                 keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                decoration: const InputDecoration(
+                decoration: InputDecoration(
                   hintText: 'Price',
+                  hintStyle: GoogleFonts.poppins(color: Color(0xFF6B6B6B), fontSize: 13),
                   border: InputBorder.none,
-                  contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 18),
+                  contentPadding: EdgeInsets.symmetric(horizontal: 10, vertical: 10),
                 ),
                 style: const TextStyle(fontFamily: 'SF Pro Display', fontSize: 15, color: Colors.black),
               ),
@@ -399,14 +392,26 @@ class _AddProductScreenState extends State<AddProductScreen> {
                     );
                     return;
                   }
-                  final order = OrderItem(
-                    name: selectedProduct,
-                    sku: skuController.text,
-                    refCode: '079586', // You can generate or get this from input
-                    qty: quantity,
-                    price: double.tryParse(priceController.text) ?? 0.0,
+                  final selectedProductObj = productData.firstWhere(
+                    (p) => p['product_name']?.toString().trim().toLowerCase() == selectedProduct.trim().toLowerCase(),
+                    orElse: () => <String, dynamic>{},
                   );
-                  Navigator.of(context).pop(order);
+                  if (selectedProductObj.isNotEmpty) {
+                    final productId = selectedProductObj['id']?.toString() ?? '';
+                    final locationId = selectedProductObj['location_id']?.toString() ?? '';
+                    final refCode = selectedProductObj['ref_code']?.toString() ?? '';
+                    Navigator.of(context).pop(OrderItem(
+                      name: selectedProduct,
+                      sku: selectedProductObj['sku'] ?? '',
+                      refCode: refCode,
+                      qty: quantity,
+                      price: double.tryParse(priceController.text) ?? 0,
+                      productCode: selectedProductObj['id']?.toString() ?? '',
+                      variationId: selectedProductObj['variation_id']?.toString() ?? '',
+                      productId: productId,
+                      locationId: locationId,
+                    ));
+                  }
                 },
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color(0xFF007AFF),
@@ -492,15 +497,10 @@ class _ProductField extends StatelessWidget {
         keyboardType: keyboardType,
         decoration: InputDecoration(
           hintText: hint,
-          hintStyle: const TextStyle(
-            fontFamily: 'SF Pro Display',
-            fontWeight: FontWeight.w400,
-            fontSize: 15,
-            color: Color(0xFF6B6B6B),
-          ),
+          hintStyle: GoogleFonts.poppins(color: Color(0xFF6B6B6B), fontSize: 13),
           filled: true,
           fillColor: Color(0xFFF5F5F7),
-          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 18),
+          contentPadding: EdgeInsets.symmetric(horizontal: 10, vertical: 10),
           border: OutlineInputBorder(
             borderRadius: BorderRadius.circular(10),
             borderSide: BorderSide.none,

@@ -12,6 +12,7 @@ import '../network/order_service.dart';
 import '../utils/custom_snackbar.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'order_list_screen.dart';
+import 'package:dio/dio.dart';
 
 class OrderItem {
   final String name;
@@ -19,7 +20,21 @@ class OrderItem {
   final String refCode;
   final int qty;
   final double price;
-  OrderItem({required this.name, required this.sku, required this.refCode, required this.qty, required this.price});
+  final String productCode;
+  final String variationId;
+  final String productId;
+  final String locationId;
+  OrderItem({
+    required this.name,
+    required this.sku,
+    required this.refCode,
+    required this.qty,
+    required this.price,
+    required this.productCode,
+    required this.variationId,
+    required this.productId,
+    required this.locationId,
+  });
 }
 
 class CreateOrderScreen extends StatefulWidget {
@@ -52,6 +67,7 @@ class _CreateOrderScreenState extends State<CreateOrderScreen> {
   // In _CreateOrderScreenState, add controllers for each field
   final List<TextEditingController> _controllers = List.generate(11, (_) => TextEditingController());
   final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
+  List<Map<String, dynamic>> cityListData = [];
 
   @override
   void initState() {
@@ -63,17 +79,37 @@ class _CreateOrderScreenState extends State<CreateOrderScreen> {
   Future<void> _fetchCities() async {
     setState(() { _isLoadingCities = true; });
     try {
-      final acno = _authService.getCurrentAcno();
-      if (acno == null || acno.isEmpty) {
+      // Use a default country_id for now, or make it dynamic if you have a country dropdown
+      final countryId = 1;
+      final dio = Dio();
+      final response = await dio.post(
+        'https://oms.getorio.com/api/cities',
+        data: {"country_id": countryId},
+        options: Options(headers: {'Content-Type': 'application/json'}),
+      );
+      if (response.statusCode == 200 && response.data != null) {
+        final data = response.data;
+        List<String> cities = [];
+        List<Map<String, dynamic>> cityObjs = [];
+        if (data is List) {
+          cityObjs = List<Map<String, dynamic>>.from(data);
+          cities = data.map<String>((c) => c['city_name']?.toString() ?? '').where((c) => c.isNotEmpty).toList();
+        } else if (data is Map && data['payload'] is List) {
+          cityObjs = List<Map<String, dynamic>>.from(data['payload']);
+          cities = (data['payload'] as List)
+              .map<String>((c) => c['city_name']?.toString() ?? '')
+              .where((c) => c.isNotEmpty)
+              .toList();
+        }
+        setState(() {
+          cityList = cities;
+          cityListData = cityObjs;
+          if (cityList.isNotEmpty) selectedCity = cityList.first;
+          _isLoadingCities = false;
+        });
+      } else {
         setState(() { _isLoadingCities = false; });
-        return;
       }
-      final cities = await StatementService().fetchCityList(acno);
-      setState(() {
-        cityList = cities.map((c) => c['name']?.toString() ?? '').where((c) => c.isNotEmpty).toList();
-        if (cityList.isNotEmpty) selectedCity = cityList.first;
-        _isLoadingCities = false;
-      });
     } catch (e) {
       setState(() { _isLoadingCities = false; });
     }
@@ -126,7 +162,7 @@ class _CreateOrderScreenState extends State<CreateOrderScreen> {
           builder: (context, setState) {
             filteredPlatforms = _platforms.where((p) => (p['platform_name']?.toString().toLowerCase() ?? '').contains(search.toLowerCase())).toList();
             return Dialog(
-              backgroundColor: const Color(0xFFE6F0FA), // Light blue background
+              backgroundColor: Colors.white, // White background
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
               child: Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
@@ -485,6 +521,171 @@ class _CreateOrderScreenState extends State<CreateOrderScreen> {
     }
   }
 
+  Future<void> _createOrder() async {
+    try {
+      // Extract from form fields/controllers
+      final remarks = _controllers[10].text.trim();
+      final shippingCharges = double.tryParse(_controllers[9].text.trim()) ?? 0;
+      final consigneeLatitude = double.tryParse(_controllers[6].text.trim()) ?? 0;
+      final consigneeLongitude = double.tryParse(_controllers[7].text.trim()) ?? 0;
+      final weight = double.tryParse(_controllers[8].text.trim()) ?? 0;
+      final orderRef = _controllers[3].text.trim();
+      final acno = _authService.getCurrentAcno();
+      // Platform extraction with fallback to 0
+      final platformId = int.tryParse(_selectedPlatform?['id']?.toString() ?? '') ?? 0;
+      final storeName = _selectedPlatform?['platform_name']?.toString() ?? '';
+      final dio = Dio();
+      final product = _orders.isNotEmpty ? _orders.first : null;
+      final productName = product?.name ?? '';
+      final quantity = product?.qty ?? 0;
+      final amount = product?.price ?? 0;
+      final skuCode = product?.sku ?? '';
+      final paymentMethodId = selectedPaymentType == 'CC' ? 2 : 1;
+      // Shipper and billing details (hardcoded as per requirements)
+      final shipperName = "DEMO";
+      final shipperEmail = "demo@gmail.com";
+      final shipperContact = "none";
+      final shipperAddress = "Demo address";
+      final billingName = "DEMO";
+      final billingEmail = "demo@gmail.com";
+      final billingContact = "none";
+      final billingAddress = "Demo address";
+      final orderDate = DateTime.now().toIso8601String().split('T')[0];
+      // Product details, ensure all IDs are int, fallback to 0
+      final productCode = product?.productCode ?? '';
+      final variationId = int.tryParse(product?.variationId ?? '') ?? 0;
+      final productId = int.tryParse(product?.productId ?? '') ?? 0;
+      final locationId = int.tryParse(product?.locationId ?? '') ?? 0;
+      final refcode = product?.refCode ?? '';
+      // City extraction
+      final cityName = selectedCity ?? '';
+      final selectedCityObj = cityListData.firstWhere(
+        (c) => c['city_name'] == cityName,
+        orElse: () => <String, dynamic>{},
+      );
+      final originCountryId = int.tryParse(selectedCityObj['country_id']?.toString() ?? '') ?? 1;
+      final originProvinceId = int.tryParse(selectedCityObj['province_id']?.toString() ?? '') ?? 1;
+      final originCityId = int.tryParse(selectedCityObj['id']?.toString() ?? '') ?? 655;
+      final destinationCountryId = int.tryParse(selectedCityObj['country_id']?.toString() ?? '') ?? 1;
+      final destinationProvinceId = int.tryParse(selectedCityObj['province_id']?.toString() ?? '') ?? 1;
+      final destinationCityId = int.tryParse(selectedCityObj['id']?.toString() ?? '') ?? 655;
+      final piece = _orders.fold<int>(0, (sum, item) => sum + item.qty);
+      final orderAmount = _orders.fold<double>(0, (sum, item) => sum + (item.qty * item.price));
+      // Consignee details from form
+      final consigneeName = _controllers[0].text.trim();
+      final consigneeEmail = _controllers[1].text.trim();
+      final consigneeContact = _controllers[2].text.trim();
+      final consigneeAddress = _controllers[4].text.trim();
+      final cnicNumber = "32323-2381822-3"; // Hardcoded as per requirements
+      // Use a dynamic, valid token from AuthService if available
+      final token = await _authService.getApiKey();
+      final body = [
+        {
+          "acno": acno,
+          "shipper_name": shipperName,
+          "shipper_address": shipperAddress,
+          "shipper_email": shipperEmail,
+          "shipper_contact": shipperContact,
+          "billingperson_name": billingName,
+          "billingperson_address": billingAddress,
+          "billingperson_email": billingEmail,
+          "billingperson_contact": billingContact,
+          "consignee_name": consigneeName,
+          "consignee_address": consigneeAddress,
+          "consignee_email": consigneeEmail,
+          "consignee_contact": consigneeContact,
+          "cnic_number": cnicNumber,
+          "origin_country_id": originCountryId,
+          "city_name": cityName,
+          "origin_province_id": originProvinceId,
+          "origin_city_id": originCityId,
+          "destination_country_id": destinationCountryId,
+          "destination_province_id": destinationProvinceId,
+          "destination_city_id": destinationCityId,
+          "piece": piece,
+          "weight": weight,
+          "order_amount": orderAmount,
+          "order_ref": orderRef,
+          "detail": [
+            {
+              "id": productCode,
+              "product_code": productCode,
+              "product_name": productName,
+              "quantity": quantity,
+              "amount": amount,
+              "image_url": "none",
+              "refcode": refcode,
+              "variation": "XL",
+              "sku_code": skuCode,
+              "discount_amount": 0,
+              "variation_id": variationId,
+              "product_id": productId,
+              "location_id": locationId
+            }
+          ],
+          "platform_id": platformId,
+          "store_name": storeName,
+          "payment_method_id": paymentMethodId,
+          "remarks": remarks,
+          "shipping_charges": shippingCharges,
+          "consignee_latitude": consigneeLatitude,
+          "consignee_longitude": consigneeLongitude,
+          "order_date": orderDate
+        }
+      ];
+      // Debug: Print all key fields and their types
+      print('--- DEBUG: ORDER CREATE REQUEST ---');
+      print('acno: ${acno} (type: ${acno.runtimeType})');
+      print('order_ref: ${orderRef} (type: ${orderRef.runtimeType})');
+      print('consignee_contact: ${consigneeContact} (type: ${consigneeContact.runtimeType})');
+      print('origin_country_id: ${originCountryId} (type: ${originCountryId.runtimeType})');
+      print('origin_province_id: ${originProvinceId} (type: ${originProvinceId.runtimeType})');
+      print('origin_city_id: ${originCityId} (type: ${originCityId.runtimeType})');
+      print('destination_country_id: ${destinationCountryId} (type: ${destinationCountryId.runtimeType})');
+      print('destination_province_id: ${destinationProvinceId} (type: ${destinationProvinceId.runtimeType})');
+      print('destination_city_id: ${destinationCityId} (type: ${destinationCityId.runtimeType})');
+      print('platform_id: ${platformId} (type: ${platformId.runtimeType})');
+      print('payment_method_id: ${paymentMethodId} (type: ${paymentMethodId.runtimeType})');
+      print('Headers:');
+      print({'Content-Type': 'application/json', if (token != null && token.isNotEmpty) 'Authorization': 'Bearer $token'});
+      print('Request body:');
+      print(body);
+      print('--- END DEBUG ---');
+      final response = await dio.post(
+        'https://stagingoms.orio.digital/api/order/create',
+        data: body,
+        options: Options(headers: {
+          'Content-Type': 'application/json',
+          if (token != null && token.isNotEmpty) 'Authorization': 'Bearer $token',
+        }),
+      );
+      print('Order create response: \nStatus: ${response.statusCode} \nData: ${response.data}');
+      if (response.statusCode == 200 && (response.data['status'] == 1 || response.data['success'] == true)) {
+        customSnackBar('Success', 'Order created successfully!');
+        // Clear all form fields
+        for (final controller in _controllers) {
+          controller.clear();
+        }
+        // Reset dropdowns and selections
+        setState(() {
+          selectedCity = null;
+          selectedPaymentType = 'COD';
+          _selectedPlatform = null;
+          _orders.clear();
+          _expandedOrders.clear();
+        });
+        // Reset form validation state
+        _formKey.currentState?.reset();
+      } else {
+        customSnackBar('Error', response.data['message'] ?? 'Failed to create order');
+      }
+    } catch (e) {
+      print('--- DEBUG: ERROR CAUGHT IN ORDER CREATE ---');
+      print(e);
+      customSnackBar('Error', 'Failed to create order: ${e.toString()}');
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     SystemChrome.setEnabledSystemUIMode(SystemUiMode.manual, overlays: [SystemUiOverlay.top, SystemUiOverlay.bottom]);
@@ -780,6 +981,13 @@ class _CreateOrderScreenState extends State<CreateOrderScreen> {
                          _OrderField(key: _orderFieldKeys[7], controller: _controllers[7], hint: 'Longitude', keyboardType: TextInputType.number, isRequired: true, prefixIcon: Icons.my_location_outlined),
                          _OrderField(key: _orderFieldKeys[8], controller: _controllers[8], hint: 'Weight', keyboardType: TextInputType.number, isRequired: true, prefixIcon: Icons.scale_outlined),
                          _OrderField(key: _orderFieldKeys[9], controller: _controllers[9], hint: 'Shipping Charges', isRequired: true, prefixIcon: Icons.local_shipping_outlined),
+                         _OrderDropdownField(
+                           hint: 'Payment Type',
+                           items: ['COD', 'CC'],
+                           value: selectedPaymentType,
+                           onChanged: (val) => setState(() => selectedPaymentType = val ?? 'COD'),
+                           prefixIcon: Icons.payment,
+                         ),
                          _OrderField(key: _orderFieldKeys[10], controller: _controllers[10], hint: 'Remarks', isRequired: true, prefixIcon: Icons.notes_outlined),
                        ],
                      ),
@@ -792,7 +1000,7 @@ class _CreateOrderScreenState extends State<CreateOrderScreen> {
                       width: double.infinity,
                       height: 48,
                       child: ElevatedButton(
-                        onPressed: _isSaving ? null : _submitOrder,
+                        onPressed: _isSaving ? null : _createOrder,
                         style: ElevatedButton.styleFrom(
                           backgroundColor: Color(0xFF007AFF),
                           shape: RoundedRectangleBorder(

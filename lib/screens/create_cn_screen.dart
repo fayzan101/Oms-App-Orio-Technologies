@@ -177,20 +177,21 @@ Widget SearchableField({
 }
 
 class CreateCnScreen extends StatefulWidget {
-  final dynamic order;
-  const CreateCnScreen({Key? key, this.order}) : super(key: key);
+  final List<dynamic> orders;
+  const CreateCnScreen({Key? key, required this.orders}) : super(key: key);
 
   @override
   State<CreateCnScreen> createState() => _CreateCnScreenState();
 }
 
 class _CreateCnScreenState extends State<CreateCnScreen> {
-  String? selectedAccount = 'Select your account';
+  // Dropdown state
+  String? selectedAccount = null; // Default to label
   String? selectedType = 'Parcel';
-  String? selectedFragile = 'Fragile(Yes)';
-  String? selectedCourier = 'Blue Cargo';
-  String? selectedCity;
-  String? selectedInsurance = 'Insurance(Yes)';
+  String? selectedFragile = null; // Default to label
+  String? selectedCourier = null; // Default to label
+  String? selectedCity = null; // Default to label
+  String? selectedInsurance = null; // Default to label
   List<String> cityList = [];
   bool _isLoadingCities = false;
   final AuthService _authService = Get.find<AuthService>();
@@ -199,16 +200,20 @@ class _CreateCnScreenState extends State<CreateCnScreen> {
   final CourierService _courierService = CourierService();
 
   // Add state for dropdowns
-  String fragileRequire = 'N';
-  String insuranceRequire = 'N';
-  String parcelType = 'Parcel';
+  String fragileRequire = ''; // No default selection
+  String insuranceRequire = ''; // No default selection
+  String parcelType = ''; // No default selection, label will be shown
   bool isSubmitting = false;
 
   // Add state for pickup and city dropdowns
   List<String> pickupOptions = [];
-  String? selectedPickup;
+  String? selectedPickup = null; // Default to label
   bool _isLoadingPickup = false;
-  String? selectedCityDropdown;
+  String? selectedCityDropdown = null; // Default to label
+  
+  // Add state to store pickup locations and cities with their IDs
+  List<Map<String, dynamic>> pickupLocationsWithIds = [];
+  List<Map<String, dynamic>> citiesWithIds = [];
 
   // Add state for service code dropdown
   List<String> serviceCodes = [];
@@ -260,24 +265,51 @@ class _CreateCnScreenState extends State<CreateCnScreen> {
   Future<void> _fetchCities() async {
     setState(() { _isLoadingCities = true; });
     try {
-      final acno = _authService.getCurrentAcno();
-      if (acno == null || acno.isEmpty) {
-        setState(() { _isLoadingCities = false; });
-        return;
-      }
-      final cities = await StatementService().fetchCityList(acno);
-      setState(() {
-        cityList = cities
-            .map((c) => (c['name']?.toString() ?? c['city_name']?.toString() ?? ''))
-            .where((c) => c.isNotEmpty)
-            .toList();
-        if (cityList.isNotEmpty && (selectedCityDropdown == null || !cityList.contains(selectedCityDropdown))) {
-          selectedCityDropdown = cityList.first;
+      final countryId = 1;
+      final dio = Dio();
+      final response = await dio.post(
+        'https://oms.getorio.com/api/cities',
+        data: {"country_id": countryId},
+        options: Options(headers: {'Content-Type': 'application/json'}),
+      );
+      if (response.statusCode == 200 && response.data != null) {
+        final data = response.data;
+        List<String> cities = [];
+        List<Map<String, dynamic>> cityObjs = [];
+        if (data is List) {
+          cityObjs = List<Map<String, dynamic>>.from(data);
+          cities = data.map<String>((c) => c['city_name']?.toString() ?? '').where((c) => c.isNotEmpty).toList();
+        } else if (data is Map && data['payload'] is List) {
+          cityObjs = List<Map<String, dynamic>>.from(data['payload']);
+          cities = (data['payload'] as List)
+              .map<String>((c) => c['city_name']?.toString() ?? '')
+              .where((c) => c.isNotEmpty)
+              .toList();
         }
+        setState(() {
+          cityList = cities;
+          citiesWithIds = cityObjs.map((c) => {
+            'name': c['city_name']?.toString() ?? '',
+            'id': int.tryParse(c['city_id']?.toString() ?? '0') ?? 0,
+          }).where((c) => c['id'] != 0).toList();
+          if (cityList.isNotEmpty && (selectedCityDropdown == null || !cityList.contains(selectedCityDropdown))) {
+            selectedCityDropdown = cityList.first;
+          }
+          _isLoadingCities = false;
+        });
+      } else {
+        setState(() {
+          cityList = [];
+          selectedCityDropdown = null;
+          _isLoadingCities = false;
+        });
+      }
+    } catch (e) {
+      setState(() {
+        cityList = [];
+        selectedCityDropdown = null;
         _isLoadingCities = false;
       });
-    } catch (e) {
-      setState(() { _isLoadingCities = false; });
     }
   }
 
@@ -292,8 +324,11 @@ class _CreateCnScreenState extends State<CreateCnScreen> {
       final accounts = await _courierService.getCourierAccounts(acno);
       setState(() {
         _accounts = accounts;
-        if (_accounts.isNotEmpty && (selectedAccount == null || !_accounts.any((a) => _accountDropdownValue(a) == selectedAccount))) {
-          selectedAccount = _accountDropdownValue(_accounts.first);
+        // Do not auto-select the first account. Only keep selectedAccount if it matches an account, otherwise set to null.
+        if (_accounts.any((a) => _accountDropdownValue(a) == selectedAccount)) {
+          // keep selectedAccount
+        } else {
+          selectedAccount = null;
         }
         _isLoadingAccounts = false;
       });
@@ -306,12 +341,51 @@ class _CreateCnScreenState extends State<CreateCnScreen> {
     setState(() { _isLoadingServiceCodes = true; });
     try {
       final user = _authService.currentUser.value;
-      final acno = user?.acno ?? widget.order?['acno'] ?? '';
-      final courierId = widget.order?['courier_id']?.toString() ?? '1';
-      final customerCourierId = widget.order?['customer_courier_id']?.toString() ?? '55';
+      final acno = user?.acno ?? widget.orders.first['acno'] ?? '';
+      
+      // Extract from selected courier account
+      String? courierId;
+      String? customerCourierId;
+      
+      if (selectedAccount != null && selectedAccount != 'Select your account') {
+        try {
+          final selectedAccountObj = _accounts.firstWhere(
+            (account) => _accountDropdownValue(account) == selectedAccount,
+          );
+          courierId = selectedAccountObj.courierId;
+          customerCourierId = selectedAccountObj.id;
+        } catch (e) {
+          // If account not found, return empty list
+          setState(() {
+            serviceCodes = [];
+            selectedServiceCode = null;
+            _isLoadingServiceCodes = false;
+          });
+          return;
+        }
+      } else {
+        // No account selected, return empty list
+        setState(() {
+          serviceCodes = [];
+          selectedServiceCode = null;
+          _isLoadingServiceCodes = false;
+        });
+        return;
+      }
+      
+      // Return empty list if either ID is null
+      if (courierId == null || customerCourierId == null) {
+        setState(() {
+          serviceCodes = [];
+          selectedServiceCode = null;
+          _isLoadingServiceCodes = false;
+        });
+        return;
+      }
+      
       final dio = Dio();
       final response = await dio.post(
-        'https://oms.getorio.com/api/order/getServiceCode',
+        'https://stagingoms.orio.digital/api/order/getServiceCode',
         data: {
           "acno": acno,
           "courier_id": int.tryParse(courierId) ?? 1,
@@ -340,7 +414,10 @@ class _CreateCnScreenState extends State<CreateCnScreen> {
         }
         setState(() {
           serviceCodes = codes;
-          selectedServiceCode = codes.isNotEmpty ? codes.first : null;
+          // Do not auto-select the first service code
+          if (!serviceCodes.contains(selectedServiceCode)) {
+            selectedServiceCode = null;
+          }
           _isLoadingServiceCodes = false;
         });
       } else {
@@ -363,12 +440,51 @@ class _CreateCnScreenState extends State<CreateCnScreen> {
     setState(() { _isLoadingPickup = true; });
     try {
       final user = _authService.currentUser.value;
-      final acno = user?.acno ?? widget.order?['acno'] ?? '';
-      final courierId = widget.order?['courier_id']?.toString() ?? '1';
-      final customerCourierId = widget.order?['customer_courier_id']?.toString() ?? '55';
+      final acno = user?.acno ?? widget.orders.first['acno'] ?? '';
+      
+      // Extract from selected courier account
+      String? courierId;
+      String? customerCourierId;
+      
+      if (selectedAccount != null && selectedAccount != 'Select your account') {
+        try {
+          final selectedAccountObj = _accounts.firstWhere(
+            (account) => _accountDropdownValue(account) == selectedAccount,
+          );
+          courierId = selectedAccountObj.courierId;
+          customerCourierId = selectedAccountObj.id;
+        } catch (e) {
+          // If account not found, return empty list
+          setState(() {
+            pickupOptions = [];
+            selectedPickup = null;
+            _isLoadingPickup = false;
+          });
+          return;
+        }
+      } else {
+        // No account selected, return empty list
+        setState(() {
+          pickupOptions = [];
+          selectedPickup = null;
+          _isLoadingPickup = false;
+        });
+        return;
+      }
+      
+      // Return empty list if either ID is null
+      if (courierId == null || customerCourierId == null) {
+        setState(() {
+          pickupOptions = [];
+          selectedPickup = null;
+          _isLoadingPickup = false;
+        });
+        return;
+      }
+      
       final dio = Dio();
       final response = await dio.post(
-        'https://oms.getorio.com/api/pickup/show',
+        'https://stagingoms.orio.digital/api/pickup/show',
         data: {
           "acno": acno,
           "courier_id": int.tryParse(courierId) ?? 1,
@@ -379,14 +495,29 @@ class _CreateCnScreenState extends State<CreateCnScreen> {
       if (response.statusCode == 200 && response.data != null) {
         final data = response.data;
         List<String> pickups = [];
+        List<Map<String, dynamic>> pickupLocationsWithIds = [];
         if (data is Map && data['pickuplocation'] is List) {
           pickups = List<String>.from(data['pickuplocation'].map((e) => e['pickuplocation_name'].toString()));
+          pickupLocationsWithIds = List<Map<String, dynamic>>.from(data['pickuplocation'].map((e) => {
+            'name': e['pickuplocation_name']?.toString() ?? '',
+            'id': int.tryParse(e['pickuplocation_id']?.toString() ?? '0') ?? 0, // Use pickuplocation_id as id
+            'pickup_code': e['pickup_code']?.toString() ?? '', // Extract pickup_code
+          }).where((p) => p['id'] != 0).toList());
         } else if (data is Map && data['payload'] is List) {
           pickups = List<String>.from(data['payload'].map((e) => e['pickuplocation_name'].toString()));
+          pickupLocationsWithIds = List<Map<String, dynamic>>.from(data['payload'].map((e) => {
+            'name': e['pickuplocation_name']?.toString() ?? '',
+            'id': int.tryParse(e['pickuplocation_id']?.toString() ?? '0') ?? 0, // Use pickuplocation_id as id
+            'pickup_code': e['pickup_code']?.toString() ?? '', // Extract pickup_code
+          }).where((p) => p['id'] != 0).toList());
         }
         setState(() {
           pickupOptions = pickups;
-          selectedPickup = pickups.isNotEmpty ? pickups.first : null;
+          pickupLocationsWithIds = pickupLocationsWithIds;
+          // Do not auto-select the first pickup
+          if (!pickupOptions.contains(selectedPickup)) {
+            selectedPickup = null;
+          }
           _isLoadingPickup = false;
         });
       } else {
@@ -411,6 +542,10 @@ class _CreateCnScreenState extends State<CreateCnScreen> {
 
   Future<void> _showCitySearchDialog() async {
     if (_isLoadingCities) return;
+    print('Showing city search dialog with ${cityList.length} cities');
+    print('Available cities: $cityList');
+    print('Selected city: $selectedCityDropdown');
+    
     final selected = await showDialog<String>(
       context: context,
       builder: (context) => _CitySearchDialog(
@@ -423,6 +558,145 @@ class _CreateCnScreenState extends State<CreateCnScreen> {
         selectedCityDropdown = selected;
       });
     }
+  }
+
+  void _showCnSuccessSheet(BuildContext context, List<String> cnList) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (context) {
+        return DraggableScrollableSheet(
+          expand: false,
+          initialChildSize: 0.4,
+          minChildSize: 0.2,
+          maxChildSize: 0.8,
+          builder: (context, scrollController) {
+            return Padding(
+              padding: const EdgeInsets.all(24),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Icon(Icons.check_circle, color: Colors.green, size: 48),
+                  const SizedBox(height: 16),
+                  const Text('CNs Created', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 20)),
+                  const SizedBox(height: 12),
+                  Expanded(
+                    child: ListView.builder(
+                      controller: scrollController,
+                      itemCount: cnList.length,
+                      itemBuilder: (context, i) => ListTile(
+                        leading: const Icon(Icons.local_shipping, color: Colors.blue),
+                        title: Text('CN: ${cnList[i]}'),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  ElevatedButton(
+                    onPressed: () => Navigator.of(context).pop(),
+                    child: const Text('Close'),
+                  ),
+                ],
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
+  void _showCnStatusDialog(BuildContext context, List<Map<String, String>> cnStatusList, [List<Map<String, dynamic>>? fullPayload]) {
+    showDialog(
+      context: context,
+      barrierDismissible: true,
+      builder: (context) {
+        return AlertDialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          title: const Text('CN Creation Status', textAlign: TextAlign.center),
+          content: SizedBox(
+            width: 340,
+            child: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  if (fullPayload != null && fullPayload.isNotEmpty)
+                    ...fullPayload.map((item) => Card(
+                          margin: const EdgeInsets.symmetric(vertical: 8),
+                          child: Padding(
+                            padding: const EdgeInsets.all(12),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Row(
+                                  children: [
+                                    Icon(
+                                      (item['consigment_no'] != null && item['consigment_no'].toString().isNotEmpty)
+                                          ? Icons.check_circle
+                                          : Icons.error,
+                                      color: (item['consigment_no'] != null && item['consigment_no'].toString().isNotEmpty)
+                                          ? Colors.green
+                                          : Colors.red,
+                                    ),
+                                    const SizedBox(width: 8),
+                                    Text(
+                                      (item['consigment_no'] != null && item['consigment_no'].toString().isNotEmpty)
+                                          ? 'Success'
+                                          : 'Failed',
+                                      style: TextStyle(
+                                        color: (item['consigment_no'] != null && item['consigment_no'].toString().isNotEmpty)
+                                            ? Colors.green
+                                            : Colors.red,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                const SizedBox(height: 8),
+                                ...item.entries.map((entry) => Padding(
+                                      padding: const EdgeInsets.symmetric(vertical: 2),
+                                      child: Row(
+                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                        children: [
+                                          Text('${entry.key}: ', style: const TextStyle(fontWeight: FontWeight.bold)),
+                                          Expanded(child: Text('${entry.value}')),
+                                        ],
+                                      ),
+                                    )),
+                              ],
+                            ),
+                          ),
+                        )),
+                  if (fullPayload == null || fullPayload.isEmpty)
+                    ...cnStatusList.map((item) => ListTile(
+                          leading: Icon(
+                            item['status'] == 'success' ? Icons.check_circle : Icons.error,
+                            color: item['status'] == 'success' ? Colors.green : Colors.red,
+                          ),
+                          title: Text('Order: ${item['order_id'] ?? '-'}'),
+                          subtitle: Text('CN: ${item['cn'] ?? '-'}'),
+                          trailing: Text(
+                            item['status'] == 'success' ? 'Success' : 'Failed',
+                            style: TextStyle(
+                              color: item['status'] == 'success' ? Colors.green : Colors.red,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        )),
+                ],
+              ),
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('Close'),
+            ),
+          ],
+        );
+      },
+    );
   }
 
   @override
@@ -460,54 +734,29 @@ class _CreateCnScreenState extends State<CreateCnScreen> {
         child: ListView(
           children: [
             SearchableField(
-                    context: context,
-                    label: 'Select your account',
-                    value: selectedAccount,
-                    options: [
-                      'Select your account',
-                      ..._accounts.map((a) => _accountDropdownValue(a)),
-                    ],
-                    onSelected: (val) => setState(() => selectedAccount = val),
-                  ),
-            SearchableField(
               context: context,
-              label: 'Fragile?',
-              value: fragileRequire == 'Y' ? 'Yes' : 'No',
-              options: ['Y', 'N'].map((v) => v == 'Y' ? 'Yes' : 'No').toList(),
-              onSelected: (val) => setState(() => fragileRequire = val == 'Yes' ? 'Y' : 'N'),
+              label: 'Select your account',
+              value: selectedAccount,
+              options: [
+                'Select your account',
+                ..._accounts.map((a) => _accountDropdownValue(a)),
+              ],
+              onSelected: (val) {
+                setState(() => selectedAccount = val);
+                // Refresh pickup locations and service codes when account changes
+                if (val != null && val != 'Select your account') {
+                  _fetchPickupLocations();
+                  _fetchServiceCodes();
+                }
+              },
             ),
-            SearchableField(
-              context: context,
-              label: 'Insurance?',
-              value: insuranceRequire == 'Y' ? 'Yes' : 'No',
-              options: ['Y', 'N'].map((v) => v == 'Y' ? 'Yes' : 'No').toList(),
-              onSelected: (val) => setState(() => insuranceRequire = val == 'Yes' ? 'Y' : 'N'),
-            ),
-            SearchableField(
-              context: context,
-              label: 'Parcel Type',
-              value: parcelType,
-              options: ['Parcel', 'Document'],
-              onSelected: (val) => setState(() => parcelType = val),
-            ),
+            // Move Pickup and Service Code fields here
             SearchableField(
               context: context,
               label: 'Pickup',
               value: selectedPickup,
               options: pickupOptions,
               onSelected: (val) => setState(() => selectedPickup = val),
-            ),
-            if (_isLoadingPickup)
-              const Padding(
-                padding: EdgeInsets.symmetric(vertical: 8),
-                child: Center(child: CircularProgressIndicator()),
-              ),
-            SearchableField(
-              context: context,
-              label: 'City',
-              value: selectedCityDropdown,
-              options: cityList,
-              onSelected: (val) => setState(() => selectedCityDropdown = val),
             ),
             SearchableField(
               context: context,
@@ -516,14 +765,43 @@ class _CreateCnScreenState extends State<CreateCnScreen> {
               options: serviceCodes,
               onSelected: (val) => setState(() => selectedServiceCode = val),
             ),
-            if (_isLoadingServiceCodes)
-              const Padding(
-                padding: EdgeInsets.symmetric(vertical: 8),
-                child: Center(child: CircularProgressIndicator()),
+            // Fragile and Insurance with default label
+            SearchableField(
+              context: context,
+              label: 'Fragile',
+              value: fragileRequire.isEmpty ? null : (fragileRequire == 'Y' ? 'Yes' : 'No'),
+              options: ['Fragile', 'Yes', 'No'],
+              onSelected: (val) => setState(() => fragileRequire = val == 'Yes' ? 'Y' : val == 'No' ? 'N' : ''),
+            ),
+            SearchableField(
+              context: context,
+              label: 'Insurance',
+              value: insuranceRequire.isEmpty ? null : (insuranceRequire == 'Y' ? 'Yes' : 'No'),
+              options: ['Insurance', 'Yes', 'No'],
+              onSelected: (val) => setState(() => insuranceRequire = val == 'Yes' ? 'Y' : val == 'No' ? 'N' : ''),
+            ),
+            SearchableField(
+              context: context,
+              label: 'Parcel Type',
+              value: parcelType.isEmpty ? null : parcelType,
+              options: ['Parcel Type', 'Parcel', 'Document'],
+              onSelected: (val) => setState(() => parcelType = val == 'Parcel Type' ? '' : val),
+            ),
+            // Inline loading indicators for pickup and service code
+            if (widget.orders.isNotEmpty) ...[
+              const SizedBox(height: 16),
+              const Text(
+                'Selected Orders',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w700,
+                  color: Colors.black,
+                ),
               ),
-            if (widget.order != null)
-              Container(
+              const SizedBox(height: 12),
+              ...widget.orders.map((order) => Container(
                 width: double.infinity,
+                margin: const EdgeInsets.only(bottom: 12),
                 decoration: BoxDecoration(
                   color: const Color(0xFFF5F5F7),
                   borderRadius: BorderRadius.circular(12),
@@ -536,118 +814,243 @@ class _CreateCnScreenState extends State<CreateCnScreen> {
                       children: [
                         const Text('Order ID', style: TextStyle(fontWeight: FontWeight.w700)),
                         const SizedBox(width: 8),
-                        Text(widget.order['id']?.toString() ?? '', style: TextStyle(fontWeight: FontWeight.w400)),
+                        Text(order['id']?.toString() ?? '', style: TextStyle(fontWeight: FontWeight.w400)),
                       ],
                     ),
                     const SizedBox(height: 6),
-                    _summaryRow('Name', widget.order['consignee_name'] ?? ''),
-                    _summaryRow('Pickup', widget.order['pickup_address'] ?? ''),
-                   Padding(
-                     padding: const EdgeInsets.symmetric(vertical: 2),
-                     child: Row(
-                       children: [
-                         const Text('Destination City', style: TextStyle(fontWeight: FontWeight.w700)),
-                         const SizedBox(width: 8),
-                         Expanded(
-                           child: _isLoadingCities
-                               ? const Center(child: SizedBox(height: 24, width: 24, child: CircularProgressIndicator(strokeWidth: 2)))
-                               : GestureDetector(
-                                   onTap: _showCitySearchDialog,
-                                   child: Container(
-                                     padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-                                     decoration: BoxDecoration(
-                                       color: Colors.white,
-                                       borderRadius: BorderRadius.circular(14),
-                                       border: Border.all(color: Colors.grey[300]!, width: 1),
-                                       boxShadow: [
-                                         BoxShadow(
-                                           color: Colors.grey.withOpacity(0.08),
-                                           blurRadius: 8,
-                                           offset: Offset(0, 2),
-                                         ),
-                                       ],
-                                     ),
-                                     child: Row(
-                                       children: [
-                                         Expanded(
-                                           child: Text(
-                                             selectedCityDropdown ?? 'Select City',
-                                             style: GoogleFonts.poppins(
-                                               fontWeight: FontWeight.w500,
-                                               color: selectedCityDropdown != null ? kBlue : Colors.grey[600],
-                                               fontSize: 15,
-                                             ),
-                                           ),
-                                         ),
-                                         const Icon(Icons.keyboard_arrow_down_rounded, color: Color(0xFF222222)),
-                                       ],
-                                     ),
-                                   ),
-                                 ),
-                         ),
-                       ],
-                     ),
-                   ),
-                    _summaryRow('Weight', widget.order['weight']?.toString() ?? ''),
-                    _summaryRow('CN', widget.order['consigment_no']?.toString() ?? ''),
+                    _summaryRow('Name', order['consignee_name'] ?? ''),
+                    _summaryRow('Pickup', order['pickup_address'] ?? ''),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 2),
+                      child: Row(
+                        children: [
+                          const Text('Destination City', style: TextStyle(fontWeight: FontWeight.w700)),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: _isLoadingCities
+                                ? const Center(child: SizedBox(height: 24, width: 24, child: CircularProgressIndicator(strokeWidth: 2)))
+                                : GestureDetector(
+                                    onTap: _showCitySearchDialog,
+                                    child: Container(
+                                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                                      decoration: BoxDecoration(
+                                        color: Colors.white,
+                                        borderRadius: BorderRadius.circular(14),
+                                        border: Border.all(color: Colors.grey[300]!, width: 1),
+                                        boxShadow: [
+                                          BoxShadow(
+                                            color: Colors.grey.withOpacity(0.08),
+                                            blurRadius: 8,
+                                            offset: Offset(0, 2),
+                                          ),
+                                        ],
+                                      ),
+                                      child: Row(
+                                        children: [
+                                          Expanded(
+                                            child: Text(
+                                              selectedCityDropdown ?? 'Select City',
+                                              style: GoogleFonts.poppins(
+                                                fontWeight: FontWeight.w500,
+                                                color: selectedCityDropdown != null ? kBlue : Colors.grey[600],
+                                                fontSize: 15,
+                                              ),
+                                            ),
+                                          ),
+                                          const Icon(Icons.keyboard_arrow_down_rounded, color: Color(0xFF222222)),
+                                        ],
+                                      ),
+                                    ),
+                                  ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    _summaryRow('Weight', order['weight']?.toString() ?? ''),
+                    _summaryRow('CN', order['consigment_no']?.toString() ?? ''),
                     const SizedBox(height: 6),
                   ],
                 ),
-              ),
+              )).toList(),
+            ],
             const SizedBox(height: 24),
             SizedBox(
               width: double.infinity,
               height: 48,
               child: ElevatedButton(
                 onPressed: isSubmitting ? null : () async {
+                  // Validate required fields before submitting
+                  if (selectedAccount == null || selectedAccount == 'Select your account' ||
+                      selectedPickup == null || selectedPickup!.isEmpty ||
+                      selectedServiceCode == null || selectedServiceCode!.isEmpty ||
+                      fragileRequire.isEmpty || insuranceRequire.isEmpty || parcelType.isEmpty ||
+                      selectedCityDropdown == null || selectedCityDropdown!.isEmpty ||
+                      widget.orders.isEmpty) {
+                    customSnackBar('Error', 'Please fill required fields');
+                    return;
+                  }
                   setState(() { isSubmitting = true; });
-                  final user = _authService.currentUser.value;
-                  final acno = user?.acno ?? '';
-                  final userId = user?.userId ?? '';
-                  final customerId = user?.customerId ?? '';
-                  final order = widget.order;
-                  final courierId = order?['courier_id']?.toString() ?? '1';
-                  final customerCourierId = order?['customer_courier_id']?.toString() ?? '55';
-                  final orderId = order?['id'] ?? order?['order_id'];
-                  // Use selectedPickup and selectedCityDropdown
-                  final body = {
-                    "acno": acno,
-                    "user_id": userId,
-                    "customer_id": customerId,
-                    "courier_id": courierId,
-                    "customer_courier_id": customerCourierId,
-                    "service_code": selectedServiceCode,
-                    "fragile_require": fragileRequire,
-                    "insurance_require": insuranceRequire,
-                    "insurance_value": 0,
-                    "parcel_type": parcelType == 'Parcel' ? 'P' : 'D',
-                    "pickup_location_id": selectedPickup,
-                    "detail": [
-                      {
-                        "order_id": orderId,
-                        "destination_city_id": selectedCityDropdown,
-                      }
-                    ]
-                  };
+                  
                   try {
+                    final user = _authService.currentUser.value;
+                    final acno = user?.acno ?? '';
+                    final userId = int.tryParse(user?.userId?.toString() ?? '0') ?? 0;
+                    final customerId = int.tryParse(user?.customerId?.toString() ?? '0') ?? 0;
+                    final order = widget.orders.first;
+                    
+                    // Extract courier_id and customer_courier_id from selected account
+                    int courierId = 1;
+                    int customerCourierId = 55;
+                    
+                    if (selectedAccount != null && selectedAccount != 'Select your account') {
+                      try {
+                        final selectedAccountObj = _accounts.firstWhere(
+                          (account) => _accountDropdownValue(account) == selectedAccount,
+                        );
+                        courierId = int.tryParse(selectedAccountObj.courierId) ?? 1;
+                        customerCourierId = int.tryParse(selectedAccountObj.id) ?? 55;
+                      } catch (e) {
+                        if (_accounts.isNotEmpty) {
+                          courierId = int.tryParse(_accounts.first.courierId) ?? 1;
+                          customerCourierId = int.tryParse(_accounts.first.id) ?? 55;
+                        }
+                      }
+                    }
+                    
+                    // Extract service_code from dropdown
+                    final serviceCode = selectedServiceCode ?? '';
+                    
+                    // Extract fragile_require and insurance_require from dropdowns
+                    final fragileRequireValue = this.fragileRequire == 'Y' ? 'Y' : 'N';
+                    final insuranceRequireValue = this.insuranceRequire == 'Y' ? 'Y' : 'N';
+                    
+                    // Extract parcel_type from dropdown
+                    final parcelTypeValue = this.parcelType == 'Parcel' ? 'P' : 'D';
+                    
+                    // Extract pickup_location_id from dropdown by matching pickup name
+                    int pickupLocationId = 0;
+                    if (selectedPickup != null && selectedPickup!.isNotEmpty) {
+                      final pickupLocation = pickupLocationsWithIds.firstWhere(
+                        (p) => p['name'] == selectedPickup,
+                        orElse: () => <String, Object>{},
+                      );
+                      pickupLocationId = pickupLocation['id'] ?? 0;
+                      print('Selected pickup: $selectedPickup, Extracted pickupLocationId (pickuplocation_id): $pickupLocationId, pickupLocation: $pickupLocation');
+                    } else {
+                      print('No pickup selected or pickup name is empty');
+                    }
+                    // Use pickupLocationId directly in API body
+                    final pickupLocationIdInt = int.tryParse(pickupLocationId.toString()) ?? 0;
+                    
+                    // Extract order_id from order
+                    final orderId = int.tryParse(order?['id']?.toString() ?? order?['order_id']?.toString() ?? '0') ?? 0;
+                    
+                    // Extract destination_city_id from selected city
+                    int destinationCityId = 0;
+                    if (selectedCityDropdown != null && selectedCityDropdown!.isNotEmpty) {
+                      final city = citiesWithIds.firstWhere(
+                        (c) => c['name'] == selectedCityDropdown,
+                        orElse: () => <String, Object>{},
+                      );
+                      destinationCityId = city['id'] ?? 0;
+                    }
+                    
+                    // Create detail entries for all orders
+                    final detailEntries = widget.orders.map((order) => {
+                      "order_id": int.tryParse(order?['id']?.toString() ?? order?['order_id']?.toString() ?? '0') ?? 0,
+                      "destination_city_id": destinationCityId,
+                    }).toList();
+                    
+                    final body = {
+                      "acno": acno,
+                      "user_id": userId,
+                      "customer_id": customerId,
+                      "courier_id": courierId,
+                      "customer_courier_id": customerCourierId,
+                      "service_code": serviceCode,
+                      "fragile_require": fragileRequireValue,
+                      "insurance_require": insuranceRequireValue,
+                      "insurance_value": 0,
+                      "parcel_type": parcelTypeValue,
+                      "pickup_location_id": pickupLocationIdInt,
+                      "detail": detailEntries
+                    };
+                    
+                    print('Shipment creation body: $body');
+                    
                     final dio = Dio();
                     final response = await dio.post(
-                      'https://oms.getorio.com/api/shipment/create',
+                      'https://stagingoms.orio.digital/api/shipment/create',
                       data: body,
                       options: Options(headers: {'Content-Type': 'application/json'}),
                     );
+                    
+                    print('Shipment creation response: ${response.data}');
+                    
                     if (response.statusCode == 200 && (response.data['status'] == 1 || response.data['success'] == true)) {
-                      showModalBottomSheet(
+                      // Extract payload and build status list for all orders
+                      final List<Map<String, dynamic>> fullPayload = response.data['payload'] is List
+                          ? List<Map<String, dynamic>>.from(response.data['payload'])
+                          : [];
+                      final Set<String> successOrderIds = fullPayload
+                          .where((item) => item['consigment_no'] != null && item['consigment_no'].toString().isNotEmpty)
+                          .map((item) => item['order_id']?.toString() ?? '')
+                          .toSet();
+                      final List<Map<String, dynamic>> dialogList = widget.orders.map((order) {
+                        final orderId = order['id']?.toString() ?? order['order_id']?.toString() ?? '';
+                        final payloadItem = fullPayload.firstWhere(
+                          (item) => (item['order_id']?.toString() ?? '') == orderId,
+                          orElse: () => <String, dynamic>{},
+                        );
+                        return {
+                          'order_id': orderId,
+                          ...payloadItem,
+                          'status': (payloadItem['consigment_no'] != null && payloadItem['consigment_no'].toString().isNotEmpty)
+                              ? 'success'
+                              : 'failed',
+                        };
+                      }).toList();
+                      // Show dialog with all order statuses
+                      await showDialog(
                         context: context,
-                        isScrollControlled: true,
-                        backgroundColor: Colors.transparent,
-                        builder: (context) => const _CnSuccessBottomSheet(),
+                        barrierDismissible: true,
+                        builder: (context) => _CnStatusDialog(dialogList: dialogList),
                       );
+                      // Only remove successful orders
+                      setState(() {
+                        widget.orders.removeWhere((order) =>
+                          successOrderIds.contains(order['id']?.toString() ?? order['order_id']?.toString() ?? '')
+                        );
+                        // Only clear form fields and selections if all orders succeeded
+                        final allSucceeded = widget.orders.isEmpty;
+                        if (allSucceeded) {
+                          selectedAccount = null;
+                          selectedType = 'Parcel';
+                          selectedFragile = null;
+                          selectedCourier = null;
+                          selectedCity = null;
+                          selectedInsurance = null;
+                          cityList = [];
+                          fragileRequire = '';
+                          insuranceRequire = '';
+                          parcelType = '';
+                          pickupOptions = [];
+                          selectedPickup = null;
+                          _isLoadingPickup = false;
+                          selectedCityDropdown = null;
+                          pickupLocationsWithIds = [];
+                          citiesWithIds = [];
+                          serviceCodes = [];
+                          selectedServiceCode = null;
+                          _isLoadingServiceCodes = false;
+                        }
+                      });
                     } else {
                       customSnackBar('Error', response.data['message'] ?? 'Failed to create shipment');
                     }
                   } catch (e) {
-                    customSnackBar('Error', 'Failed to create shipment: \\${e.toString()}');
+                    print('Error creating shipment: $e');
+                    customSnackBar('Error', 'Failed to create shipment: ${e.toString()}');
                   } finally {
                     setState(() { isSubmitting = false; });
                   }
@@ -661,6 +1064,8 @@ class _CreateCnScreenState extends State<CreateCnScreen> {
                 child: isSubmitting ? const CircularProgressIndicator(color: Colors.white) : const Text('Create CN', style: TextStyle(fontSize: 18, color: Colors.white)),
               ),
             ),
+            // Add bottom padding to prevent FAB overlap
+            const SizedBox(height: 80),
           ],
         ),
       ),
@@ -888,6 +1293,71 @@ class _CitySearchDialogState extends State<_CitySearchDialog> {
           ],
         ),
       ),
+    );
+  }
+} 
+
+class _CnStatusDialog extends StatelessWidget {
+  final List<Map<String, dynamic>> dialogList;
+  const _CnStatusDialog({Key? key, required this.dialogList}) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      title: const Text('CN Creation Status', textAlign: TextAlign.center),
+      content: SizedBox(
+        width: 340,
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: dialogList.map((item) => Card(
+              margin: const EdgeInsets.symmetric(vertical: 8),
+              child: Padding(
+                padding: const EdgeInsets.all(12),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Icon(
+                          item['status'] == 'success' ? Icons.check_circle : Icons.error,
+                          color: item['status'] == 'success' ? Colors.green : Colors.red,
+                        ),
+                        const SizedBox(width: 8),
+                        Text(
+                          item['status'] == 'success' ? 'Success' : 'Failed',
+                          style: TextStyle(
+                            color: item['status'] == 'success' ? Colors.green : Colors.red,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    ...item.entries.where((entry) => entry.key != 'status').map((entry) => Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 2),
+                          child: Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text('${entry.key}: ', style: const TextStyle(fontWeight: FontWeight.bold)),
+                              Expanded(child: Text('${entry.value}')),
+                            ],
+                          ),
+                        )),
+                  ],
+                ),
+              ),
+            )).toList(),
+          ),
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(),
+          child: const Text('Close'),
+        ),
+      ],
     );
   }
 } 
